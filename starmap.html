@@ -1,0 +1,1252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Project Reliquary starmap: a full-screen galactic chart of star systems and gate lanes.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23020d1d'/%3E%3Ccircle cx='32' cy='32' r='17' fill='none' stroke='%2386d8ff' stroke-width='3'/%3E%3Cellipse cx='32' cy='32' rx='27' ry='8' fill='none' stroke='%235bbfff' stroke-width='2' transform='rotate(-20 32 32)'/%3E%3C/svg%3E">
+<title>Starmap · Project Reliquary</title>
+<style>
+:root{--accent:#98dcff;--text:#e3f2fb;--muted:#8fb0c4;--line:rgba(152,220,255,.3);--panel:rgba(4,22,40,.8);--bar-h:66px}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#000;color:var(--text);font:13px/1.5 'Segoe UI',Arial,sans-serif}
+button,input,textarea{font:inherit;color:inherit}
+#map{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:none;outline:none}
+#map.dragging{cursor:grabbing}
+#map.over-item{cursor:pointer}
+body.mode-system #map{cursor:crosshair}
+body.mode-lane #map{cursor:cell}
+.bar{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;flex-wrap:wrap;gap:12px 14px;padding:12px 18px;background:linear-gradient(rgba(0,8,16,.9),rgba(0,8,16,.6));border-bottom:1px solid var(--line);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.home-icon{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;flex-shrink:0;border:1px solid rgba(152,220,255,.45);border-radius:6px;background:rgba(4,26,46,.45);color:#9fdcff;box-shadow:0 0 10px rgba(107,194,255,.2);text-decoration:none}
+.home-icon svg{width:22px;height:22px;filter:drop-shadow(0 0 4px rgba(152,220,255,.5))}
+.home-icon:hover{border-color:var(--accent);color:#d6f1ff}
+.brand{display:flex;flex-direction:column;line-height:1;min-width:0}
+.brand-kicker{font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.brand-name{font-family:'Copperplate Gothic Bold','Copperplate Gothic','Copperplate','Bank Gothic','Eurostile Extended','Eurostile','Segoe UI',sans-serif;font-size:22px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#d8f2ff;text-shadow:0 0 10px rgba(120,210,255,.55);white-space:nowrap}
+.brand-name small{font-family:'Segoe UI',Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:.3em;color:var(--accent);margin-left:12px;text-shadow:none}
+.bar-tools{margin-left:auto;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.audio-ctl{display:flex;align-items:center;gap:6px}
+.audio-btn svg{width:16px;height:16px}
+.audio-btn[aria-pressed="true"] .mute{display:none}
+.audio-btn .rx-dot{width:6px;height:6px;border-radius:50%;background:rgba(152,220,255,.25);display:none}
+.audio-btn[aria-pressed="true"] .rx-dot{display:inline-block}
+.audio-btn.rx .rx-dot{background:#7dffb0;box-shadow:0 0 6px #7dffb0;animation:rxpulse .9s ease-in-out infinite}
+@keyframes rxpulse{50%{opacity:.35}}
+.audio-vol{display:flex;align-items:center;min-height:34px;padding:0 8px;border:1px solid var(--line);border-radius:5px;background:rgba(4,26,46,.65)}.audio-vol[hidden]{display:none}.audio-vol input{width:84px;accent-color:#9fdcff}
+@media(prefers-reduced-motion:reduce){.audio-btn.rx .rx-dot{animation:none}}
+.admin-tools{display:none;flex-wrap:wrap;align-items:center;gap:6px;padding-right:10px;margin-right:2px;border-right:1px solid var(--line)}
+body.is-admin .admin-tools{display:flex}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:6px 12px;border:1px solid var(--line);border-radius:5px;background:rgba(4,26,46,.65);color:var(--text);font-size:12px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent);background:rgba(22,59,87,.7)}
+.btn[aria-pressed="true"]{border-color:var(--accent);background:rgba(60,150,210,.32);color:#fff;box-shadow:0 0 10px rgba(107,194,255,.35)}
+.btn.primary{background:#9fdcff;border-color:#9fdcff;color:#031421;font-weight:600}
+.btn.danger{color:#ffb4a2;border-color:rgba(255,160,140,.45)}
+.btn:focus-visible,.home-icon:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+body.is-admin #admin-toggle{color:var(--accent);border-color:var(--accent);box-shadow:0 0 12px rgba(152,220,255,.35)}
+.panel{position:fixed;top:calc(var(--bar-h) + 12px);right:16px;z-index:4;width:300px;max-width:calc(100vw - 32px);max-height:calc(100vh - var(--bar-h) - 100px);overflow:auto;padding:16px;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 0 20px rgba(0,0,0,.5);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.panel[hidden]{display:none}
+.panel h2{margin:0 0 4px;font-size:16px;color:#d8f2ff;letter-spacing:.04em;overflow-wrap:anywhere}
+.panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+.eyebrow{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent)}
+.muted{color:var(--muted);font-size:12px}
+.notes{white-space:pre-wrap;overflow-wrap:anywhere;margin:10px 0;font-size:12px}
+.list{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.list button{width:100%;text-align:left;justify-content:flex-start;min-height:30px;background:rgba(4,26,46,.4)}
+.field{display:flex;flex-direction:column;gap:4px;margin:10px 0;font-size:11px;color:var(--muted)}
+.field input,.field textarea{width:100%;padding:8px;border:1px solid var(--line);border-radius:4px;background:rgba(0,10,20,.7);color:var(--text)}
+.field textarea{min-height:80px;resize:vertical}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.hud{position:fixed;left:16px;bottom:16px;z-index:4;max-width:min(520px,calc(100vw - 90px));padding:9px 13px;background:var(--panel);border:1px solid var(--line);border-radius:6px;font-size:11px;color:var(--muted)}
+.hud strong{color:var(--text);font-weight:600}
+.hud kbd{display:inline-block;min-width:18px;padding:0 4px;border:1px solid var(--line);border-radius:3px;text-align:center;font:10px/16px Consolas,monospace;color:var(--text)}
+#mode-hint{display:block;margin-top:4px;color:var(--accent)}
+#mode-hint:empty{display:none}
+.zoom{position:fixed;right:16px;bottom:16px;z-index:4;display:flex;flex-direction:column;gap:6px}
+.zoom .btn{width:38px;padding:0;font-size:16px}
+.toast{position:fixed;left:50%;bottom:24px;z-index:9;transform:translateX(-50%);padding:10px 18px;border-radius:6px;background:#bfeaff;color:#031421;font-size:13px;box-shadow:0 6px 30px rgba(0,0,0,.5)}
+.toast[hidden]{display:none}
+dialog{width:400px;max-width:94vw;padding:24px;border:1px solid rgba(152,220,255,.5);border-radius:8px;background:rgba(5,15,33,.97);color:var(--text);box-shadow:0 24px 100px #000b}
+dialog::backdrop{background:rgba(0,3,12,.75)}
+dialog h2{margin:0 0 6px;font-size:18px}
+.error{color:#ffb4a2;font-size:12px;min-height:1em;margin:4px 0 0}
+.dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.screen-reader{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+#import-file{display:none}
+.traffic-control{margin:12px 0 4px}
+.traffic-control .field{flex-direction:row;justify-content:space-between;align-items:center;margin:0 0 6px}
+.traffic-control output,.traffic-control strong{color:var(--text);font-weight:600}
+#lane-traffic{width:100%;accent-color:#9fdcff}
+.traffic-scale{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.traffic-meter{height:6px;border:1px solid var(--line);border-radius:3px;overflow:hidden;background:rgba(0,10,20,.6)}
+.lane-row{display:flex;gap:6px;align-items:stretch}
+.lane-row>.btn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.lane-cond-select{position:relative;flex-shrink:0}
+.lane-cond-select select{height:100%;min-height:30px;padding:4px 24px 4px 8px;border:1px solid var(--line);border-radius:5px;background:rgba(4,26,46,.65);color:var(--text);font-size:11px;cursor:pointer;appearance:none;-webkit-appearance:none}
+.lane-cond-select::after{content:'\25BE';position:absolute;right:8px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:11px;color:var(--muted)}
+.lane-cond-select select:hover,.lane-cond-select select:focus-visible{border-color:var(--accent);outline:none}
+.cond-sel-caution select{border-color:#ffc440;color:#ffe2a0;background:rgba(255,196,64,.16)}
+.cond-sel-closed select{border-color:#ff564a;color:#ffc0b8;background:rgba(255,86,74,.16)}
+.lane-cond-select option{background:#06182c;color:#e3f2fb}
+.head-actions{display:flex;gap:6px;flex-shrink:0}
+.gear-btn{width:34px;padding:0}
+.gear-btn svg{width:18px;height:18px}
+.gear-btn[aria-expanded="true"]{border-color:var(--accent);background:rgba(60,150,210,.32)}
+.star-color-menu{margin:4px 0 12px;padding:10px;border:1px solid var(--line);border-radius:6px;background:rgba(0,10,20,.55)}
+.star-color-menu .field{flex-direction:row;justify-content:space-between;margin:0 0 8px}
+.star-color-menu .field{margin-top:4px}
+.opt-row{display:grid;gap:5px;margin-bottom:10px}
+.opt-shape,.opt-size{grid-template-columns:repeat(4,1fr)}
+.opt-design{grid-template-columns:repeat(3,1fr)}
+.opt-row .btn{min-height:28px;padding:4px 2px;font-size:11px}
+.swatch-row{display:grid;grid-template-columns:62px repeat(3,1fr);align-items:center;gap:6px;margin-bottom:6px}
+.swatch-hue{font-size:11px;color:var(--muted)}
+.opt-style{grid-template-columns:repeat(4,1fr)}
+.neb-swatches{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px}
+.neb-range{margin:0 0 10px}.neb-range .field{flex-direction:row;justify-content:space-between;align-items:center;margin:0 0 4px}.neb-range input{width:100%;accent-color:#9fdcff}
+.neb-range output{color:var(--text);font-weight:600}
+/* ---- Commander identity + Eisdon industrial interface (Command Module α; set on the main page) ---- */
+.cmd-ident{display:none}
+body.is-commander .cmd-ident{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-left:12px}
+body.is-commander .cmd-badge{display:inline-flex;align-items:center;gap:7px;padding:3px 9px;border:1px solid #0a0b0c;border-radius:2px;background:linear-gradient(#1c1f22,#101214);color:#7dffa8;font:600 10px/1.4 Bahnschrift,'Arial Narrow',Arial,sans-serif;letter-spacing:.24em;text-transform:uppercase;text-shadow:0 0 6px rgba(125,255,168,.6);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+body.is-commander .cmd-badge::before{content:"";width:7px;height:7px;border-radius:50%;background:#46ff86;box-shadow:0 0 7px #46ff86}
+.cmd-change{padding:2px 8px;border:1px solid #0a0b0c;border-radius:2px;background:linear-gradient(#3c4248,#24282c);color:#f2b632;font:600 9px/1.5 Bahnschrift,'Arial Narrow',Arial,sans-serif;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 1px 0 #000}
+.cmd-change:hover{color:#ffd57a;background:linear-gradient(#4a5158,#2b3035)}.cmd-change:focus-visible{outline:2px solid #7dffa8;outline-offset:2px}
+#command-dialog .cmd-factions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+#command-dialog .cmd-faction{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;border:1px solid var(--line);border-radius:5px;background:rgba(4,26,46,.6);color:var(--text);cursor:pointer}
+#command-dialog .cmd-faction svg{width:34px;height:34px;color:#9fdcff}#command-dialog .cmd-faction strong{font-size:12px;letter-spacing:.16em;text-transform:uppercase}#command-dialog .cmd-faction small{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#7dffa8}
+#command-dialog .cmd-faction[aria-checked="true"]{border-color:#7dffa8;box-shadow:0 0 12px rgba(125,255,168,.3)}#command-dialog .cmd-faction:disabled{opacity:.45;cursor:not-allowed}#command-dialog .cmd-faction:disabled small{color:#ffb4a2}
+#command-dialog .cmd-current{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0;padding:10px 12px;border:1px solid var(--line);border-radius:5px}
+#command-dialog .cmd-current strong{letter-spacing:.18em;text-transform:uppercase;color:#7dffa8}
+#command-dialog input[type=password]{letter-spacing:.4em;text-align:center;font:18px Consolas,monospace}
+body.cmd-eisdon{--accent:#7dffa8;--text:#d4d9dd;--muted:#8f979f;--line:#0b0c0d;--panel:#1d2023;font-family:Bahnschrift,'DIN Alternate','Arial Narrow','Segoe UI',Arial,sans-serif}
+body.cmd-eisdon .bar{background:repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 3px),linear-gradient(#34393e,#202326 55%,#15171a);border-bottom:2px solid #050606;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 4px 16px rgba(0,0,0,.75);-webkit-backdrop-filter:none;backdrop-filter:none}
+body.cmd-eisdon .bar::after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:6px;background:repeating-linear-gradient(-45deg,#c9962b 0 8px,#0e0e0e 8px 16px);opacity:.8;pointer-events:none}
+body.cmd-eisdon .bar::before{content:"";position:absolute;right:calc(330px + 3%);bottom:-58px;width:min(520px,40vw);height:54px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='54' viewBox='0 0 520 54' preserveAspectRatio='none'%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cpath d='M0 2 C90 52 210 50 300 4' stroke='%23050505' stroke-width='8'/%3E%3Cpath d='M0 2 C90 52 210 50 300 4' stroke='%233a1410' stroke-width='6'/%3E%3Cpath d='M0 2 C90 52 210 50 300 4' stroke='rgba(255,255,255,.18)' stroke-width='1.2' transform='translate(0,-2.0)'/%3E%3Cpath d='M180 2 C280 44 420 46 520 2' stroke='%23050505' stroke-width='9'/%3E%3Cpath d='M180 2 C280 44 420 46 520 2' stroke='%23151515' stroke-width='7'/%3E%3Cpath d='M180 2 C280 44 420 46 520 2' stroke='rgba(255,255,255,.18)' stroke-width='1.2' transform='translate(0,-2.3)'/%3E%3Cpath d='M330 2 C380 26 450 28 500 2' stroke='%23050505' stroke-width='6'/%3E%3Cpath d='M330 2 C380 26 450 28 500 2' stroke='%235b4a12' stroke-width='4'/%3E%3Cpath d='M330 2 C380 26 450 28 500 2' stroke='rgba(255,255,255,.18)' stroke-width='1.2' transform='translate(0,-1.3)'/%3E%3Crect x='292' y='0' width='20' height='10' rx='2' fill='%2325282b' stroke='%230a0a0a'/%3E%3C/g%3E%3C/svg%3E") center top/100% 100% no-repeat;pointer-events:none;opacity:.95}
+body.cmd-eisdon .brand-name{color:#e4e8eb;text-shadow:0 1px 0 #000,0 0 10px rgba(255,255,255,.08)}
+body.cmd-eisdon .brand-name small{color:#d9a13a}
+body.cmd-eisdon .brand-kicker{color:#a9b0b7}
+body.cmd-eisdon .btn,body.cmd-eisdon .home-icon{border:1px solid #070808;border-radius:3px;background:linear-gradient(#484e55,#2b2f34 55%,#1f2226);color:#e2e6e9;letter-spacing:.04em;text-transform:uppercase;font-size:11px;box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 2px 0 #060707;text-shadow:0 1px 0 #000}
+body.cmd-eisdon .bar .btn{padding:6px 9px}
+body.cmd-eisdon .panel{top:calc(var(--bar-h) + 18px)}
+body.cmd-eisdon .home-icon svg{filter:none}
+body.cmd-eisdon .btn:hover,body.cmd-eisdon .home-icon:hover{background:linear-gradient(#565d64,#33383d 55%,#25282c);border-color:#070808;color:#fff}
+body.cmd-eisdon .btn:active{transform:translateY(1px);box-shadow:inset 0 1px 3px rgba(0,0,0,.6)}
+body.cmd-eisdon .btn[aria-pressed="true"]{background:linear-gradient(#1f2e25,#121a15);color:#9dffbf;border-color:#050606;box-shadow:inset 0 2px 4px rgba(0,0,0,.7),0 0 8px rgba(125,255,168,.2);text-shadow:0 0 6px rgba(125,255,168,.6)}
+body.cmd-eisdon .btn.primary{background:linear-gradient(#d9a13a,#a8701a);color:#140f04;text-shadow:none;border-color:#3d2a07}
+body.cmd-eisdon .btn.danger{color:#ff9c86}
+body.cmd-eisdon .admin-tools{border-right:2px groove #3a3f44}
+body.cmd-eisdon .panel,body.cmd-eisdon .hud,body.cmd-eisdon .lock-menu,body.cmd-eisdon dialog{border:1px solid #060707;border-radius:4px;-webkit-backdrop-filter:none;backdrop-filter:none;
+ background:radial-gradient(circle at 9px 9px,#7a8189 0 2.5px,#16181b 3px 3.8px,transparent 4.2px),radial-gradient(circle at calc(100% - 9px) 9px,#7a8189 0 2.5px,#16181b 3px 3.8px,transparent 4.2px),radial-gradient(circle at 9px calc(100% - 9px),#7a8189 0 2.5px,#16181b 3px 3.8px,transparent 4.2px),radial-gradient(circle at calc(100% - 9px) calc(100% - 9px),#7a8189 0 2.5px,#16181b 3px 3.8px,transparent 4.2px),repeating-linear-gradient(90deg,rgba(255,255,255,.02) 0 1px,transparent 1px 3px),linear-gradient(160deg,#2a2e32,#1b1e21 50%,#131517);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.1),inset 0 -2px 0 rgba(0,0,0,.5),0 8px 26px rgba(0,0,0,.75)}
+body.cmd-eisdon .panel{padding:18px}
+body.cmd-eisdon .panel h2,body.cmd-eisdon dialog h2{color:#e6eaed;text-transform:uppercase;letter-spacing:.12em;text-shadow:0 1px 0 #000}
+body.cmd-eisdon .eyebrow{color:#d9a13a;letter-spacing:.24em}
+body.cmd-eisdon .list button{background:linear-gradient(#2c3135,#1f2225);border-color:#08090a;text-transform:none;letter-spacing:.02em;font-size:12px}
+body.cmd-eisdon .field input,body.cmd-eisdon .field textarea,body.cmd-eisdon select{background:#02100a;border:1px solid #050606;border-radius:2px;color:#9dffbf;font-family:Consolas,'Lucida Console',monospace;box-shadow:inset 0 2px 6px rgba(0,0,0,.85)}
+body.cmd-eisdon .hud{color:#7dffa8;font-family:'OCR A Extended',Consolas,'Lucida Console',monospace;text-transform:uppercase;letter-spacing:.04em;text-shadow:0 0 5px rgba(125,255,168,.6);background:repeating-linear-gradient(0deg,rgba(0,0,0,.28) 0 1px,transparent 1px 3px),radial-gradient(ellipse at center,rgba(18,80,44,.45),rgba(2,16,9,.97) 80%),#010c06;border:3px solid #1c1f22;box-shadow:0 0 0 1px #050606,inset 0 0 18px rgba(0,0,0,.85),0 6px 18px rgba(0,0,0,.7)}
+body.cmd-eisdon .hud strong{color:#b6ffcc}
+body.cmd-eisdon .hud kbd{background:#071c10;border-color:#1a4a2d;color:#9dffbf}
+body.cmd-eisdon .toast{background:linear-gradient(#1f2226,#141618);border:1px solid #050606;border-left:4px solid #d9a13a;color:#e2e6e9;border-radius:3px}
+body.cmd-eisdon .audio-vol{background:linear-gradient(#2a2e32,#1a1d20);border-color:#070808;border-radius:3px}
+body.cmd-eisdon .audio-vol input,body.cmd-eisdon .neb-range input,body.cmd-eisdon #lane-traffic{accent-color:#d9a13a}
+body.cmd-eisdon .star-color-menu,body.cmd-eisdon .traffic-control{border-color:#08090a}
+body.cmd-eisdon .star-color-menu{background:rgba(8,9,10,.55);box-shadow:inset 0 2px 5px rgba(0,0,0,.6)}
+body.cmd-eisdon #command-dialog .cmd-faction{background:linear-gradient(#2a2e32,#1a1d20);border-color:#060707}
+/* Mechanical switches, volume knobs and the flip-open screen (Eisdon interface only) */
+.mech-lever,.vol-knob{display:none}
+body.cmd-eisdon .btn.mech-btn{gap:7px;padding:3px 8px 3px 5px;min-height:44px;border-width:2px;background:radial-gradient(circle at 5px 5px,#8a9198 0 1.3px,transparent 1.9px),radial-gradient(circle at calc(100% - 5px) 5px,#8a9198 0 1.3px,transparent 1.9px),radial-gradient(circle at 5px calc(100% - 5px),#8a9198 0 1.3px,transparent 1.9px),radial-gradient(circle at calc(100% - 5px) calc(100% - 5px),#8a9198 0 1.3px,transparent 1.9px),linear-gradient(#3e444a,#24282c 55%,#191b1e)!important}
+body.cmd-eisdon .mech-btn svg{display:none}
+body.cmd-eisdon .mech-label{display:inline-block;min-width:74px;padding:3px 7px;border:1px solid #050606;border-radius:2px;text-align:center;font:11px/1.3 'OCR A Extended',Consolas,'Lucida Console',monospace;letter-spacing:.06em;text-transform:uppercase;color:#3f7a55;text-shadow:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.3) 0 1px,transparent 1px 3px),#03130b;box-shadow:inset 0 1px 4px rgba(0,0,0,.9)}
+body.cmd-eisdon .mech-btn[aria-pressed="true"] .mech-label{color:#9dffbf;text-shadow:0 0 6px rgba(125,255,168,.75);background:repeating-linear-gradient(0deg,rgba(0,0,0,.25) 0 1px,transparent 1px 3px),radial-gradient(ellipse at center,rgba(30,110,60,.55),#03130b 85%)}
+body.cmd-eisdon .mech-btn[aria-pressed="true"]{background:linear-gradient(#484e55,#2b2f34 55%,#1f2226);color:#e2e6e9;box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 2px 0 #060707;text-shadow:0 1px 0 #000}
+body.cmd-eisdon .audio-vol{padding:0 5px;min-height:44px;border-width:2px}
+body.cmd-eisdon .audio-vol[hidden]{display:flex} /* knobs stay on the console even while music or radio is off */
+body.cmd-eisdon .audio-vol input{display:none}
+/* Rugged bat-handle toggles and knurled knobs */
+body.cmd-eisdon .mech-lever{display:inline-block;position:relative;flex-shrink:0;width:26px;height:38px;padding:0;border:1px solid #050606;border-radius:3px;background:radial-gradient(circle at 4.5px 4.5px,#a6adb4 0 1.4px,#26292c 1.9px 2.5px,transparent 2.9px),radial-gradient(circle at calc(100% - 4.5px) calc(100% - 4.5px),#a6adb4 0 1.4px,#26292c 1.9px 2.5px,transparent 2.9px),linear-gradient(160deg,#4a5056,#24282c 55%,#15171a);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -1px 0 rgba(0,0,0,.6),0 2px 3px rgba(0,0,0,.75)}
+body.cmd-eisdon .mech-lever::before{content:"";position:absolute;left:50%;top:50%;width:15px;height:15px;margin:-7.5px 0 0 -7.5px;z-index:2;clip-path:polygon(25% 4%,75% 4%,100% 50%,75% 96%,25% 96%,0 50%);background:radial-gradient(circle,#090a0b 0 2.6px,#8a9198 3.1px,#4a5056 4.6px,#2a2e32 7.5px)}
+body.cmd-eisdon .mech-lever::after{content:"";position:absolute;left:50%;bottom:50%;right:auto;top:auto;width:11px;height:16px;margin-left:-5.5px;z-index:1;transform-origin:50% 100%;border-radius:5px 5px 2px 2px;background:radial-gradient(ellipse 70% 22% at 50% 10%,rgba(255,200,190,.95) 0,rgba(255,140,120,.4) 45%,transparent 75%),linear-gradient(90deg,#4a0603,#b8231a 28%,#ff6450 47%,#d42d1f 62%,#5c0a06);box-shadow:0 0 0 1px #1c0302,0 3px 4px rgba(0,0,0,.85),inset 0 -2px 2px rgba(0,0,0,.35);transform:scaleY(-1);transition:transform .17s cubic-bezier(.35,1.45,.6,1)}
+body.cmd-eisdon .mech-btn[aria-pressed="true"] .mech-lever::after{transform:scaleY(1)}
+body.cmd-eisdon .vol-knob{display:inline-block;position:relative;width:36px;height:36px;padding:0;border:0;border-radius:50%;cursor:grab;touch-action:none;background:conic-gradient(from 135deg,#111315 0 90deg,transparent 90deg),repeating-conic-gradient(from -135deg,#c7cdd2 0 1.6deg,transparent 1.6deg 27deg),radial-gradient(circle closest-side,#111315 0 66%,#1c1f22 67% 100%);box-shadow:0 0 0 1px #050606,inset 0 0 0 2px #0a0b0c,0 2px 4px rgba(0,0,0,.75)}
+body.cmd-eisdon .vol-knob-cap{position:absolute;inset:6px;border-radius:50%;transform:rotate(var(--rot,0deg));transition:transform .12s;background:radial-gradient(circle at 38% 32%,rgba(255,255,255,.4),transparent 28%),radial-gradient(circle closest-side,#3a3f45 0 55%,#25292d 68%,transparent 71%),repeating-conic-gradient(#7a818a 0 5deg,#1a1d20 5deg 10deg);box-shadow:0 0 0 1px #050606,0 3px 6px rgba(0,0,0,.9),inset 0 0 4px rgba(0,0,0,.85)}
+body.cmd-eisdon .vol-knob-cap::after{content:"";position:absolute;left:50%;top:2px;width:3px;height:9px;margin-left:-1.5px;border-radius:2px;background:linear-gradient(#ffd57a,#d9a13a);box-shadow:0 0 5px rgba(217,161,58,.85),0 0 0 1px rgba(0,0,0,.5)}
+body.cmd-eisdon .btn.mech-btn:active .mech-lever{transform:translateY(1px)}
+body.cmd-eisdon .vol-knob:focus-visible{outline:2px solid #7dffa8;outline-offset:3px}
+body.cmd-eisdon .vol-knob.turning{cursor:grabbing}
+body.cmd-eisdon .panel{border:9px solid transparent;padding:14px 14px 16px;transform-origin:50% 0;
+ background:repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px) padding-box,radial-gradient(ellipse at 50% 30%,rgba(16,70,38,.55),rgba(2,14,8,.97) 80%) padding-box,radial-gradient(circle at 6px 6px,#7a8189 0 2px,transparent 2.6px) border-box,radial-gradient(circle at calc(100% - 6px) 6px,#7a8189 0 2px,transparent 2.6px) border-box,radial-gradient(circle at 6px calc(100% - 6px),#7a8189 0 2px,transparent 2.6px) border-box,radial-gradient(circle at calc(100% - 6px) calc(100% - 6px),#7a8189 0 2px,transparent 2.6px) border-box border-box,linear-gradient(160deg,#3a3f44,#1d2023 50%,#141618) border-box;
+ box-shadow:0 0 0 1px #050606,inset 0 0 0 1px #050606,inset 0 0 22px rgba(0,0,0,.85),0 10px 30px rgba(0,0,0,.75)}
+body.cmd-eisdon .panel h2{color:#b6ffcc;text-shadow:0 0 8px rgba(125,255,168,.55)}
+body.cmd-eisdon .panel .muted,body.cmd-eisdon .panel .field,body.cmd-eisdon .panel .notes{color:#7fb894}
+body.cmd-eisdon .panel .btn,body.cmd-eisdon .panel .list button{background:rgba(10,40,22,.35);border:1px solid #2a6a43;border-radius:2px;color:#9dffbf;box-shadow:none;text-shadow:0 0 5px rgba(125,255,168,.5);text-transform:uppercase;letter-spacing:.06em;font-family:'OCR A Extended',Consolas,'Lucida Console',monospace;font-size:11px}
+body.cmd-eisdon .panel .btn:hover,body.cmd-eisdon .panel .list button:hover{background:rgba(30,110,60,.35);border-color:#7dffa8;color:#d6ffe3}
+body.cmd-eisdon .panel .btn[aria-pressed="true"]{background:rgba(125,255,168,.2);border-color:#7dffa8;color:#eafff0}
+body.cmd-eisdon .panel .btn.primary{border-color:#d9a13a;color:#ffd57a;background:rgba(80,55,10,.35);text-shadow:0 0 5px rgba(217,161,58,.6)}
+body.cmd-eisdon .panel .btn.danger{border-color:#8a2a1c;color:#ff9c86;text-shadow:none}
+body.cmd-eisdon .panel .swatch{border-color:rgba(157,255,191,.3)}
+body.cmd-eisdon .panel.flip-open{animation:panelFlipOpen .5s cubic-bezier(.2,.8,.3,1.15) both}
+body.cmd-eisdon .panel.flip-close{animation:panelFlipClose .32s ease-in both}
+body.cmd-eisdon .panel.flip-open>*{animation:crtOn .55s .38s both}
+body.cmd-eisdon .panel.flip-open::after{content:"";position:absolute;left:0;right:0;top:0;height:100%;pointer-events:none;background:linear-gradient(transparent calc(50% - 1px),#d6ffe3 50%,transparent calc(50% + 1px));animation:crtLine .45s .32s both}
+@keyframes panelFlipOpen{0%{transform:perspective(1100px) rotateX(-96deg);opacity:.3}70%{transform:perspective(1100px) rotateX(7deg);opacity:1}100%{transform:perspective(1100px) rotateX(0)}}
+@keyframes panelFlipClose{0%{transform:perspective(1100px) rotateX(0);opacity:1}100%{transform:perspective(1100px) rotateX(-96deg);opacity:.2}}
+@keyframes crtOn{0%{opacity:0;transform:scaleY(.02);filter:brightness(4)}45%{opacity:1;transform:scaleY(.04)}75%{transform:scaleY(1);filter:brightness(1.8)}100%{opacity:1;transform:none;filter:none}}
+@keyframes crtLine{0%{opacity:0;transform:scaleX(0)}40%{opacity:1;transform:scaleX(1)}100%{opacity:0;transform:scaleX(1)}}
+@media(prefers-reduced-motion:reduce){body.cmd-eisdon .mech-lever::after,body.cmd-eisdon .vol-knob-cap{transition:none}}
+@media(prefers-reduced-motion:reduce){body.cmd-eisdon .panel.flip-open,body.cmd-eisdon .panel.flip-close,body.cmd-eisdon .panel.flip-open>*,body.cmd-eisdon .panel.flip-open::after{animation:none}body.cmd-eisdon .mech-lever::after{transition:none}}
+/* Command dock (Comms, Orders, admin Chat): switches on the left flip panels out. Command view only. */
+.cmd-rail,.cmd-dock{display:none}
+body.is-commander .cmd-rail{position:fixed;left:16px;top:calc(var(--bar-h) + 18px);z-index:4;display:flex;flex-direction:column;gap:8px}
+body.is-commander .cmd-dock{position:fixed;left:170px;top:calc(var(--bar-h) + 18px);bottom:118px;z-index:4;display:flex;flex-direction:column;gap:10px;width:min(330px,calc(100vw - 520px));min-width:240px;pointer-events:none}
+body:not(.is-admin) [data-dock="chat"],body:not(.is-admin) #dock-chat{display:none!important}
+.cmd-rail .mech-label{min-width:66px}
+.dock-panel{position:relative;flex:1 1 0;min-height:0;overflow:auto;pointer-events:auto;transform-origin:0 50%;border:9px solid transparent;padding:12px 14px 14px;border-radius:4px;color:#9dffbf;
+ background:repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px) padding-box,radial-gradient(ellipse at 50% 30%,rgba(16,70,38,.55),rgba(2,14,8,.97) 80%) padding-box,radial-gradient(circle at 6px 6px,#7a8189 0 2px,transparent 2.6px) border-box,radial-gradient(circle at calc(100% - 6px) 6px,#7a8189 0 2px,transparent 2.6px) border-box,radial-gradient(circle at 6px calc(100% - 6px),#7a8189 0 2px,transparent 2.6px) border-box,radial-gradient(circle at calc(100% - 6px) calc(100% - 6px),#7a8189 0 2px,transparent 2.6px) border-box,linear-gradient(160deg,#3a3f44,#1d2023 50%,#141618) border-box;
+ box-shadow:0 0 0 1px #050606,inset 0 0 0 1px #050606,inset 0 0 22px rgba(0,0,0,.85),0 10px 30px rgba(0,0,0,.75)}
+.dock-panel[hidden]{display:none}
+.dock-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+.dock-panel h2{margin:2px 0 0;font-size:16px;letter-spacing:.12em;text-transform:uppercase;color:#b6ffcc;text-shadow:0 0 8px rgba(125,255,168,.55)}
+.dock-led{flex-shrink:0;width:10px;height:10px;margin-top:4px;border-radius:50%;background:#46ff86;box-shadow:0 0 8px #46ff86}.dock-led.amber{background:#d9a13a;box-shadow:0 0 8px #d9a13a}
+.dock-sec{margin:12px 0 4px;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:#d9a13a}
+.dock-log{list-style:none;margin:0;padding:0;font:12px/1.55 'OCR A Extended',Consolas,'Lucida Console',monospace;text-shadow:0 0 5px rgba(125,255,168,.45);overflow-wrap:anywhere}
+.dock-log li{padding:2px 0;border-bottom:1px dashed rgba(125,255,168,.12)}.dock-log li:last-child{border-bottom:0}
+.dock-log .dim{opacity:.6}.dock-log time{color:#5fae7d;margin-right:6px}.dock-log b{color:#d9ffe6;font-weight:600}
+.dock-note{margin:10px 0 0;font-size:11px;color:#7fb894}
+#dock-chat:not([hidden]){display:flex;flex-direction:column}
+.chat-log{flex:1 1 auto;min-height:40px;overflow:auto}
+.chat-form{display:flex;gap:6px;margin-top:10px}
+.chat-form input{flex:1;min-width:0;padding:7px 8px;border:1px solid #2a6a43;border-radius:2px;background:#010c06;color:#9dffbf;font:12px Consolas,'Lucida Console',monospace;box-shadow:inset 0 2px 5px rgba(0,0,0,.8)}
+.chat-form input:focus-visible{outline:2px solid #7dffa8;outline-offset:1px}
+.chat-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+.dock-panel .btn{background:rgba(10,40,22,.35);border:1px solid #2a6a43;border-radius:2px;color:#9dffbf;box-shadow:none;text-shadow:0 0 5px rgba(125,255,168,.5);text-transform:uppercase;letter-spacing:.06em;font:11px 'OCR A Extended',Consolas,'Lucida Console',monospace;min-height:30px}
+.dock-panel .btn.primary{border-color:#d9a13a;color:#ffd57a;background:rgba(80,55,10,.35)}.dock-panel .btn.danger{border-color:#8a2a1c;color:#ff9c86;text-shadow:none}
+.dock-panel.flip-open{animation:dockFlipOpen .5s cubic-bezier(.2,.8,.3,1.15) both}
+.dock-panel.flip-close{animation:dockFlipClose .32s ease-in both}
+.dock-panel.flip-open>*{animation:crtOn .55s .38s both}
+.dock-panel.flip-open::after{content:"";position:absolute;left:0;right:0;top:0;height:100%;pointer-events:none;background:linear-gradient(90deg,transparent calc(50% - 1px),#d6ffe3 50%,transparent calc(50% + 1px));animation:crtLine .45s .32s both}
+@keyframes dockFlipOpen{0%{transform:perspective(1100px) rotateY(96deg);opacity:.3}70%{transform:perspective(1100px) rotateY(-7deg);opacity:1}100%{transform:perspective(1100px) rotateY(0)}}
+@keyframes dockFlipClose{0%{transform:perspective(1100px) rotateY(0);opacity:1}100%{transform:perspective(1100px) rotateY(96deg);opacity:.2}}
+@media(prefers-reduced-motion:reduce){.dock-panel.flip-open,.dock-panel.flip-close,.dock-panel.flip-open>*,.dock-panel.flip-open::after{animation:none}}
+@media(max-width:900px){body.is-commander .cmd-dock{left:16px;top:calc(var(--bar-h) + 200px);width:calc(100vw - 32px)}}
+@media(forced-colors:active){body.cmd-eisdon .bar::after,body.cmd-eisdon .bar::before{display:none}}
+body.mode-nebula #map{cursor:crosshair}
+.lock-ctl{position:relative}
+#lock-toggle.any-locked{border-color:#ffd27a;color:#ffe2a6;box-shadow:0 0 10px rgba(255,210,122,.25)}
+.lock-menu{position:absolute;top:calc(100% + 6px);right:0;z-index:10;display:grid;gap:6px;min-width:190px;padding:10px;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.6);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.lock-menu[hidden]{display:none}
+.lock-menu .btn{justify-content:space-between;width:100%}
+.lock-menu .btn[aria-pressed="true"]{border-color:#ffd27a;background:rgba(255,190,90,.16);color:#ffe2a6;box-shadow:none}
+.lock-menu hr{width:100%;border:0;border-top:1px solid var(--line);margin:2px 0}
+.lock-note{margin:0 0 10px;padding:7px 9px;border:1px solid rgba(255,210,122,.45);border-radius:5px;color:#ffe2a6;background:rgba(255,190,90,.08)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.swatch{height:24px;border:1px solid rgba(255,255,255,.25);border-radius:4px;cursor:pointer;background:radial-gradient(circle,#fff 0,rgb(var(--sw)) 45%,rgba(var(--sw),.35) 100%);box-shadow:0 0 6px rgba(var(--sw),.45)}
+.swatch:hover{border-color:#fff}
+.swatch[aria-pressed="true"]{outline:2px solid #fff;outline-offset:2px}
+.star-color-menu>.btn{width:100%;margin-top:4px}
+.state-picker{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.state-picker .btn{padding:6px 4px}
+.btn.state-peace[aria-pressed="true"]{border-color:#9fdcff;background:rgba(60,150,210,.32)}
+.btn.state-instability[aria-pressed="true"]{border-color:#ffd040;background:rgba(255,208,64,.22);color:#ffe8a0;box-shadow:0 0 10px rgba(255,208,64,.35)}
+.btn.state-conflict[aria-pressed="true"]{border-color:#ff8c28;background:rgba(255,140,40,.22);color:#ffc999;box-shadow:0 0 10px rgba(255,140,40,.35)}
+.btn.state-war[aria-pressed="true"]{border-color:#ff4034;background:rgba(255,64,52,.24);color:#ffb8b0;box-shadow:0 0 10px rgba(255,64,52,.4)}
+.state-text-peace{color:#9fdcff}.state-text-instability{color:#ffe08a}.state-text-conflict{color:#ffb877}.state-text-war{color:#ff8f84}
+.condition-picker{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.condition-picker .btn{padding:6px 4px}
+.btn.cond-open[aria-pressed="true"]{border-color:#9fdcff;background:rgba(60,150,210,.32)}
+.btn.cond-caution[aria-pressed="true"]{border-color:#ffc440;background:rgba(255,196,64,.22);color:#ffe2a0;box-shadow:0 0 10px rgba(255,196,64,.35)}
+.btn.cond-closed[aria-pressed="true"]{border-color:#ff564a;background:rgba(255,86,74,.22);color:#ffc0b8;box-shadow:0 0 10px rgba(255,86,74,.35)}
+.cond-text-open{color:#9fdcff}.cond-text-caution{color:#ffd56e}.cond-text-closed{color:#ff8a7c}
+.traffic-meter.cond-caution span{background:linear-gradient(90deg,#d99a1a,#ffe2a0)}
+.traffic-meter span{display:block;height:100%;background:linear-gradient(90deg,#5bbfff,#d8f2ff);box-shadow:0 0 8px rgba(152,220,255,.6)}
+@media(max-width:700px){.brand-name{font-size:17px}.brand-name small{display:none}.panel{top:auto;bottom:64px;left:16px;right:16px;width:auto;max-height:42vh}.hud .keys{display:none}}
+@media(prefers-reduced-transparency:reduce){.bar,.panel,.hud{background:#041a2e;-webkit-backdrop-filter:none;backdrop-filter:none}}
+@media(forced-colors:active){.btn,.panel,.hud,.bar{border-color:CanvasText}.brand-name{text-shadow:none}}
+</style>
+</head>
+<body>
+<script>/* Command Module α: Eisdon commanders get the industrial interface (set on the main page). */try{const c=localStorage.getItem('reliquary-commander');if(localStorage.getItem('reliquary-command-alpha')==='1'&&c==='eisdon')document.body.classList.add('is-commander','cmd-'+c);}catch(e){}</script>
+<header class="bar" id="bar">
+<a class="home-icon" href="index.html" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h4.5v-6h4v6h4.5V9.5"/></svg></a>
+<div class="brand"><span class="brand-kicker">Project</span><span class="brand-name">RELIQUARY<small>STARMAP</small></span></div><div class="cmd-ident"><span class="cmd-badge" id="cmd-badge">Eisdon Command</span><button class="cmd-change" id="cmd-change" type="button" aria-haspopup="dialog">Change Command</button></div>
+<div class="bar-tools">
+<div class="admin-tools" role="group" aria-label="Map editing tools">
+<button class="btn" type="button" data-mode="select" aria-pressed="true">Select / move</button>
+<button class="btn" type="button" data-mode="system" aria-pressed="false">＋ Star system</button>
+<button class="btn" type="button" data-mode="lane" aria-pressed="false">⟷ Gate lane</button>
+<button class="btn" type="button" data-mode="nebula" aria-pressed="false">☁ Nebula</button>
+<button class="btn" type="button" id="export">Export</button>
+<button class="btn" type="button" id="import">Import</button>
+<input id="import-file" type="file" accept="application/json,.json">
+<div class="lock-ctl"><button class="btn" type="button" id="lock-toggle" aria-expanded="false" aria-controls="lock-menu" title="Lock parts of the map against editing">🔓 Locks</button><div class="lock-menu" id="lock-menu" role="group" aria-label="Editing locks" hidden><button class="btn" type="button" data-lock="all" aria-pressed="false">Lock all</button><hr><button class="btn" type="button" data-lock="systems" aria-pressed="false">Systems</button><button class="btn" type="button" data-lock="lanes" aria-pressed="false">Gate lanes</button><button class="btn" type="button" data-lock="nebulae" aria-pressed="false">Nebulae</button></div></div>
+</div>
+<div class="audio-ctl" role="group" aria-label="Sound"><button class="btn audio-btn mech-btn" type="button" id="music-toggle" aria-pressed="false" title="Space ambience music"><span class="mech-lever" aria-hidden="true"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 17.5V6l10-2v11.5"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/><path class="mute" d="M3 3l18 18"/></svg><span class="audio-label mech-label">Music off</span></button><label class="audio-vol" id="music-vol-wrap" hidden><span class="screen-reader">Music volume</span><input id="vol-music" type="range" min="0" max="100" step="1"><span class="vol-knob" role="slider" tabindex="0" data-vol-knob="music" aria-label="Music volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="vol-knob-cap"></span></span></label><button class="btn audio-btn mech-btn" type="button" id="radio-toggle" aria-pressed="false" title="Gate traffic radio chatter"><span class="mech-lever" aria-hidden="true"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h14v10H5z"/><path d="M7 9l9-5"/><circle cx="9.5" cy="14" r="2"/><path d="M14 12.5h3M14 15.5h3"/><path class="mute" d="M3 3l18 18"/></svg><span class="audio-label mech-label">Radio off</span><span class="rx-dot" aria-hidden="true"></span></button><label class="audio-vol" id="radio-vol-wrap" hidden><span class="screen-reader">Radio volume</span><input id="vol-radio" type="range" min="0" max="100" step="1"><span class="vol-knob" role="slider" tabindex="0" data-vol-knob="radio" aria-label="Radio volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="vol-knob-cap"></span></span></label></div>
+<button class="btn mech-btn" type="button" id="panel-toggle" aria-pressed="true" aria-controls="panel"><span class="mech-lever" aria-hidden="true"></span><span class="mech-label">Details</span></button>
+<button class="btn" type="button" id="admin-toggle">Admin login</button>
+</div>
+</header>
+<div class="cmd-rail" id="cmd-rail" role="group" aria-label="Command panels"><button class="btn mech-btn" type="button" data-dock="comms" aria-pressed="false" aria-controls="dock-comms"><span class="mech-lever" aria-hidden="true"></span><span class="mech-label">Comms</span></button><button class="btn mech-btn" type="button" data-dock="orders" aria-pressed="false" aria-controls="dock-orders"><span class="mech-lever" aria-hidden="true"></span><span class="mech-label">Orders</span></button><button class="btn mech-btn" type="button" data-dock="chat" aria-pressed="false" aria-controls="dock-chat"><span class="mech-lever" aria-hidden="true"></span><span class="mech-label">Chat</span></button></div>
+<div class="cmd-dock" id="cmd-dock"><section class="dock-panel" id="dock-comms" aria-label="Communications" hidden><div class="dock-head"><div><div class="eyebrow">Eisdon command net</div><h2>Communications</h2></div><span class="dock-led" aria-hidden="true"></span></div><div class="dock-sec">Priority messages</div><ul class="dock-log" id="comms-priority"><li class="dim">&gt; No priority messages</li></ul><div class="dock-sec">Gate traffic intercepts</div><ul class="dock-log" id="comms-intercepts" aria-live="polite"><li class="dim">&gt; Switch Radio on to monitor gate traffic</li></ul></section><section class="dock-panel" id="dock-orders" aria-label="Orders" hidden><div class="dock-head"><div><div class="eyebrow">Fleet command</div><h2>Orders</h2></div><span class="dock-led amber" aria-hidden="true"></span></div><div class="dock-sec">Standing orders</div><ul class="dock-log"><li class="dim">&gt; No standing orders</li></ul><div class="dock-sec">Order queue</div><ul class="dock-log"><li class="dim">&gt; Queue empty</li></ul><p class="dock-note">Fleet command comes online in a later update.</p></section><section class="dock-panel" id="dock-chat" aria-label="Command chat" hidden><div class="dock-head"><div><div class="eyebrow">Admin channel</div><h2>Chat</h2></div><span class="dock-led" aria-hidden="true"></span></div><ul class="dock-log chat-log" id="chat-log" aria-live="polite"></ul><form id="chat-form" class="chat-form" autocomplete="off"><label class="screen-reader" for="chat-input">Message</label><input id="chat-input" maxlength="300" placeholder="Type a message…" required><button class="btn primary" type="submit">Send</button></form><div class="chat-foot"><p class="dock-note">Local channel: messages stay in this browser and its open tabs until a chat server is connected.</p><button class="btn danger" type="button" id="chat-clear">Clear</button></div></section></div>
+<canvas id="map" tabindex="0" role="img" aria-label="Starmap. Use W, A, S and D to move, Q and E or the mouse wheel to zoom. The Details panel lists every star system."></canvas>
+<aside class="panel" id="panel" aria-live="polite"></aside>
+<div class="hud" id="hud"><span id="hud-pos"></span><span class="keys"> &nbsp;·&nbsp; <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move &nbsp;<kbd>Shift</kbd> faster &nbsp;<kbd>Q</kbd><kbd>E</kbd>/wheel zoom &nbsp;drag to pan</span><span id="mode-hint"></span></div>
+<div class="zoom"><button class="btn" type="button" id="zoom-in" aria-label="Zoom in">+</button><button class="btn" type="button" id="zoom-out" aria-label="Zoom out">−</button><button class="btn" type="button" id="zoom-reset" aria-label="Reset view">⌂</button></div>
+<div class="toast" id="toast" role="status" hidden></div>
+<dialog id="command-dialog" aria-labelledby="command-dialog-title"><div id="command-dialog-body"></div></dialog>
+<dialog id="login-dialog" aria-labelledby="login-title"><form id="login-form"><h2 id="login-title">Administrator login</h2><p class="muted">Sign in to place star systems and gate lanes.</p><label class="field">Password<input id="login-password" type="password" autocomplete="current-password" required></label><p class="error" id="login-error" role="alert"></p><div class="dialog-actions"><button class="btn" type="button" data-close>Cancel</button><button class="btn primary" type="submit">Sign in</button></div></form></dialog>
+<dialog id="system-dialog" aria-labelledby="system-dialog-title"><form id="system-form"><h2 id="system-dialog-title">New star system</h2><p class="muted" id="system-dialog-pos"></p><label class="field">Name<input id="system-name" maxlength="80" required></label><label class="field">Notes (optional)<textarea id="system-notes" maxlength="2000"></textarea></label><div class="dialog-actions"><button class="btn" type="button" data-close>Cancel</button><button class="btn primary" type="submit">Place system</button></div></form></dialog>
+<script>
+'use strict';
+// ---- Configuration ----------------------------------------------------------
+// Background image: set BACKGROUND_IMAGE to e.g. 'assets/starmap/background.jpg' once it is supplied.
+// BACKGROUND_BOUNDS is the area of the map (in map units) that the image covers.
+const BACKGROUND_IMAGE='';
+const BACKGROUND_BOUNDS={x:-4000,y:-2500,w:8000,h:5000};
+// Published map for every visitor. Export from admin mode and replace this file in the repository.
+const PUBLISHED_URL='starmap-data.json';
+const STORAGE_KEY='reliquary-starmap-v1';
+// Shared with the main page's administrator login (password is checked against this SHA-256 hash).
+const ADMIN_HASH='dbd9045db770ddd312fa5a0a19f8dca0c90b80437ad3f64a95c8f29cb8938025',ADMIN_KEY='universe-archive-admin';
+const ZMIN=.15,ZMAX=6;
+// Ship traffic on gate lanes: 1 (quiet) to 10 (busy). New lanes start at DEFAULT_TRAFFIC.
+const DEFAULT_TRAFFIC=5;
+// Traffic is full at 1x zoom and above. Zooming out steadily reduces the number of ships (each lane keeps at least one)
+// until the map is zoomed completely out (ZMIN), where traffic is hidden and the animation stops.
+const TRAFFIC_FULL_ZOOM=1;
+// One zoom-out step in from the farthest zoom ("second-farthest zoom"). There each lane shows a fixed small number of
+// ships: 1 at traffic 1 up to 4 at traffic 10 (Caution uses its halved traffic). Between here and 1x the count rises smoothly.
+const TRAFFIC_FAR_ZOOM=ZMIN*1.3;
+function farShipCount(l){return Math.max(1,Math.round(1+(effectiveTraffic(l)-1)/3));}
+function visibleShipCount(l,total){
+ if(cam.zoom>=TRAFFIC_FULL_ZOOM)return total;
+ const far=Math.min(total,farShipCount(l));
+ if(cam.zoom<=TRAFFIC_FAR_ZOOM)return far;
+ const t=Math.log(cam.zoom/TRAFFIC_FAR_ZOOM)/Math.log(TRAFFIC_FULL_ZOOM/TRAFFIC_FAR_ZOOM);
+ return Math.round(far+(total-far)*t);
+}
+function trafficOff(){return cam.zoom<=ZMIN+1e-6;}
+// Lane conditions: caution halves traffic, closed stops it. Colors are base / hover / selected RGB.
+const LANE_CONDITIONS={
+ open:{label:'Open',traffic:1,colors:['110,195,255','150,220,255','200,240,255']},
+ caution:{label:'Caution',traffic:.5,colors:['255,196,64','255,214,110','255,232,160']},
+ closed:{label:'Closed',traffic:0,colors:['255,86,74','255,120,105','255,165,150']}
+};
+// Star system states. Colors: core fill, glow / ring RGB, label.
+const SYSTEM_STATES={
+ peace:{label:'Peace',core:'#e6f6ff',glow:'150,220,255',text:'#cfeaff'},
+ instability:{label:'Instability',core:'#fff1b8',glow:'255,208,64',text:'#ffe08a'},
+ conflict:{label:'Conflict',core:'#ffd3a8',glow:'255,140,40',text:'#ffb877'},
+ war:{label:'At War',core:'#ffc0b8',glow:'255,64,52',text:'#ff8f84'}
+};
+// Systems in Conflict or At War automatically put their connected lanes on Caution (closed lanes stay closed).
+const HOSTILE_STATES=['conflict','war'];
+function isHostile(s){return !!s&&HOSTILE_STATES.includes(s.state);}
+function cautionLanesOf(id){let n=0;for(const l of data.lanes)if((l.a===id||l.b===id)&&l.condition!=='closed'&&l.condition!=='caution'){l.condition='caution';n++;}return n;}
+// Star colors an administrator can pick from the gear menu: six hues, three shades each. RGB values.
+const STAR_HUES={
+ Red:{Light:'255,150,140',Standard:'255,82,66',Deep:'196,32,32'},
+ Green:{Light:'165,255,175',Standard:'80,222,112',Deep:'28,150,72'},
+ Blue:{Light:'170,215,255',Standard:'88,158,255',Deep:'40,88,222'},
+ Yellow:{Light:'255,242,165',Standard:'255,210,70',Deep:'228,158,20'},
+ White:{Light:'255,255,255',Standard:'255,244,226',Deep:'222,236,255'},
+ Purple:{Light:'222,182,255',Standard:'170,110,255',Deep:'118,58,200'}
+};
+const WHITE_SHADE_LABELS={Light:'Pure',Standard:'Warm',Deep:'Cool'};
+const STAR_COLORS={};
+for(const [hue,shades] of Object.entries(STAR_HUES))for(const [shade,rgb] of Object.entries(shades))STAR_COLORS[`${hue.toLowerCase()}-${shade.toLowerCase()}`]={hue,shade,label:`${hue === 'White'?WHITE_SHADE_LABELS[shade]+' white':shade+' '+hue.toLowerCase()}`,glow:rgb};
+const DEFAULT_STAR={glow:'150,220,255',core:'#e6f6ff'};
+function mixWhite(rgb,f){return 'rgb('+rgb.split(',').map(v=>Math.round(+v+(255-v)*f)).join(',')+')';}
+function starColor(s){const c=STAR_COLORS[s.starColor];return c?{glow:c.glow,core:mixWhite(c.glow,.55)}:DEFAULT_STAR;}
+// Star appearance options (admin gear menu). The first entry of each is the default.
+const STAR_SHAPES={eight:{label:'8-point'},four:{label:'4-point'},six:{label:'6-point'},round:{label:'Round'}};
+const STAR_DESIGNS={
+ classic:{label:'Classic',halo:4.2,haloA:.42,spike:3.6,spikeA:.35,core:1.5},
+ bright:{label:'Bright',halo:6,haloA:.6,spike:5,spikeA:.5,core:1.8},
+ dim:{label:'Dim',halo:3,haloA:.24,spike:2.4,spikeA:.2,core:1.15},
+ ringed:{label:'Ringed',halo:4.2,haloA:.42,spike:3.2,spikeA:.32,core:1.5,ring:true},
+ binary:{label:'Binary',halo:4.2,haloA:.42,spike:3.2,spikeA:.32,core:1.4,binary:true}
+};
+const STAR_SIZES={medium:{label:'Medium',scale:1},small:{label:'Small',scale:.7},large:{label:'Large',scale:1.4},huge:{label:'Huge',scale:1.9}};
+const STAR_SIZE_ORDER=['small','medium','large','huge'];
+function starOpt(table,v){return table[v]?v:Object.keys(table)[0];}
+function starScale(s){return STAR_SIZES[starOpt(STAR_SIZES,s.size)].scale;}
+// Nebula clouds (admin). Colors are [label, r,g,b]; each nebula blends a main color with an accent.
+const NEBULA_COLORS={
+ crimson:['Crimson','205,40,65'],rose:['Rose','235,90,160'],ember:['Ember','225,85,25'],amber:['Amber','240,160,40'],gold:['Gold','235,210,90'],
+ emerald:['Emerald','40,175,95'],teal:['Teal','25,180,180'],azure:['Azure','50,125,240'],violet:['Violet','135,70,220'],dust:['Dust','150,150,170']
+};
+const NEBULA_STYLES={billow:'Billowing',wisp:'Wispy',ring:'Ring',patchy:'Patchy'};
+const NEB_SIZE_MIN=100,NEB_SIZE_MAX=3000,NEB_DEFAULT={size:600,stretch:1.5,rotation:0,opacity:.6,style:'billow',color:'violet',accent:'azure'};
+const NEB_LIGHT=380,NEB_LIGHT_STRENGTH=.75; // how far (map units) a star lights a nebula around it (scaled by star size), and how strongly (0-1)
+function systemState(s){return SYSTEM_STATES[s.state]||SYSTEM_STATES.peace;}
+function laneCondition(l){return LANE_CONDITIONS[l.condition]||LANE_CONDITIONS.open;}
+function effectiveTraffic(l){return l.traffic*laneCondition(l).traffic;}
+// -----------------------------------------------------------------------------
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const canvas=$('map'),ctx=canvas.getContext('2d');
+let W=0,H=0,DPR=1,dirty=true;
+const cam={x:0,y:0,zoom:1};
+let data={version:2,systems:[],lanes:[],nebulae:[]};
+let colorMenuOpen=false,selected=null,hover=null,mode='select',laneStart=null,mouse=null,bgImg=null,toastTimer;
+const keys=new Set();
+
+function toast(msg){$('toast').textContent=msg;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,3200);}
+function isAdmin(){return document.body.classList.contains('is-admin');}
+// Editing locks (admin): a locked kind cannot be placed, moved, edited or deleted. Saved in this browser.
+// System state and lane condition are deliberately left out and stay editable while locked.
+const LOCK_KEY='reliquary-starmap-locks',LOCK_KINDS={systems:'Systems',lanes:'Gate lanes',nebulae:'Nebulae'};
+const locks={systems:false,lanes:false,nebulae:false};
+try{const v=JSON.parse(localStorage.getItem(LOCK_KEY)||'{}');for(const k in locks)locks[k]=v[k]===true;}catch(e){}
+function canEdit(kind){return isAdmin()&&!locks[kind];}
+const KIND_OF={system:'systems',lane:'lanes',nebula:'nebulae'};
+function sys(id){return data.systems.find(s=>s.id===id);}
+function newId(p){return p+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+
+// ---- Data ---------------------------------------------------------------------
+function validate(raw){
+ if(!raw||!Array.isArray(raw.systems)||!Array.isArray(raw.lanes))throw Error('This is not a starmap file.');
+ const ids=new Set(),systems=[],legacy=!(+raw.version>=2);
+ for(const s of raw.systems){
+  if(!s||typeof s.id!=='string'||ids.has(s.id)||typeof s.name!=='string'||!Number.isFinite(+s.x)||!Number.isFinite(+s.y))continue;
+  ids.add(s.id);systems.push({id:s.id,name:s.name.slice(0,80),x:+s.x,y:+s.y,notes:typeof s.notes==='string'?s.notes.slice(0,2000):'',state:SYSTEM_STATES[s.state]?s.state:'peace',starColor:STAR_COLORS[s.starColor]?s.starColor:'',shape:starOpt(STAR_SHAPES,legacy&&s.shape==='four'?'eight':s.shape),design:starOpt(STAR_DESIGNS,s.design),size:starOpt(STAR_SIZES,s.size)});
+ }
+ const seen=new Set(),lanes=[];
+ for(const l of raw.lanes){
+  if(!l||!ids.has(l.a)||!ids.has(l.b)||l.a===l.b)continue;
+  const k=[l.a,l.b].sort().join('|');if(seen.has(k))continue;seen.add(k);
+  lanes.push({id:typeof l.id==='string'?l.id:newId('lane'),a:l.a,b:l.b,name:typeof l.name==='string'?l.name.slice(0,80):'',traffic:Number.isFinite(+l.traffic)&&l.traffic!==null&&l.traffic!==''?clamp(Math.round(+l.traffic),1,10):DEFAULT_TRAFFIC,condition:LANE_CONDITIONS[l.condition]?l.condition:'open'});
+ }
+ const nebulae=[],nids=new Set();
+ for(const n of Array.isArray(raw.nebulae)?raw.nebulae:[]){
+  if(!n||typeof n.id!=='string'||nids.has(n.id)||!Number.isFinite(+n.x)||!Number.isFinite(+n.y))continue;nids.add(n.id);
+  nebulae.push({id:n.id,name:typeof n.name==='string'?n.name.slice(0,80):'',x:+n.x,y:+n.y,
+   size:clamp(Number.isFinite(+n.size)&&+n.size>0?+n.size:NEB_DEFAULT.size,NEB_SIZE_MIN,NEB_SIZE_MAX),stretch:clamp(Number.isFinite(+n.stretch)?+n.stretch:1,1,4),
+   rotation:((Number.isFinite(+n.rotation)?+n.rotation:0)%180+180)%180,opacity:clamp(Number.isFinite(+n.opacity)?+n.opacity:NEB_DEFAULT.opacity,.1,1),
+   style:NEBULA_STYLES[n.style]?n.style:'billow',color:NEBULA_COLORS[n.color]?n.color:NEB_DEFAULT.color,accent:NEBULA_COLORS[n.accent]?n.accent:NEB_DEFAULT.accent,
+   seed:Number.isInteger(n.seed)?n.seed:(Math.random()*2147483647|0)});
+ }
+ return {version:2,systems,lanes,nebulae};
+}
+function save(){
+ try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data));return true;}
+ catch(e){toast('Could not save in this browser. Use Export to keep a copy.');return false;}
+}
+async function load(){
+ try{const raw=localStorage.getItem(STORAGE_KEY);if(raw){data=validate(JSON.parse(raw));return;}}catch(e){}
+ try{const r=await fetch(PUBLISHED_URL,{cache:'no-cache'});if(r.ok)data=validate(await r.json());}catch(e){}
+}
+
+// ---- Camera ---------------------------------------------------------------------
+function resize(){
+ DPR=Math.min(window.devicePixelRatio||1,2);W=innerWidth;H=innerHeight;
+ canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);
+ document.documentElement.style.setProperty('--bar-h',$('bar').offsetHeight+'px');dirty=true;
+}
+function toScreen(x,y){return [(x-cam.x)*cam.zoom+W/2,(y-cam.y)*cam.zoom+H/2];}
+function toWorld(sx,sy){return [(sx-W/2)/cam.zoom+cam.x,(sy-H/2)/cam.zoom+cam.y];}
+function zoomAt(f,sx=W/2,sy=H/2){const [wx,wy]=toWorld(sx,sy);cam.zoom=clamp(cam.zoom*f,ZMIN,ZMAX);cam.x=wx-(sx-W/2)/cam.zoom;cam.y=wy-(sy-H/2)/cam.zoom;dirty=true;}
+function flyTo(s){cam.x=s.x;cam.y=s.y;if(cam.zoom<.8)cam.zoom=1;dirty=true;}
+
+// ---- Starfield (procedural, seeded per tile so it stays fixed in place) ----------
+const TILE=600,tileCache=new Map();
+function rng(seed){return ()=>{seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function tileStars(tx,ty){
+ const k=tx+','+ty;let t=tileCache.get(k);if(t)return t;
+ const r=rng(Math.imul(tx,73856093)^Math.imul(ty,19349663)^0x5bd1e995);t=[];
+ const n=30+Math.floor(r()*16);
+ for(let i=0;i<n;i++){const big=r()>.92,c=r();t.push({x:(tx+r())*TILE,y:(ty+r())*TILE,s:big?1.1+r()*1.1:.35+r()*.6,a:.3+r()*.7,k:r(),c:c<.12?'255,228,196':c<.3?'200,226,255':'255,255,255'});}
+ if(tileCache.size>5000)tileCache.clear();tileCache.set(k,t);return t;
+}
+function drawStars(){
+ const [x0,y0]=toWorld(0,0),[x1,y1]=toWorld(W,H),scale=Math.sqrt(clamp(cam.zoom,.4,3));
+ for(let tx=Math.floor(x0/TILE);tx<=Math.floor(x1/TILE);tx++)for(let ty=Math.floor(y0/TILE);ty<=Math.floor(y1/TILE);ty++){
+  for(const st of tileStars(tx,ty)){
+   if(cam.zoom<.6&&st.k>cam.zoom/.6&&st.s<1.1)continue; // thin faint stars when zoomed out
+   const [sx,sy]=toScreen(st.x,st.y),rad=st.s*scale;
+   ctx.fillStyle=`rgba(${st.c},${st.a})`;
+   if(rad<.9)ctx.fillRect(sx,sy,rad*1.6,rad*1.6);else{ctx.beginPath();ctx.arc(sx,sy,rad,0,6.283);ctx.fill();}
+  }
+ }
+}
+function drawGrid(){
+ const step=cam.zoom<.35?2000:cam.zoom<1.2?500:100;
+ const [x0,y0]=toWorld(0,0),[x1,y1]=toWorld(W,H);
+ ctx.strokeStyle='rgba(120,200,255,.06)';ctx.lineWidth=1;ctx.beginPath();
+ for(let x=Math.floor(x0/step)*step;x<=x1;x+=step){const sx=Math.round(toScreen(x,0)[0])+.5;ctx.moveTo(sx,0);ctx.lineTo(sx,H);}
+ for(let y=Math.floor(y0/step)*step;y<=y1;y+=step){const sy=Math.round(toScreen(0,y)[1])+.5;ctx.moveTo(0,sy);ctx.lineTo(W,sy);}
+ ctx.stroke();
+}
+
+// ---- Drawing ------------------------------------------------------------------
+function isSel(type,id){return selected&&selected.type===type&&selected.id===id;}
+function isHover(type,id){return hover&&hover.type===type&&hover.id===id;}
+function drawLane(l){
+ const a=sys(l.a),b=sys(l.b);if(!a||!b)return;
+ const [ax,ay]=toScreen(a.x,a.y),[bx,by]=toScreen(b.x,b.y),on=isSel('lane',l.id),hv=isHover('lane',l.id);
+ const cond=laneCondition(l),[cBase,cHover,cSel]=cond.colors,flag=l.condition&&l.condition!=='open';
+ const busy=effectiveTraffic(l)/10;
+ ctx.save();ctx.shadowColor=`rgba(${cBase},.8)`;ctx.shadowBlur=on?12:4+busy*10;
+ ctx.strokeStyle=on?`rgba(${cSel},.95)`:hv?`rgba(${cHover},.85)`:`rgba(${cBase},${flag?.75:.55})`;ctx.lineWidth=on?3:hv?2.4:1.6;
+ if(l.condition==='closed')ctx.setLineDash([9,6]);
+ ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();ctx.restore();
+ const len=Math.hypot(bx-ax,by-ay);if(len<40)return;
+ const ux=(bx-ax)/len,uy=(by-ay)/len;ctx.fillStyle=`rgba(${cHover},.9)`;
+ for(const [px,py] of [[ax+ux*16,ay+uy*16],[bx-ux*16,by-uy*16]]){ctx.beginPath();ctx.moveTo(px+ux*4,py+uy*4);ctx.lineTo(px-uy*4,py+ux*4);ctx.lineTo(px-ux*4,py-uy*4);ctx.lineTo(px+uy*4,py-ux*4);ctx.closePath();ctx.fill();}
+ const tag=[l.name,flag?cond.label.toUpperCase():''].filter(Boolean).join(' · ');
+ if(tag&&cam.zoom>=.5){ctx.font=(flag?'600 ':'')+'10px Segoe UI,Arial,sans-serif';ctx.fillStyle=flag?`rgba(${cHover},.95)`:'rgba(160,215,245,.85)';ctx.textAlign='center';ctx.fillText(tag,(ax+bx)/2,(ay+by)/2-7);}
+}
+// ---- Ship traffic ------------------------------------------------------------------
+const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
+const trafficCache=new Map();
+function strHash(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function laneShips(l,len){
+ const eff=effectiveTraffic(l);if(eff<=0)return [];
+ // Ship count grows with the square of traffic: 1 gives a lone ship, 10 gives a dense stream (about 50 on a typical lane).
+ const n=Math.min(140,Math.max(1,Math.round(.5*eff*eff*clamp(len/600,.6,2.5)))),key=l.id+'|'+n;
+ let ships=trafficCache.get(key);if(ships)return ships;
+ const r=rng(strHash(l.id));ships=[];
+ for(let i=0;i<n;i++){const dir=i%2?1:-1,c=r();ships.push({p:r(),speed:12+r()*22,dir,jit:(r()-.5)*1.6,size:.9+r()*.9,col:dir>0?(c<.3?'255,236,190':'255,250,235'):(c<.3?'150,220,255':'215,240,255')});}
+ if(trafficCache.size>2000)trafficCache.clear();trafficCache.set(key,ships);return ships;
+}
+function trafficLevel(){return clamp((cam.zoom-ZMIN)/(TRAFFIC_FULL_ZOOM-ZMIN),0,1);}
+function drawTraffic(now){
+ if(trafficOff())return;
+ const lvl=trafficLevel(),glow=.4+.6*lvl;
+ const t=reducedMotion.matches?0:now/1000,zs=Math.min(1.4,Math.max(.6,Math.sqrt(cam.zoom)));
+ ctx.save();ctx.globalCompositeOperation='lighter';
+ for(const l of data.lanes){
+  const a=sys(l.a),b=sys(l.b);if(!a||!b)continue;
+  const [ax,ay]=toScreen(a.x,a.y),[bx,by]=toScreen(b.x,b.y);
+  if(Math.max(ax,bx)<-20||Math.min(ax,bx)>W+20||Math.max(ay,by)<-20||Math.min(ay,by)>H+20)continue;
+  const len=Math.hypot(b.x-a.x,b.y-a.y),sl=Math.hypot(bx-ax,by-ay);if(len<1||sl<24)continue;
+  const ux=(bx-ax)/sl,uy=(by-ay)/sl,nx=-uy,ny=ux;
+  const ships=laneShips(l,len);if(!ships.length)continue;
+  const shown=visibleShipCount(l,ships.length);
+  for(let i=0;i<ships.length;i++){
+   if(i>=shown)break; // fewer ships as you zoom out
+   const sh=ships[i];
+   const u=((sh.p+t*sh.speed/len)%1+1)%1,f=sh.dir>0?u:1-u;
+   const fade=Math.sin(Math.PI*u)*glow,off=(sh.dir>0?2.6:-2.6)*zs+sh.jit;
+   const x=ax+(bx-ax)*f+nx*off,y=ay+(by-ay)*f+ny*off,dx=ux*sh.dir,dy=uy*sh.dir;
+   ctx.strokeStyle=`rgba(${sh.col},${.35*fade})`;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-dx*7*zs,y-dy*7*zs);ctx.stroke();
+   ctx.fillStyle=`rgba(${sh.col},${.22*fade})`;ctx.beginPath();ctx.arc(x,y,3*sh.size*zs,0,6.283);ctx.fill();
+   ctx.fillStyle=`rgba(${sh.col},${.95*fade})`;ctx.beginPath();ctx.arc(x,y,.9*sh.size*zs,0,6.283);ctx.fill();
+  }
+ }
+ ctx.restore();
+}
+function sysRadius(){return 4+1.5*Math.min(cam.zoom,2);}
+// Star system icon: a realistic star (bright core, soft halo, diffraction spikes) in the system's chosen
+// color, shape, design and size. Systems not at Peace get a ring in their state color.
+function spikeAngles(shape){
+ if(shape==='round')return [];
+ if(shape==='six')return [[Math.PI/2,1.08],[Math.PI/6,.9],[-Math.PI/6,.9]];
+ if(shape==='eight')return [[0,1],[Math.PI/2,1.08],[Math.PI/4,.55],[-Math.PI/4,.55]];
+ return [[0,1],[Math.PI/2,1.08]];
+}
+function drawStarBody(x,y,r,col,boost,shape,d){
+ const glow=col.glow,round=shape==='round',L=r*d.spike*boost,w=Math.max(1.1,r*.32);
+ const haloR=r*d.halo*boost*(round?1.15:1);
+ let g=ctx.createRadialGradient(x,y,0,x,y,haloR);
+ g.addColorStop(0,`rgba(${glow},${d.haloA})`);g.addColorStop(.35,`rgba(${glow},${d.haloA/3})`);g.addColorStop(1,`rgba(${glow},0)`);
+ ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,haloR,0,6.283);ctx.fill();
+ for(const [a,k] of spikeAngles(shape)){
+  const len=L*k,dx=Math.cos(a),dy=Math.sin(a);
+  g=ctx.createLinearGradient(x-dx*len,y-dy*len,x+dx*len,y+dy*len);
+  g.addColorStop(0,`rgba(${glow},0)`);g.addColorStop(.36,`rgba(${glow},${d.spikeA})`);g.addColorStop(.5,'rgba(255,255,255,.95)');g.addColorStop(.64,`rgba(${glow},${d.spikeA})`);g.addColorStop(1,`rgba(${glow},0)`);
+  ctx.fillStyle=g;ctx.beginPath();
+  ctx.moveTo(x-dx*len,y-dy*len);ctx.lineTo(x-dy*w,y+dx*w);ctx.lineTo(x+dx*len,y+dy*len);ctx.lineTo(x+dy*w,y-dx*w);ctx.closePath();ctx.fill();
+ }
+ const cr=r*d.core*(round?1.25:1);
+ g=ctx.createRadialGradient(x,y,0,x,y,cr);
+ g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.35,col.core);g.addColorStop(1,`rgba(${glow},0)`);
+ ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,cr,0,6.283);ctx.fill();
+}
+function drawStarIcon(x,y,r,col,boost,shape='eight',design='classic'){
+ const d=STAR_DESIGNS[design]||STAR_DESIGNS.classic;
+ ctx.save();ctx.globalCompositeOperation='lighter';
+ if(d.binary){
+  drawStarBody(x-r*.7,y+r*.25,r,col,boost,shape,d);
+  drawStarBody(x+r*1.15,y-r*.55,r*.55,col,boost,shape,d);
+ }else drawStarBody(x,y,r,col,boost,shape,d);
+ if(d.ring){ctx.strokeStyle=`rgba(${col.glow},.65)`;ctx.lineWidth=1.1;ctx.beginPath();ctx.ellipse(x,y,r*3.1*boost,r*1.05*boost,-.35,0,6.283);ctx.stroke();}
+ ctx.restore();
+}
+// ---- Nebulae ----------------------------------------------------------------------
+// Each nebula is painted once into a small offscreen image (soft colored blobs, dark dust and a
+// faded edge) and redrawn only when its look or the stars inside it change. Stars on or near a
+// nebula light it up in their own color; that lighting is baked into the same image.
+const NEB_S=384,NEB_R=NEB_S*.4,nebCache=new Map();let nebTmp=null;
+function neb(id){return data.nebulae.find(n=>n.id===id);}
+function nebLocal(n,x,y){const a=n.rotation*Math.PI/180,dx=x-n.x,dy=y-n.y;return [(dx*Math.cos(a)+dy*Math.sin(a))/n.stretch,-dx*Math.sin(a)+dy*Math.cos(a)];}
+function litStars(n){
+ const out=[],C=NEB_S/2;
+ for(const s of data.systems){
+  const [lx,ly]=nebLocal(n,s.x,s.y),px=C+lx/n.size*NEB_R,py=C+ly/n.size*NEB_R,Ly=Math.min(NEB_S*1.2,NEB_LIGHT*starScale(s)/n.size*NEB_R),Lx=Ly/n.stretch;
+  if(px<-Lx||px>NEB_S+Lx||py<-Ly||py>NEB_S+Ly)continue;
+  const col=(STAR_COLORS[s.starColor]?.glow||DEFAULT_STAR.glow).split(',').map(v=>Math.round(+v+(255-v)*.15)).join(',');
+  out.push({px,py,Lx,Ly,col,k:`${Math.round(px)},${Math.round(py)},${Math.round(Ly)},${Math.round(Lx)},${col}`});
+ }
+ return out;
+}
+function paintNebula(cv,n,lit){
+ const g=cv.getContext('2d'),S=NEB_S,R=NEB_R,C=S/2,r=rng(n.seed),gs=()=>(r()+r()+r()-1.5)/1.5;
+ const m=NEBULA_COLORS[n.color][1].split(',').map(Number),ac=NEBULA_COLORS[n.accent][1].split(',').map(Number);
+ const mix=(t,w=0)=>m.map((v,i)=>{const c=v+(ac[i]-v)*t;return Math.round(c+(255-c)*w);}).join(',');
+ const ph=r()*6.283,fx=.6+r()*1.8,blobs=[];
+ const add=(x,y,s,a,el=1,ang=0)=>blobs.push({x,y,s,a,el,ang});
+ if(n.style==='wisp'){for(let k=0;k<6;k++){const x0=gs()*.7,y0=gs()*.7,x1=gs()*.8,y1=gs()*.8,cx=gs(),cy=gs();for(let i=0;i<20;i++){const u=i/19,x=(1-u)*(1-u)*x0+2*(1-u)*u*cx+u*u*x1,y=(1-u)*(1-u)*y0+2*(1-u)*u*cy+u*u*y1,tx=2*(1-u)*(cx-x0)+2*u*(x1-cx),ty=2*(1-u)*(cy-y0)+2*u*(y1-cy);add(x+gs()*.05,y+gs()*.05,.06+r()*.1,.16,2.6+r()*1.5,Math.atan2(ty,tx));}}for(let i=0;i<18;i++)add(gs()*.6,gs()*.6,.2+r()*.2,.05);}
+ else if(n.style==='ring'){for(let i=0;i<95;i++){const a=r()*6.283,d=.62+gs()*.12;add(Math.cos(a)*d,Math.sin(a)*d,.07+r()*.15,.13,1.6,a+1.571);}for(let i=0;i<14;i++)add(gs()*.35,gs()*.35,.15+r()*.15,.04);}
+ else if(n.style==='patchy'){for(let k=0;k<8;k++){const cx=gs()*.75,cy=gs()*.75;for(let i=0;i<11;i++)add(cx+gs()*.14,cy+gs()*.14,.05+r()*.14,.22);}for(let i=0;i<10;i++)add(gs()*.6,gs()*.6,.2+r()*.2,.04);}
+ else{const cs=Array.from({length:5},()=>[gs()*.45,gs()*.45]);for(let i=0;i<95;i++){const [cx,cy]=cs[i%5];add(cx+gs()*.32,cy+gs()*.32,.12+r()*.26,.055);}}
+ g.setTransform(1,0,0,1,0,0);g.globalAlpha=1;g.globalCompositeOperation='source-over';g.clearRect(0,0,S,S);g.globalCompositeOperation='lighter';
+ const blob=(b,col,alpha)=>{g.save();g.translate(C+b.x*R,C+b.y*R);g.rotate(b.ang);g.scale(b.el,1);const rr=b.s*R,gr=g.createRadialGradient(0,0,0,0,0,rr);gr.addColorStop(0,`rgba(${col},${alpha})`);gr.addColorStop(.45,`rgba(${col},${alpha*.5})`);gr.addColorStop(1,`rgba(${col},0)`);g.fillStyle=gr;g.fillRect(-rr,-rr,2*rr,2*rr);g.restore();};
+ for(const b of blobs){const tt=clamp(.5+.5*Math.sin((b.x*fx+b.y)*2.4+ph)+(r()-.5)*.35,0,1);blob(b,mix(tt),b.a*(.55+r()*.9));}
+ for(let i=0;i<7;i++){const b=blobs[Math.floor(r()*blobs.length)];blob({...b,s:b.s*.45},mix(r(),.45),.1);} // brighter knots
+ g.globalCompositeOperation='destination-out'; // dark dust lanes for texture
+ for(let i=0;i<16;i++)blob({x:gs()*.7,y:gs()*.7,s:.05+r()*.12,el:1+r()*2.5,ang:r()*3.14},'0,0,0',.25+r()*.25);
+ g.globalCompositeOperation='destination-in'; // soft edge
+ const eg=g.createRadialGradient(C,C,0,C,C,R*1.22);eg.addColorStop(0,'rgba(0,0,0,1)');eg.addColorStop(.62,'rgba(0,0,0,1)');eg.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=eg;g.fillRect(0,0,S,S);
+ if(lit.length){ // starlight: the cloud's own shape, tinted by each nearby star and fading with distance
+  if(!nebTmp){nebTmp=document.createElement('canvas');nebTmp.width=nebTmp.height=S;}
+  const tg=nebTmp.getContext('2d');
+  for(const l of lit){
+   tg.setTransform(1,0,0,1,0,0);tg.globalCompositeOperation='source-over';tg.clearRect(0,0,S,S);tg.drawImage(cv,0,0);
+   tg.globalCompositeOperation='source-in';tg.translate(l.px,l.py);tg.scale(l.Lx/l.Ly,1);
+   const lg=tg.createRadialGradient(0,0,0,0,0,l.Ly);lg.addColorStop(0,`rgba(${l.col},1)`);lg.addColorStop(.3,`rgba(${l.col},.7)`);lg.addColorStop(1,`rgba(${l.col},0)`);tg.fillStyle=lg;tg.fillRect(-l.Ly,-l.Ly,2*l.Ly,2*l.Ly);
+   g.globalCompositeOperation='lighter';g.globalAlpha=NEB_LIGHT_STRENGTH;g.drawImage(nebTmp,0,0);g.globalAlpha=1;
+  }
+ }
+ g.globalCompositeOperation='source-over';
+}
+function nebulaSprite(n){
+ const lit=litStars(n),key=[n.seed,n.style,n.color,n.accent,lit.map(l=>l.k).join(';')].join('|');
+ let c=nebCache.get(n.id);if(c&&c.key===key)return c.canvas;
+ const cv=c?.canvas||Object.assign(document.createElement('canvas'),{width:NEB_S,height:NEB_S});
+ paintNebula(cv,n,lit);nebCache.set(n.id,{key,canvas:cv});return cv;
+}
+function drawNebula(n){
+ const [x,y]=toScreen(n.x,n.y),h=n.size*cam.zoom*(NEB_S/2)/NEB_R,ext=h*n.stretch;
+ if(h<1.5||x+ext<0||x-ext>W||y+ext<0||y-ext>H)return;
+ ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=n.opacity;ctx.translate(x,y);ctx.rotate(n.rotation*Math.PI/180);ctx.scale(n.stretch,1);
+ ctx.drawImage(nebulaSprite(n),-h,-h,2*h,2*h);ctx.restore();
+ if(isAdmin()&&(isSel('nebula',n.id)||isHover('nebula',n.id))){
+  const on=isSel('nebula',n.id);ctx.save();ctx.setLineDash([8,7]);ctx.lineWidth=on?1.5:1;ctx.strokeStyle=on?'rgba(220,245,255,.85)':'rgba(200,235,255,.4)';
+  ctx.beginPath();ctx.ellipse(x,y,n.size*cam.zoom*n.stretch,n.size*cam.zoom,n.rotation*Math.PI/180,0,6.283);ctx.stroke();
+  if(on){ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(x-6,y);ctx.lineTo(x+6,y);ctx.moveTo(x,y-6);ctx.lineTo(x,y+6);ctx.stroke();}
+  ctx.restore();
+ }
+}
+function systemsInNebula(n){return data.systems.filter(s=>{const [lx,ly]=nebLocal(n,s.x,s.y);return Math.hypot(lx,ly)<n.size;});}
+function addNebula(x,y){
+ const n={id:newId('neb'),name:'',x,y,...NEB_DEFAULT,rotation:Math.round(Math.random()*180),seed:Math.random()*2147483647|0};
+ data.nebulae.push(n);save();return n;
+}
+
+function drawSystem(s){
+ const [x,y]=toScreen(s.x,s.y);if(x<-120||y<-120||x>W+120||y>H+120)return;
+ const r=sysRadius()*starScale(s),on=isSel('system',s.id),hv=isHover('system',s.id),start=laneStart===s.id,st=systemState(s),alert=s.state&&s.state!=='peace';
+ drawStarIcon(x,y,r,starColor(s),on||hv?1.2:1,s.shape,s.design);
+ if(alert){ctx.save();ctx.shadowColor=`rgba(${st.glow},.9)`;ctx.shadowBlur=8;ctx.strokeStyle=`rgba(${st.glow},.9)`;ctx.lineWidth=1.8;ctx.beginPath();ctx.arc(x,y,r+6,0,6.283);ctx.stroke();ctx.restore();}
+ if(on||start||hv){
+  ctx.strokeStyle=start?'rgba(255,210,122,.95)':on?'rgba(220,245,255,.95)':'rgba(200,235,255,.5)';ctx.lineWidth=on||start?1.6:1;
+  ctx.beginPath();ctx.arc(x,y,r+(alert?11:9),0,6.283);ctx.stroke();
+ }
+ if(cam.zoom>=.35||on||hv){ctx.font=(on?'600 ':'')+'12px Segoe UI,Arial,sans-serif';ctx.textAlign='center';ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillText(s.name,x+1,y+r+21);ctx.fillStyle=on?'#ffffff':st.text;ctx.fillText(s.name,x,y+r+20);}
+}
+
+function draw(){
+ ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+ if(bgImg&&bgImg.complete&&bgImg.naturalWidth){const [x,y]=toScreen(BACKGROUND_BOUNDS.x,BACKGROUND_BOUNDS.y);ctx.drawImage(bgImg,x,y,BACKGROUND_BOUNDS.w*cam.zoom,BACKGROUND_BOUNDS.h*cam.zoom);}
+ else drawStars();
+ drawGrid();
+ data.nebulae.forEach(drawNebula);
+ data.lanes.forEach(drawLane);
+ drawTraffic(performance.now());
+ if(mode==='lane'&&laneStart&&mouse&&sys(laneStart)){const s=sys(laneStart),[ax,ay]=toScreen(s.x,s.y);ctx.save();ctx.setLineDash([6,6]);ctx.strokeStyle='rgba(255,210,122,.8)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(mouse[0],mouse[1]);ctx.stroke();ctx.restore();}
+ data.systems.forEach(drawSystem);
+ $('hud-pos').innerHTML=`<strong>X ${Math.round(cam.x)} · Y ${Math.round(cam.y)}</strong> · Zoom ${cam.zoom.toFixed(2)}× · ${data.systems.length} system${data.systems.length===1?'':'s'} · ${data.lanes.length} gate lane${data.lanes.length===1?'':'s'}${data.nebulae.length?` · ${data.nebulae.length} nebula${data.nebulae.length===1?'':'e'}`:''}`;
+}
+
+// ---- Hit testing --------------------------------------------------------------
+function hit(sx,sy){
+ let best=null,bd=Infinity;
+ for(const s of data.systems){const r=sysRadius()*starScale(s)+8,[x,y]=toScreen(s.x,s.y),d=Math.hypot(x-sx,y-sy);if(d<r&&d<bd){bd=d;best={type:'system',id:s.id};}}
+ if(best)return best;
+ for(const l of data.lanes){const a=sys(l.a),b=sys(l.b);if(!a||!b)continue;const [ax,ay]=toScreen(a.x,a.y),[bx,by]=toScreen(b.x,b.y),dx=bx-ax,dy=by-ay,L=dx*dx+dy*dy;if(!L)continue;const t=clamp(((sx-ax)*dx+(sy-ay)*dy)/L,0,1),d=Math.hypot(ax+t*dx-sx,ay+t*dy-sy);if(d<6&&d<bd){bd=d;best={type:'lane',id:l.id};}}
+ if(best)return best;
+ if(isAdmin()&&locks.nebulae)return best; // locked nebulae cannot be selected
+ const [wx,wy]=toWorld(sx,sy);let bs=Infinity; // nebulae last: the smallest one under the pointer
+ for(const n of data.nebulae){const [lx,ly]=nebLocal(n,wx,wy);if(Math.hypot(lx,ly)<n.size*.85&&n.size*n.stretch<bs){bs=n.size*n.stretch;best={type:'nebula',id:n.id};}}
+ return best;
+}
+
+// ---- Panel ----------------------------------------------------------------------
+function trafficText(l){const e=effectiveTraffic(l);return l.condition==='closed'?`0 / 10 (closed; set to ${l.traffic})`:l.condition==='caution'?`${e} / 10 (caution; set to ${l.traffic})`:`${l.traffic} / 10`;}
+function lanesOf(id){return data.lanes.filter(l=>l.a===id||l.b===id);}
+function renderPanel(){
+ const p=$('panel'),admin=isAdmin();
+ if(selected?.type==='system'&&sys(selected.id)){
+  const s=sys(selected.id),links=lanesOf(s.id),admin=canEdit('systems'),laneAdmin=canEdit('lanes');
+  p.innerHTML=`<div class="panel-head"><div><div class="eyebrow">Star system</div><h2>${esc(s.name)}</h2><div class="muted">X ${Math.round(s.x)} · Y ${Math.round(s.y)}</div></div><div class="head-actions">${admin?`<button class="btn gear-btn" data-act="star-color" aria-label="Star appearance settings" aria-expanded="${colorMenuOpen}" title="Star appearance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/><circle cx="12" cy="12" r="6.5"/></svg></button>`:''}<button class="btn" data-act="close" aria-label="Back to system list">✕</button></div></div>`+
+  (admin&&colorMenuOpen?`<div class="star-color-menu" role="group" aria-label="Star appearance">${[['shape','Shape',STAR_SHAPES,Object.keys(STAR_SHAPES)],['design','Design',STAR_DESIGNS,Object.keys(STAR_DESIGNS)],['size','Size',STAR_SIZES,STAR_SIZE_ORDER]].map(([f,title,table,keys])=>`<div class="field">${title}</div><div class="opt-row opt-${f}" role="group" aria-label="Star ${title.toLowerCase()}">${keys.map(k=>`<button class="btn" type="button" data-star-opt="${f}" data-value="${k}" aria-pressed="${starOpt(table,s[f])===k}">${table[k].label}</button>`).join('')}</div>`).join('')}<div class="field">Color <span class="muted">${esc(STAR_COLORS[s.starColor]?.label||'Default')}</span></div>${Object.entries(STAR_HUES).map(([hue,shades])=>`<div class="swatch-row"><span class="swatch-hue">${hue}</span>${Object.entries(shades).map(([shade,rgb])=>{const k=`${hue.toLowerCase()}-${shade.toLowerCase()}`;return `<button class="swatch" type="button" data-star-color="${k}" aria-pressed="${s.starColor===k}" aria-label="${esc(STAR_COLORS[k].label)}" title="${esc(STAR_COLORS[k].label)}" style="--sw:${rgb}"></button>`;}).join('')}</div>`).join('')}<button class="btn" type="button" data-star-color="" aria-pressed="${!s.starColor}">Default blue-white</button></div>`:'')+
+  (isAdmin()?`<div class="traffic-control"><div class="field">System state</div><div class="state-picker" role="group" aria-label="System state">${Object.entries(SYSTEM_STATES).map(([k,c])=>`<button class="btn state-${k}" type="button" data-state="${k}" aria-pressed="${(s.state||'peace')===k}">${c.label}</button>`).join('')}</div></div>`:`<div class="traffic-control"><div class="field">System state <strong class="state-text-${s.state||'peace'}">${systemState(s).label}</strong></div></div>`)+
+  (s.notes&&!admin?`<p class="notes">${esc(s.notes)}</p>`:'')+
+  `<div class="eyebrow" style="margin-top:12px">Gate lanes (${links.length})</div>`+
+  (links.length?`<ul class="list">${links.map(l=>{const o=sys(l.a===s.id?l.b:l.a);if(isAdmin())return `<li class="lane-row"><button class="btn" data-go="${esc(o.id)}">${esc(s.name)} ⟷ ${esc(o.name)}</button><label class="lane-cond-select cond-sel-${l.condition||'open'}"><span class="screen-reader">Condition of lane to ${esc(o.name)}</span><select data-lane-condition="${esc(l.id)}">${Object.entries(LANE_CONDITIONS).map(([k,c])=>`<option value="${k}"${(l.condition||'open')===k?' selected':''}>${c.label}</option>`).join('')}</select></label></li>`;
+  return `<li><button class="btn" data-go="${esc(o.id)}">${esc(s.name)} ⟷ ${esc(o.name)}${l.condition&&l.condition!=='open'?` <span class="cond-text-${l.condition}">· ${laneCondition(l).label}</span>`:''}</button></li>`;}).join('')}</ul>`:'<p class="muted">No gate lanes connected.</p>')+
+  (admin?`<form id="edit-system"><label class="field">Name<input name="name" maxlength="80" required value="${esc(s.name)}"></label><label class="field">Notes<textarea name="notes" maxlength="2000">${esc(s.notes)}</textarea></label><div class="row"><button class="btn primary" type="submit">Save changes</button>${laneAdmin?'<button class="btn" type="button" data-act="lane-from">⟷ Gate lane from here</button>':''}<button class="btn danger" type="button" data-act="delete">Delete system</button></div></form><p class="muted">Drag the system on the map to move it.</p>`:'');
+ }else if(selected?.type==='lane'&&data.lanes.some(l=>l.id===selected.id)){
+  const l=data.lanes.find(l=>l.id===selected.id),a=sys(l.a),b=sys(l.b),admin=canEdit('lanes');
+  p.innerHTML=`<div class="panel-head"><div><div class="eyebrow">Gate lane</div><h2>${esc(l.name||a.name+' ⟷ '+b.name)}</h2><div class="muted">Length ${Math.round(Math.hypot(a.x-b.x,a.y-b.y))} units</div></div><button class="btn" data-act="close" aria-label="Back to system list">✕</button></div><ul class="list"><li><button class="btn" data-go="${esc(a.id)}">${esc(a.name)}</button></li><li><button class="btn" data-go="${esc(b.id)}">${esc(b.name)}</button></li></ul>`+
+  (isAdmin()?`<div class="traffic-control"><div class="field">Lane condition</div><div class="condition-picker" role="group" aria-label="Lane condition">${Object.entries(LANE_CONDITIONS).map(([k,c])=>`<button class="btn cond-${k}" type="button" data-condition="${k}" aria-pressed="${(l.condition||'open')===k}">${c.label}</button>`).join('')}</div><p class="muted">Caution halves traffic. Closed stops it.</p></div>`:`<div class="traffic-control"><div class="field">Lane condition <strong class="cond-text-${l.condition||'open'}">${laneCondition(l).label}</strong></div></div>`)+
+  (admin?`<div class="traffic-control"><label class="field" for="lane-traffic">Lane traffic <output id="lane-traffic-value" for="lane-traffic">${trafficText(l)}</output></label><input id="lane-traffic" type="range" min="1" max="10" step="1" value="${l.traffic}"><div class="traffic-scale" aria-hidden="true"><span>Quiet</span><span>Busy</span></div></div><form id="edit-lane"><label class="field">Lane name (optional)<input name="name" maxlength="80" value="${esc(l.name)}"></label>`:`<div class="traffic-control"><div class="field">Lane traffic <strong>${trafficText(l)}</strong></div><div class="traffic-meter cond-${l.condition||'open'}" aria-hidden="true"><span style="width:${effectiveTraffic(l)*10}%"></span></div></div>`)+(admin?`<div class="row"><button class="btn primary" type="submit">Save</button><button class="btn danger" type="button" data-act="delete">Delete lane</button></div></form>`:'');
+ }else if(selected?.type==='nebula'&&neb(selected.id)){
+  const n=neb(selected.id),inside=systemsInNebula(n),admin=canEdit('nebulae');
+  const range=(f,label,min,max,step,val,txt)=>`<div class="neb-range"><label class="field" for="neb-${f}">${label} <output id="neb-${f}-value">${txt}</output></label><input id="neb-${f}" data-neb-range="${f}" type="range" min="${min}" max="${max}" step="${step}" value="${val}"></div>`;
+  const swatches=(f,cur)=>`<div class="neb-swatches" role="group" aria-label="Nebula ${f==='color'?'main':'accent'} color">${Object.entries(NEBULA_COLORS).map(([k,[lab,rgb]])=>`<button class="swatch" type="button" data-neb-${f}="${k}" aria-pressed="${cur===k}" aria-label="${lab}" title="${lab}" style="--sw:${rgb}"></button>`).join('')}</div>`;
+  p.innerHTML=`<div class="panel-head"><div><div class="eyebrow">Nebula</div><h2>${esc(n.name||'Unnamed nebula')}</h2><div class="muted">X ${Math.round(n.x)} · Y ${Math.round(n.y)}</div></div><button class="btn" data-act="close" aria-label="Back to system list">✕</button></div>`+
+  (admin?`<div class="star-color-menu"><div class="field">Shape</div><div class="opt-row opt-style" role="group" aria-label="Nebula shape">${Object.entries(NEBULA_STYLES).map(([k,lab])=>`<button class="btn" type="button" data-neb-style="${k}" aria-pressed="${n.style===k}">${lab}</button>`).join('')}</div>`+
+   `<button class="btn" type="button" data-act="neb-reshape" style="width:100%;margin-bottom:10px">↻ Reshape (new random cloud)</button>`+
+   range('size','Size',NEB_SIZE_MIN,NEB_SIZE_MAX,10,n.size,Math.round(n.size))+range('stretch','Stretch',1,4,.05,n.stretch,n.stretch.toFixed(2)+'×')+range('rotation','Rotation',0,179,1,Math.round(n.rotation),Math.round(n.rotation)+'°')+range('opacity','Density',10,100,1,Math.round(n.opacity*100),Math.round(n.opacity*100)+'%')+
+   `<div class="field">Main color <span class="muted">${NEBULA_COLORS[n.color][0]}</span></div>${swatches('color',n.color)}<div class="field">Accent color <span class="muted">${NEBULA_COLORS[n.accent][0]}</span></div>${swatches('accent',n.accent)}</div>`+
+   `<form id="edit-nebula"><label class="field">Name (optional)<input name="name" maxlength="80" value="${esc(n.name)}"></label><div class="row"><button class="btn primary" type="submit">Save name</button><button class="btn danger" type="button" data-act="delete">Delete nebula</button></div></form><p class="muted">While the nebula is selected, drag it on the map to move it. Stars inside or near it light it up in their own color.</p>`:'')+
+  `<div class="eyebrow" style="margin-top:12px">Star systems inside (${inside.length})</div>`+(inside.length?`<ul class="list">${inside.map(s=>`<li><button class="btn" data-go="${esc(s.id)}">${esc(s.name)}</button></li>`).join('')}</ul>`:'<p class="muted">None.</p>');
+ }else{
+  selected=null;
+  const list=[...data.systems].sort((a,b)=>a.name.localeCompare(b.name));
+  p.innerHTML=`<div class="eyebrow">Navigation index</div><h2>Star systems (${list.length})</h2>`+
+  (list.length?`<label class="field"><span class="screen-reader">Find a system</span><input id="system-search" type="search" placeholder="Find a system…" autocomplete="off"></label><ul class="list" id="system-list">${list.map(s=>`<li data-name="${esc(s.name.toLowerCase())}"><button class="btn" data-go="${esc(s.id)}">${esc(s.name)}${s.state&&s.state!=='peace'?` <span class="state-text-${s.state}">· ${systemState(s).label}</span>`:''} <span class="muted">· ${lanesOf(s.id).length} lane${lanesOf(s.id).length===1?'':'s'}</span></button></li>`).join('')}</ul>`:
+  `<p class="muted">No star systems charted yet.</p>${admin?'<p class="muted">Choose <strong>＋ Star system</strong>, then click the map to place one.</p>':'<p class="muted">Sign in as administrator to place systems.</p>'}`);
+  if(data.nebulae.length&&!(isAdmin()&&locks.nebulae))p.insertAdjacentHTML('beforeend',`<div class="eyebrow" style="margin-top:14px">Nebulae (${data.nebulae.length})</div><ul class="list">${data.nebulae.map(n=>`<li><button class="btn" data-go-neb="${esc(n.id)}">${esc(n.name||'Unnamed nebula')}</button></li>`).join('')}</ul>`);
+ }
+ const lk=selected&&KIND_OF[selected.type];if(lk&&isAdmin()&&locks[lk])p.querySelector('.panel-head')?.insertAdjacentHTML('afterend',`<p class="lock-note">🔒 ${LOCK_KINDS[lk]} are locked. Unlock them from Locks to edit.${lk==='systems'?' System state can still be changed.':lk==='lanes'?' Lane condition can still be changed.':''}</p>`);
+}
+$('panel').addEventListener('click',e=>{
+ const go=e.target.closest('[data-go]');if(go){const s=sys(go.dataset.go);if(s){selected={type:'system',id:s.id};flyTo(s);renderPanel();}return;}
+ const gn=e.target.closest('[data-go-neb]');if(gn){if(isAdmin()&&locks.nebulae)return;const n=neb(gn.dataset.goNeb);if(n){selected={type:'nebula',id:n.id};cam.x=n.x;cam.y=n.y;cam.zoom=clamp(Math.min(W,H)*.42/(n.size*n.stretch),ZMIN,Math.max(cam.zoom,.3));dirty=true;renderPanel();}return;}
+ const nb=e.target.closest('[data-neb-style],[data-neb-color],[data-neb-accent]');if(nb){const n=neb(selected?.id);if(!n||!canEdit('nebulae'))return;if(nb.dataset.nebStyle)n.style=nb.dataset.nebStyle;if(nb.dataset.nebColor)n.color=nb.dataset.nebColor;if(nb.dataset.nebAccent)n.accent=nb.dataset.nebAccent;save();renderPanel();dirty=true;return;}
+ const so=e.target.closest('[data-star-opt]');if(so){const s=sys(selected?.id);if(!s||!canEdit('systems'))return;const f=so.dataset.starOpt,tbl={shape:STAR_SHAPES,design:STAR_DESIGNS,size:STAR_SIZES}[f];s[f]=starOpt(tbl,so.dataset.value);save();renderPanel();dirty=true;toast(`${s.name}: ${tbl[s[f]].label} ${f}.`);return;}
+ const scb=e.target.closest('[data-star-color]');if(scb){const s=sys(selected?.id);if(!s||!canEdit('systems'))return;s.starColor=scb.dataset.starColor;save();renderPanel();dirty=true;toast(`${s.name}: ${STAR_COLORS[s.starColor]?.label||'Default blue-white'} star.`);return;}
+ const sb=e.target.closest('[data-state]');if(sb){const s=sys(selected?.id);if(!s||!isAdmin())return; // state stays editable when systems are locked
+ s.state=sb.dataset.state;const changed=isHostile(s)?cautionLanesOf(s.id):0;save();renderPanel();dirty=true;toast(`${s.name}: ${systemState(s).label}.${changed?` ${changed} connected lane${changed===1?'':'s'} set to Caution.`:''}`);return;}
+ const cb=e.target.closest('[data-condition]');if(cb){const l=data.lanes.find(x=>x.id===selected?.id);if(!l||!isAdmin())return; // conditions stay editable when lanes are locked
+ l.condition=cb.dataset.condition;save();renderPanel();dirty=true;toast(`Lane condition: ${laneCondition(l).label}.`);return;}
+ const act=e.target.closest('[data-act]')?.dataset.act;if(!act)return;
+ if(act==='star-color'){colorMenuOpen=!colorMenuOpen;renderPanel();return;}
+ if(act==='neb-reshape'){const n=neb(selected?.id);if(!n||!canEdit('nebulae'))return;n.seed=Math.random()*2147483647|0;save();dirty=true;return;}
+ if(act==='close'){selected=null;renderPanel();dirty=true;}
+ else if(act==='delete')deleteSelected();
+ else if(act==='lane-from'&&canEdit('lanes')){setMode('lane');laneStart=selected.id;updateHint();dirty=true;}
+});
+$('panel').addEventListener('input',e=>{
+ const nr=e.target.dataset?.nebRange;if(nr){const n=neb(selected?.id);if(!n||!canEdit('nebulae'))return;const v=+e.target.value;
+  if(nr==='size'){n.size=clamp(v,NEB_SIZE_MIN,NEB_SIZE_MAX);$('neb-size-value').textContent=Math.round(n.size);}
+  else if(nr==='stretch'){n.stretch=clamp(v,1,4);$('neb-stretch-value').textContent=n.stretch.toFixed(2)+'×';}
+  else if(nr==='rotation'){n.rotation=clamp(v,0,179);$('neb-rotation-value').textContent=Math.round(n.rotation)+'°';}
+  else if(nr==='opacity'){n.opacity=clamp(v/100,.1,1);$('neb-opacity-value').textContent=Math.round(n.opacity*100)+'%';}
+  dirty=true;return;}
+ if(e.target.id==='lane-traffic'){const l=data.lanes.find(x=>x.id===selected?.id);if(!l||!canEdit('lanes'))return;l.traffic=clamp(Math.round(+e.target.value),1,10);$('lane-traffic-value').textContent=trafficText(l);dirty=true;return;}
+ if(e.target.id!=='system-search')return;const q=e.target.value.trim().toLowerCase();for(const li of $('system-list').children)li.hidden=!!q&&!li.dataset.name.includes(q);});
+$('panel').addEventListener('change',e=>{
+ const ls=e.target.closest('[data-lane-condition]');if(ls){const l=data.lanes.find(x=>x.id===ls.dataset.laneCondition);if(!l||!isAdmin())return;l.condition=ls.value;save();renderPanel();dirty=true;toast(`Lane to ${sys(l.a===selected?.id?l.b:l.a)?.name||'system'}: ${laneCondition(l).label}.`);return;}if((e.target.id==='lane-traffic'||e.target.dataset?.nebRange)&&isAdmin())save();});
+$('panel').addEventListener('submit',e=>{
+ e.preventDefault();if(!canEdit({'edit-system':'systems','edit-lane':'lanes','edit-nebula':'nebulae'}[e.target.id]))return;const f=new FormData(e.target);
+ if(e.target.id==='edit-system'){const s=sys(selected.id),name=String(f.get('name')).trim();if(!name)return;s.name=name.slice(0,80);s.notes=String(f.get('notes')).slice(0,2000);}
+ else if(e.target.id==='edit-lane'){data.lanes.find(l=>l.id===selected.id).name=String(f.get('name')).trim().slice(0,80);}
+ else if(e.target.id==='edit-nebula'){const n=neb(selected.id);if(n)n.name=String(f.get('name')).trim().slice(0,80);}
+ if(save())toast('Saved.');renderPanel();dirty=true;
+});
+function deleteSelected(){
+ if(!selected||!canEdit(KIND_OF[selected.type])){if(selected&&isAdmin())toast(`${LOCK_KINDS[KIND_OF[selected.type]]} are locked.`);return;}
+ if(selected.type==='system'){const s=sys(selected.id);if(!s||!confirm(`Delete ${s.name} and its ${lanesOf(s.id).length} gate lane(s)?`))return;data.systems=data.systems.filter(x=>x.id!==s.id);data.lanes=data.lanes.filter(l=>l.a!==s.id&&l.b!==s.id);if(laneStart===s.id)laneStart=null;}
+ else if(selected.type==='nebula'){const n=neb(selected.id);if(!n||!confirm(`Delete ${n.name||'this nebula'}?`))return;data.nebulae=data.nebulae.filter(x=>x.id!==n.id);nebCache.delete(n.id);}
+ else{if(!confirm('Delete this gate lane?'))return;data.lanes=data.lanes.filter(l=>l.id!==selected.id);}
+ selected=null;save();renderPanel();dirty=true;toast('Deleted.');
+}
+
+// ---- Modes ------------------------------------------------------------------------
+function setMode(m){mode=isAdmin()&&!({system:locks.systems,lane:locks.lanes,nebula:locks.nebulae})[m]?m:'select';laneStart=null;document.body.classList.remove('mode-select','mode-system','mode-lane','mode-nebula');document.body.classList.add('mode-'+mode);for(const b of document.querySelectorAll('[data-mode]'))b.setAttribute('aria-pressed',String(b.dataset.mode===mode));updateHint();dirty=true;}
+function updateHint(){$('mode-hint').textContent=mode==='nebula'?'Placing a nebula: click the map (or a star to center it there). Esc to stop.':mode==='system'?'Placing star systems: click empty space on the map. Esc to stop.':mode==='lane'?(laneStart?`Gate lane from ${sys(laneStart)?.name}: click another system to connect. Esc to stop.`:'Gate lanes: click a system to start, then click another to connect. Esc to stop.'):'';}
+for(const b of document.querySelectorAll('[data-mode]'))b.onclick=()=>setMode(b.dataset.mode);
+function addLane(a,b){
+ const k=[a,b].sort().join('|');if(data.lanes.some(l=>[l.a,l.b].sort().join('|')===k)){toast('Those systems are already connected.');return false;}
+ data.lanes.push({id:newId('lane'),a,b,name:'',traffic:DEFAULT_TRAFFIC,condition:isHostile(sys(a))||isHostile(sys(b))?'caution':'open'});save();toast(`Gate lane added: ${sys(a).name} ⟷ ${sys(b).name}`);return true;
+}
+
+// ---- Pointer --------------------------------------------------------------------
+let down=null;
+canvas.addEventListener('pointerdown',e=>{
+ if(e.button!==0)return;canvas.focus({preventScroll:true});try{canvas.setPointerCapture(e.pointerId);}catch(_){}
+ const t=hit(e.offsetX,e.offsetY);
+ down={x:e.offsetX,y:e.offsetY,lx:e.offsetX,ly:e.offsetY,target:t,moved:false,drag:canEdit('systems')&&mode==='select'&&t?.type==='system'?t.id:null,dragNeb:canEdit('nebulae')&&mode==='select'&&t?.type==='nebula'&&isSel('nebula',t.id)?t.id:null};
+});
+canvas.addEventListener('pointermove',e=>{
+ mouse=[e.offsetX,e.offsetY];
+ if(down){
+  const dx=e.offsetX-down.lx,dy=e.offsetY-down.ly;down.lx=e.offsetX;down.ly=e.offsetY;
+  if(!down.moved&&Math.hypot(e.offsetX-down.x,e.offsetY-down.y)>3){down.moved=true;if(!down.drag&&!down.dragNeb)canvas.classList.add('dragging');}
+  if(down.moved){if(down.drag){const s=sys(down.drag);s.x+=dx/cam.zoom;s.y+=dy/cam.zoom;}else if(down.dragNeb){const n=neb(down.dragNeb);n.x+=dx/cam.zoom;n.y+=dy/cam.zoom;}else{cam.x-=dx/cam.zoom;cam.y-=dy/cam.zoom;}dirty=true;}
+ }else{let h=hit(e.offsetX,e.offsetY);if(h?.type==='nebula'&&!isAdmin())h=null;if(JSON.stringify(h)!==JSON.stringify(hover)){hover=h;canvas.classList.toggle('over-item',!!h&&(h.type!=='nebula'||isSel('nebula',h.id)));dirty=true;}else if(mode==='lane'&&laneStart)dirty=true;}
+});
+canvas.addEventListener('pointerleave',()=>{if(hover){hover=null;dirty=true;}mouse=null;});
+canvas.addEventListener('pointerup',e=>{
+ if(!down)return;const d=down;down=null;canvas.classList.remove('dragging');
+ if(d.moved){if(d.drag){save();if(isSel('system',d.drag))renderPanel();}else if(d.dragNeb){save();renderPanel();}return;}
+ click(d.target,e.offsetX,e.offsetY);
+});
+canvas.addEventListener('pointercancel',()=>{down=null;canvas.classList.remove('dragging');});
+canvas.addEventListener('contextmenu',e=>{if(mode==='lane'&&laneStart){e.preventDefault();laneStart=null;updateHint();dirty=true;}});
+function click(t,sx,sy){
+ if(canEdit('nebulae')&&mode==='nebula'){const s=t?.type==='system'?sys(t.id):null,[wx,wy]=s?[s.x,s.y]:toWorld(sx,sy),n=addNebula(wx,wy);setMode('select');selected={type:'nebula',id:n.id};renderPanel();dirty=true;toast('Nebula placed. Adjust it in the panel.');return;}
+ if(canEdit('systems')&&mode==='system'&&(!t||t.type==='nebula')){const [wx,wy]=toWorld(sx,sy);openSystemDialog(wx,wy);return;}
+ if(canEdit('lanes')&&mode==='lane'){
+  if(t?.type==='system'){if(!laneStart)laneStart=t.id;else if(t.id!==laneStart){if(addLane(laneStart,t.id))laneStart=t.id;}}
+  else laneStart=null;
+  selected=laneStart?{type:'system',id:laneStart}:selected;updateHint();renderPanel();dirty=true;return;
+ }
+ selected=t;renderPanel();dirty=true;
+}
+canvas.addEventListener('wheel',e=>{e.preventDefault();zoomAt(Math.exp(-e.deltaY*(e.deltaMode===1?.05:.0015)),e.offsetX,e.offsetY);},{passive:false});
+
+// ---- Keyboard -------------------------------------------------------------------
+const MOVE_KEYS=['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','q','e','-','=','+','shift'];
+function typing(e){return (e.target instanceof Element&&e.target.closest('input,textarea,select,[contenteditable]'))||document.querySelector('dialog[open]');}
+addEventListener('keydown',e=>{
+ if(typing(e)||e.ctrlKey||e.metaKey||e.altKey)return;
+ const k=e.key.toLowerCase();
+ if(MOVE_KEYS.includes(k)){keys.add(k);if(k.startsWith('arrow'))e.preventDefault();return;}
+ if(k==='escape'){if(laneStart)laneStart=null;else if(mode!=='select')setMode('select');else{selected=null;renderPanel();}updateHint();dirty=true;}
+ if((k==='delete'||k==='backspace')&&isAdmin()&&selected){e.preventDefault();deleteSelected();}
+});
+addEventListener('keyup',e=>{keys.delete(e.key.toLowerCase());if(e.key==='Shift')keys.delete('shift');});
+addEventListener('blur',()=>keys.clear());
+let last=performance.now();
+function frame(t){
+ const dt=Math.min(.05,(t-last)/1000);last=t;
+ if(keys.size){
+  let dx=0,dy=0;
+  if(keys.has('w')||keys.has('arrowup'))dy--;if(keys.has('s')||keys.has('arrowdown'))dy++;
+  if(keys.has('a')||keys.has('arrowleft'))dx--;if(keys.has('d')||keys.has('arrowright'))dx++;
+  if(dx||dy){const sp=(keys.has('shift')?1500:600)*dt/cam.zoom,l=Math.hypot(dx,dy);cam.x+=dx/l*sp;cam.y+=dy/l*sp;dirty=true;}
+  if(keys.has('e')||keys.has('=')||keys.has('+'))zoomAt(Math.exp(1.6*dt));
+  if(keys.has('q')||keys.has('-'))zoomAt(Math.exp(-1.6*dt));
+ }
+ if(!reducedMotion.matches&&!trafficOff()&&data.lanes.some(l=>effectiveTraffic(l)>0))dirty=true; // keep ship traffic moving
+ if(dirty){dirty=false;draw();}
+ requestAnimationFrame(frame);
+}
+$('zoom-in').onclick=()=>zoomAt(1.3);
+$('zoom-out').onclick=()=>zoomAt(1/1.3);
+$('zoom-reset').onclick=()=>{cam.x=0;cam.y=0;cam.zoom=1;dirty=true;};
+// Details panel: in the Eisdon interface it flips open on a hinge and its screen powers on.
+function setPanelOpen(open){
+ const p=$('panel'),fx=document.body.classList.contains('cmd-eisdon')&&!reducedMotion.matches;
+ $('panel-toggle').setAttribute('aria-pressed',String(open));p.classList.remove('flip-open','flip-close');clearTimeout(p._flipT);
+ if(open){p.hidden=false;if(fx){void p.offsetWidth;p.classList.add('flip-open');p._flipT=setTimeout(()=>p.classList.remove('flip-open'),1000);}}
+ else if(fx&&!p.hidden){p.classList.add('flip-close');p._flipT=setTimeout(()=>{p.hidden=true;p.classList.remove('flip-close');},330);}
+ else p.hidden=true;
+}
+$('panel-toggle').onclick=()=>setPanelOpen($('panel-toggle').getAttribute('aria-pressed')!=='true');
+
+// ---- New system dialog ------------------------------------------------------------
+let pendingPos=null;
+function openSystemDialog(x,y){pendingPos=[x,y];$('system-form').reset();$('system-dialog-pos').textContent=`Position X ${Math.round(x)} · Y ${Math.round(y)}`;$('system-dialog').showModal();$('system-name').focus();}
+$('system-form').addEventListener('submit',e=>{
+ e.preventDefault();if(!canEdit('systems')||!pendingPos)return;const name=$('system-name').value.trim();if(!name)return;
+ const s={id:newId('sys'),name:name.slice(0,80),x:pendingPos[0],y:pendingPos[1],notes:$('system-notes').value.slice(0,2000),state:'peace'};
+ data.systems.push(s);save();selected={type:'system',id:s.id};$('system-dialog').close();renderPanel();dirty=true;toast(`${s.name} placed.`);
+});
+for(const b of document.querySelectorAll('dialog [data-close]'))b.onclick=()=>b.closest('dialog').close();
+
+// ---- Import / export -------------------------------------------------------------
+$('export').onclick=()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='starmap-data.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('Exported starmap-data.json.');};
+$('import').onclick=()=>{if(!isAdmin())return;if(Object.values(locks).some(Boolean)){toast('Unlock everything before importing a map.');return;}$('import-file').click();};
+$('import-file').addEventListener('change',async e=>{
+ const f=e.target.files[0];e.target.value='';if(!f||!isAdmin()||Object.values(locks).some(Boolean))return;
+ try{const d=validate(JSON.parse(await f.text()));if(!confirm(`Replace the current map with ${d.systems.length} systems, ${d.lanes.length} gate lanes and ${d.nebulae.length} nebulae?`))return;nebCache.clear();data=d;selected=null;save();renderPanel();dirty=true;toast('Starmap imported.');}
+ catch(err){toast(err instanceof SyntaxError?'That file is not valid JSON.':err.message);}
+});
+
+// ---- Editing locks ------------------------------------------------------------------
+function applyLocks(){
+ const n=Object.values(locks).filter(Boolean).length,all=n===3,tg=$('lock-toggle');
+ tg.textContent=n===0?'🔓 Locks':all?'🔒 All locked':`🔒 ${n} locked`;tg.classList.toggle('any-locked',n>0);
+ for(const b of document.querySelectorAll('[data-lock]')){const k=b.dataset.lock;
+  if(k==='all'){b.textContent=all?'🔓 Unlock all':'🔒 Lock all';b.setAttribute('aria-pressed',String(all));}
+  else{b.innerHTML=`<span>${LOCK_KINDS[k]}</span><span>${locks[k]?'🔒 Locked':'🔓 Unlocked'}</span>`;b.setAttribute('aria-pressed',String(locks[k]));}}
+ const mb=k=>document.querySelector(`[data-mode="${k}"]`);
+ mb('system').disabled=locks.systems;mb('lane').disabled=locks.lanes;mb('nebula').disabled=locks.nebulae;$('import').disabled=n>0;
+ if(({system:locks.systems,lane:locks.lanes,nebula:locks.nebulae})[mode])setMode('select');
+ if(locks.nebulae&&isAdmin()&&(selected?.type==='nebula'||hover?.type==='nebula')){if(selected?.type==='nebula')selected=null;hover=null;canvas.classList.remove('over-item');}
+ renderPanel();dirty=true;
+}
+function setLock(kind,on){
+ if(kind==='all')for(const k in locks)locks[k]=on;else locks[kind]=on;
+ try{localStorage.setItem(LOCK_KEY,JSON.stringify(locks));}catch(e){}
+ applyLocks();toast(kind==='all'?(on?'Everything is locked.':'Everything is unlocked.'):`${LOCK_KINDS[kind]} ${on?'locked':'unlocked'}.`);
+}
+$('lock-toggle').onclick=()=>{const m=$('lock-menu'),open=m.hidden;m.hidden=!open;$('lock-toggle').setAttribute('aria-expanded',String(open));};
+$('lock-menu').addEventListener('click',e=>{const b=e.target.closest('[data-lock]');if(!b||!isAdmin())return;const k=b.dataset.lock;setLock(k,k==='all'?!Object.values(locks).every(Boolean):!locks[k]);});
+document.addEventListener('pointerdown',e=>{const m=$('lock-menu');if(!m.hidden&&!e.composedPath().some(el=>el.classList?.contains('lock-ctl'))){m.hidden=true;$('lock-toggle').setAttribute('aria-expanded','false');}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('lock-menu').hidden){$('lock-menu').hidden=true;$('lock-toggle').setAttribute('aria-expanded','false');$('lock-toggle').focus();}});
+
+// ---- Administrator login (shared with the main page) -------------------------------
+// Client-side gate for a static site: it deters casual edits but is not server-side security.
+async function sha256Hex(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
+function setAdmin(on){
+ document.body.classList.toggle('is-admin',on);
+ $('admin-toggle').textContent=on?'Admin · Log out':'Admin login';
+ try{on?sessionStorage.setItem(ADMIN_KEY,ADMIN_HASH):sessionStorage.removeItem(ADMIN_KEY);}catch(e){}
+ setMode('select');applyLocks();
+}
+$('admin-toggle').onclick=()=>{if(isAdmin()){setAdmin(false);toast('Signed out of administrator mode.');}else{$('login-form').reset();$('login-error').textContent='';$('login-dialog').showModal();$('login-password').focus();}};
+$('login-form').addEventListener('submit',async e=>{
+ e.preventDefault();try{if(!window.crypto?.subtle)throw 0;
+  if(await sha256Hex($('login-password').value)===ADMIN_HASH){$('login-dialog').close();setAdmin(true);toast('Administrator mode on. Use the tools at the top to edit the map.');}
+  else{$('login-error').textContent='Incorrect password.';$('login-password').select();}
+ }catch(x){$('login-error').textContent='This browser cannot verify the password here. Open the site over https or use a current browser.';}
+});
+
+// ---- Audio: space ambience + gate traffic radio (off by default, open to everyone) ----
+// The music is synthesised with the Web Audio API. The radio chatter plays recorded gate-traffic
+// lines with the radio filter already applied, three voices taking turns: an Asian female voice
+// (Luna), a slightly deep male voice (Guy) and a lighter male voice (Brian). The recordings are
+// stored in assets/radio/radio-data.js (loaded the first time Radio is turned on), which works both
+// on a web server and when the page is opened straight from disk.
+const AUDIO_VOL_KEY='reliquary-starmap-audio-v2'; // renamed so earlier saved slider positions reset to the new defaults
+const RADIO_DATA_URL='assets/radio/radio-data.js';
+const AUDIO_DEFAULTS={music:1,radio:.5}; // slider starting points (0-1)
+const MUSIC_MAX=3.75,RADIO_MAX=.6; // levels with each slider at full; raise for louder
+const audio={musicOn:false,radioOn:false,mtimers:[],ctx:null,master:null,music:null,radio:null,radioIn:null,reverb:null,timers:[],chord:0,padVoices:[],vi:0,gen:0,vol:{...AUDIO_DEFAULTS},ready:false,lib:null,buffers:null,libState:'idle',libPromise:null,recent:[]};
+try{const v=JSON.parse(localStorage.getItem(AUDIO_VOL_KEY)||'{}');for(const k of ['music','radio'])if(v[k]>=0&&v[k]<=1)audio.vol[k]=v[k];}catch(e){}
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const rint=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+function impulse(ctx,sec){const n=ctx.sampleRate*sec,b=ctx.createBuffer(2,n,ctx.sampleRate);for(let c=0;c<2;c++){const d=b.getChannelData(c);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,3);}return b;}
+// Radio and music each keep their own timers so they can be switched on and off independently.
+function audioLater(fn,ms){const t=setTimeout(()=>{audio.timers=audio.timers.filter(x=>x!==t);if(audio.radioOn&&!document.hidden)fn();},ms);audio.timers.push(t);}
+function musicLater(fn,ms){const t=setTimeout(()=>{audio.mtimers=audio.mtimers.filter(x=>x!==t);if(audio.musicOn&&!document.hidden)fn();},ms);audio.mtimers.push(t);}
+function buildAudio(){
+ const ctx=new (window.AudioContext||window.webkitAudioContext)();audio.ctx=ctx;
+ // Peak limiter only (no squashing), so the volume sliders change the level directly.
+ const comp=ctx.createDynamicsCompressor();comp.threshold.value=-2;comp.knee.value=0;comp.ratio.value=20;comp.attack.value=.003;comp.release.value=.15;comp.connect(ctx.destination);
+ audio.master=ctx.createGain();audio.master.gain.value=0;audio.master.connect(comp);
+ audio.music=ctx.createGain();audio.music.gain.value=0;audio.music.connect(audio.master);
+ audio.reverb=ctx.createConvolver();audio.reverb.buffer=impulse(ctx,6);const wet=ctx.createGain();wet.gain.value=.9;audio.reverb.connect(wet);wet.connect(audio.music);
+ // Sub drone.
+ const sub=ctx.createOscillator(),subG=ctx.createGain();sub.frequency.value=36.7;subG.gain.value=.16;sub.connect(subG);subG.connect(audio.music);sub.start();
+ // Radio bus (the recordings already carry the radio filter).
+ audio.radioIn=ctx.createGain();audio.radio=ctx.createGain();audio.radio.gain.value=0;audio.radioIn.connect(audio.radio);audio.radio.connect(audio.master);
+ audio.ready=true;
+}
+const PAD_CHORDS=[[73.42,110,146.83,220,277.18],[65.41,98,130.81,196,293.66],[58.27,87.31,116.54,174.61,261.63],[61.74,92.5,123.47,185,277.18]]; // Dm(add9)-ish drift
+function padChord(){
+ const ctx=audio.ctx,now=ctx.currentTime,notes=PAD_CHORDS[audio.chord++%PAD_CHORDS.length];
+ for(const v of audio.padVoices){v.g.gain.cancelScheduledValues(now);v.g.gain.setValueAtTime(v.g.gain.value,now);v.g.gain.linearRampToValueAtTime(0,now+9);v.oscs.forEach(o=>o.stop(now+9.5));}
+ audio.padVoices=notes.map((f,i)=>{
+  const g=ctx.createGain(),lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=520+i*90;lp.Q.value=.4;
+  const oscs=[-6,5].map(det=>{const o=ctx.createOscillator();o.type=i<2?'triangle':'sawtooth';o.frequency.value=f;o.detune.value=det;o.connect(lp);o.start(now);return o;});
+  const pan=ctx.createStereoPanner?ctx.createStereoPanner():null;
+  lp.connect(g);if(pan){pan.pan.value=(i/(notes.length-1))*1.2-.6;g.connect(pan);pan.connect(audio.music);pan.connect(audio.reverb);}else{g.connect(audio.music);g.connect(audio.reverb);}
+  g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(i<2?.05:.022,now+8);
+  return {g,oscs};
+ });
+ musicLater(padChord,20000);
+}
+function sparkle(){
+ const ctx=audio.ctx,now=ctx.currentTime,f=pick([587.33,659.25,880,987.77,1174.66,1318.51,1760]);
+ const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=f;
+ g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(.018,now+.4);g.gain.exponentialRampToValueAtTime(.0001,now+5);
+ o.connect(g);g.connect(audio.reverb);o.start(now);o.stop(now+5.2);
+ musicLater(sparkle,rint(3500,9000));
+}
+// Short, quiet radio key-up and release tones.
+function radioTone(end){
+ const ctx=audio.ctx,now=ctx.currentTime,o=ctx.createOscillator(),g=ctx.createGain();
+ o.type='sine';o.frequency.setValueAtTime(end?1100:1450,now);if(end)o.frequency.setValueAtTime(820,now+.05);
+ g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(.03,now+.005);g.gain.setValueAtTime(.03,now+(end?.09:.05));g.gain.linearRampToValueAtTime(0,now+(end?.1:.06));
+ o.connect(g);g.connect(audio.radioIn);o.start(now);o.stop(now+.12);
+}
+function loadRadio(){
+ if(audio.libPromise)return audio.libPromise;
+ audio.libState='loading';
+ audio.libPromise=(async()=>{
+  try{
+   if(!window.RELIQUARY_RADIO)await new Promise((ok,no)=>{const s=document.createElement('script');s.src=RADIO_DATA_URL;s.onload=ok;s.onerror=no;document.head.appendChild(s);});
+   const lib=window.RELIQUARY_RADIO;if(!lib)throw Error('missing');const buffers={};
+   // Decode with an offline context: it works the same everywhere and needs no audio device.
+   const Off=window.OfflineAudioContext||window.webkitOfflineAudioContext,dc=Off?new Off(1,1,audio.ctx.sampleRate):audio.ctx;
+   await Promise.all(lib.voices.map(async v=>{
+    const bin=atob(lib.audio[v]),bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+    buffers[v]=await new Promise((ok,no)=>{const p=dc.decodeAudioData(bytes.buffer,ok,no);if(p&&p.catch)p.catch(no);});
+   }));
+   lib.audio=null;audio.lib=lib;audio.buffers=buffers;audio.libState='ready';
+  }catch(e){audio.libState='failed';}
+ })();
+ return audio.libPromise;
+}
+// Choose the next recorded exchange: it must start with the next voice in the rotation, suit the
+// map (caution, closed and wartime calls are rarer unless the map has such lanes or systems) and
+// not be one of the last few played.
+function nextRecordedExchange(){
+ const lanes=data.lanes,empty=!lanes.length,hostile=data.systems.some(isHostile);
+ const typeW={clear:1,caution:lanes.some(l=>l.condition==='caution')?1:empty?.15:.03,closed:lanes.some(l=>l.condition==='closed')?1:empty?.1:0,hostile:hostile?1:empty?.1:0};
+ const all=audio.lib.exchanges.map((x,i)=>({x,i,w:typeW[x.type]||0})).filter(o=>o.w>0&&!audio.recent.includes(o.i));
+ let pool=all.filter(o=>o.x.start===audio.vi%3);if(!pool.length)pool=all;if(!pool.length)return null;
+ let roll=Math.random()*pool.reduce((s,o)=>s+o.w,0);let pickd=pool[pool.length-1];for(const o of pool){if((roll-=o.w)<0){pickd=o;break;}}
+ audio.recent.push(pickd.i);if(audio.recent.length>8)audio.recent.shift();
+ return pickd.x;
+}
+function transmitRecorded(g){
+ if(g!==audio.gen)return;
+ const ex=nextRecordedExchange();if(!ex){audioLater(()=>transmitRecorded(g),5000);return;}
+ const lines=ex.lines.slice();audio.vi+=lines.length;
+ const next=()=>{
+  if(!audio.radioOn||g!==audio.gen)return;
+  if(!lines.length){audioLater(()=>transmitRecorded(g),rint(3000,8000));return;}
+  const [v,i]=lines.shift(),name=audio.lib.voices[v],[off,dur]=audio.lib.clips[name][i];
+  logIntercept(ex.text?.[ex.lines.length-lines.length-1]);
+  $('radio-toggle').classList.add('rx');radioTone(false);
+  audioLater(()=>{
+   const src=audio.ctx.createBufferSource();src.buffer=audio.buffers[name];src.connect(audio.radioIn);
+   let done=false;const fin=()=>{if(done)return;done=true;if(g!==audio.gen)return;radioTone(true);$('radio-toggle').classList.remove('rx');audioLater(next,rint(500,1300));};
+   src.onended=fin;src.start(audio.ctx.currentTime,Math.max(0,off-.02),dur+.12);
+   const t=setTimeout(fin,(dur+1.5)*1000);audio.timers.push(t);
+  },120);
+ };
+ next();
+}
+function startRadio(g){
+ if(audio.libState==='ready')return transmitRecorded(g);
+ if(audio.libState==='failed'){toast('Radio recordings could not load. Make sure assets/radio/radio-data.js is uploaded with the site.');setRadioOn(false);return;}
+ loadRadio().then(()=>{if(audio.radioOn&&g===audio.gen&&!document.hidden)audioLater(()=>startRadio(g),800);});
+}
+const level=k=>audio.vol[k]*(k==='music'?MUSIC_MAX:RADIO_MAX);
+function rampGain(node,to,sec){const t=audio.ctx.currentTime;node.gain.cancelScheduledValues(t);node.gain.setValueAtTime(node.gain.value,t);node.gain.linearRampToValueAtTime(to,t+sec);}
+function ensureAudio(){
+ if(!audio.ready)buildAudio();
+ audio.ctx.resume();rampGain(audio.master,1,.3);
+}
+function idleAudio(){ // both off: let the fades finish, then sleep the audio engine
+ setTimeout(()=>{if(!audio.musicOn&&!audio.radioOn&&audio.ready)audio.ctx.suspend();},1200);
+}
+function startMusic(){
+ audio.mtimers.forEach(clearTimeout);audio.mtimers=[];
+ if(isIndustrial()){stopPads();startIndustrial();}
+ else{stopIndustrial();padChord();musicLater(sparkle,2500);}
+}
+// ---- Eisdon industrial soundtrack (plays instead of the space ambience in the Eisdon command view) ----
+// Slow 68 BPM beat (deep kick, metallic clank on the off-beats, ticking hats) over a low machine drone,
+// with occasional hammer strikes, welding arcs and steam releases. All synthesised; no audio files.
+const IND_BPM=68;
+function isIndustrial(){return document.body.classList.contains('cmd-eisdon');}
+function noiseBuf(){if(!audio.noise){const c=audio.ctx,b=c.createBuffer(1,c.sampleRate*2,c.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;audio.noise=b;}return audio.noise;}
+function panNode(v){const c=audio.ctx;if(!c.createStereoPanner)return c.createGain();const p=c.createStereoPanner();p.pan.value=v;return p;}
+function noiseHit(t,{dur=.05,type='highpass',freq=5000,q=.7,gain=.02,to=audio.music,pan=0,send=0}){
+ const c=audio.ctx,s=c.createBufferSource(),f=c.createBiquadFilter(),g=c.createGain(),p=panNode(pan);s.buffer=noiseBuf();f.type=type;f.frequency.value=freq;f.Q.value=q;
+ g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(gain,t+.003);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+ s.connect(f);f.connect(g);g.connect(p);p.connect(to);if(send){const sg=c.createGain();sg.gain.value=send;p.connect(sg);sg.connect(audio.reverb);}
+ s.start(t,Math.random()*1.5);s.stop(t+dur+.05);
+}
+function kick(t,v){
+ const c=audio.ctx,o=c.createOscillator(),g=c.createGain();
+ o.frequency.setValueAtTime(115,t);o.frequency.exponentialRampToValueAtTime(36,t+.38);
+ g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.15*v,t+.006);g.gain.exponentialRampToValueAtTime(.0005,t+.7);
+ o.connect(g);g.connect(audio.music);o.start(t);o.stop(t+.75);
+ noiseHit(t,{dur:.025,type:'lowpass',freq:2500,gain:.03*v});
+}
+function metalHit(t,base,v,{decay=.45,pan=0,send=.35}={}){
+ const c=audio.ctx,out=c.createGain(),p=panNode(pan);out.gain.value=v;out.connect(p);p.connect(audio.music);
+ const sg=c.createGain();sg.gain.value=send;p.connect(sg);sg.connect(audio.reverb);
+ [[1,1,1],[2.76,.6,.7],[5.4,.38,.45],[8.93,.22,.3],[13.3,.12,.2]].forEach(([r,a,d])=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=base*r*(1+(Math.random()-.5)*.01);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(a,t+.002);g.gain.exponentialRampToValueAtTime(.0001,t+decay*d+.05);o.connect(g);g.connect(out);o.start(t);o.stop(t+decay*d+.1);});
+ noiseHit(t,{dur:.04,type:'bandpass',freq:3200,q:1.2,gain:v*.8,pan});
+}
+function startIndustrial(){
+ stopIndustrial();const c=audio.ctx,now=c.currentTime,nodes=[];
+ const g=c.createGain();g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(1,now+4);g.connect(audio.music);
+ const lp=c.createBiquadFilter();lp.type='lowpass';lp.frequency.value=170;lp.Q.value=5;lp.connect(g);
+ const lfo=c.createOscillator(),lg=c.createGain();lfo.frequency.value=.06;lg.gain.value=80;lfo.connect(lg);lg.connect(lp.frequency);lfo.start();nodes.push(lfo);
+ for(const [f,d,type,a] of [[41.2,0,'sawtooth',.05],[41.2,9,'sawtooth',.05],[82.4,-5,'square',.012]]){const o=c.createOscillator(),og=c.createGain();o.type=type;o.frequency.value=f;o.detune.value=d;og.gain.value=a;o.connect(og);og.connect(lp);o.start();nodes.push(o);}
+ // a dark, slowly breathing mid tone (machine hum) for some tonality
+ const hum=c.createOscillator(),hg=c.createGain(),hf=c.createBiquadFilter(),trem=c.createOscillator(),tg=c.createGain();hum.type='triangle';hum.frequency.value=164.8;hf.type='lowpass';hf.frequency.value=600;
+ hg.gain.value=.012;trem.frequency.value=.11;tg.gain.value=.008;trem.connect(tg);tg.connect(hg.gain);hum.connect(hf);hf.connect(hg);hg.connect(g);hum.start();trem.start();nodes.push(hum,trem);
+ audio.ind={nodes,gain:g};audio.indBar=0;audio.indNext=now+.3;
+ indSchedule();musicLater(hammerEvent,rint(4000,9000));musicLater(weldEvent,rint(10000,18000));musicLater(steamEvent,rint(16000,28000));
+}
+function stopIndustrial(){
+ const i=audio.ind;if(!i)return;audio.ind=null;const now=audio.ctx.currentTime;
+ i.gain.gain.cancelScheduledValues(now);i.gain.gain.setValueAtTime(i.gain.gain.value,now);i.gain.gain.linearRampToValueAtTime(0,now+1);
+ i.nodes.forEach(o=>{try{o.stop(now+1.1);}catch(e){}});
+}
+function indSchedule(){
+ if(!audio.ind)return;const c=audio.ctx,beat=60/IND_BPM;
+ while(audio.indNext<c.currentTime+beat*4+.5){
+  const t0=Math.max(audio.indNext,c.currentTime+.05),bar=audio.indBar++;
+  for(let b=0;b<4;b++){const t=t0+b*beat;
+   if(b===0||b===2)kick(t,b===0?1:.8);
+   if(b===2&&bar%4===3)kick(t+beat/2,.55);
+   if(b===1||b===3)metalHit(t,bar%2?392:349,.045,{decay:.35,pan:b===1?-.25:.25,send:.3});
+   noiseHit(t+beat/2,{dur:.03,freq:7000,gain:.006,pan:.35});if(bar%2)noiseHit(t,{dur:.02,freq:8000,gain:.004,pan:-.35});
+  }
+  audio.indNext=t0+beat*4;
+ }
+ musicLater(indSchedule,beat*2000);
+}
+function hammerEvent(){ // a worker striking metal somewhere in the yard
+ const c=audio.ctx,n=rint(2,5),base=280+Math.random()*260,pan=Math.random()*1.4-.7;let t=c.currentTime+.05;
+ for(let i=0;i<n;i++){metalHit(t,base*(1+(Math.random()-.5)*.04),.1*(1-i*.08),{decay:1.1,pan,send:.85});t+=.42+Math.random()*.28;}
+ musicLater(hammerEvent,rint(7000,16000));
+}
+function weldEvent(){ // crackling arc welder
+ const c=audio.ctx,now=c.currentTime,d=1.8+Math.random()*2.2,p=panNode(Math.random()*1.2-.6),send=c.createGain();send.gain.value=.25;p.connect(audio.music);p.connect(send);send.connect(audio.reverb);
+ const s=c.createBufferSource(),hp=c.createBiquadFilter(),g=c.createGain();s.buffer=noiseBuf();s.loop=true;hp.type='highpass';hp.frequency.value=2400;s.connect(hp);hp.connect(g);g.connect(p);
+ const arc=c.createOscillator(),af=c.createBiquadFilter(),ag=c.createGain();arc.type='sawtooth';arc.frequency.value=100+Math.random()*20;af.type='bandpass';af.frequency.value=1300;af.Q.value=2;arc.connect(af);af.connect(ag);ag.connect(p);
+ g.gain.setValueAtTime(0,now);ag.gain.setValueAtTime(0,now);
+ for(let x=0;x<d;x+=.025+Math.random()*.03){const v=Math.random()<.15?0:.01+Math.random()*.045;g.gain.setValueAtTime(v,now+x);ag.gain.setValueAtTime(v*.35,now+x);}
+ g.gain.setValueAtTime(0,now+d);ag.gain.setValueAtTime(0,now+d);s.start(now);s.stop(now+d+.1);arc.start(now);arc.stop(now+d+.1);
+ musicLater(weldEvent,rint(14000,30000));
+}
+function steamEvent(){ // pneumatic hiss / steam release
+ const c=audio.ctx,now=c.currentTime,s=c.createBufferSource(),f=c.createBiquadFilter(),g=c.createGain(),p=panNode(Math.random()*1.4-.7);
+ s.buffer=noiseBuf();s.loop=true;f.type='bandpass';f.Q.value=.9;f.frequency.setValueAtTime(3200,now);f.frequency.exponentialRampToValueAtTime(700,now+1.6);
+ g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(.035,now+.06);g.gain.setValueAtTime(.035,now+.5);g.gain.exponentialRampToValueAtTime(.0005,now+1.8);
+ s.connect(f);f.connect(g);g.connect(p);p.connect(audio.music);s.start(now);s.stop(now+1.9);
+ musicLater(steamEvent,rint(18000,40000));
+}
+function stopPads(){const now=audio.ctx.currentTime;for(const v of audio.padVoices){v.oscs.forEach(o=>{try{o.stop(now+1.2);}catch(e){}});}audio.padVoices=[];}
+function startRadioLoop(){
+ audio.timers.forEach(clearTimeout);audio.timers=[];audio.gen++;
+ $('radio-toggle').classList.remove('rx');
+ const g=audio.gen;audioLater(()=>startRadio(g),1200);
+}
+function stopRadioLoop(){
+ audio.timers.forEach(clearTimeout);audio.timers=[];audio.gen++;
+ $('radio-toggle').classList.remove('rx');
+}
+function setToggle(id,on,label){const b=$(id);b.setAttribute('aria-pressed',String(on));b.querySelector('.audio-label').textContent=`${label} ${on?'on':'off'}`;}
+function setMusicOn(on){
+ audio.musicOn=on;setToggle('music-toggle',on,'Music');$('music-vol-wrap').hidden=!on;
+ if(on){ensureAudio();rampGain(audio.music,level('music'),2.5);startMusic();}
+ else if(audio.ready){audio.mtimers.forEach(clearTimeout);audio.mtimers=[];rampGain(audio.music,0,.8);setTimeout(()=>{if(!audio.musicOn){stopPads();stopIndustrial();}},900);idleAudio();}
+}
+function setRadioOn(on){
+ audio.radioOn=on;setToggle('radio-toggle',on,'Radio');$('radio-vol-wrap').hidden=!on;$('radio-toggle').classList.remove('rx');
+ if(on){ensureAudio();rampGain(audio.radio,level('radio'),.4);loadRadio();startRadioLoop();}
+ else if(audio.ready){stopRadioLoop();rampGain(audio.radio,0,.3);idleAudio();}
+}
+$('music-toggle').addEventListener('click',()=>setMusicOn(!audio.musicOn));
+$('radio-toggle').addEventListener('click',()=>setRadioOn(!audio.radioOn));
+for(const k of ['music','radio']){
+ const el=$('vol-'+k);el.value=Math.round(audio.vol[k]*100);
+ el.addEventListener('input',()=>{audio.vol[k]=+el.value/100;try{localStorage.setItem(AUDIO_VOL_KEY,JSON.stringify(audio.vol));}catch(err){}
+  if(audio.ready&&audio[k+'On'])audio[k].gain.setTargetAtTime(level(k),audio.ctx.currentTime,.08);});
+}
+// Volume knobs (Eisdon interface): turn by dragging, the mouse wheel or the arrow keys; they drive the hidden sliders.
+function syncKnob(k){const el=$('vol-'+k),kn=document.querySelector(`[data-vol-knob="${k}"]`),v=+el.value;kn.setAttribute('aria-valuenow',String(v));kn.setAttribute('aria-valuetext',v+'%');kn.firstElementChild.style.setProperty('--rot',(-135+v*2.7)+'deg');}
+function setKnob(k,v){const el=$('vol-'+k);v=Math.round(clamp(v,0,100));if(+el.value===v)return;el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));syncKnob(k);}
+for(const kn of document.querySelectorAll('[data-vol-knob]')){
+ const k=kn.dataset.volKnob;syncKnob(k);let drag=null;
+ kn.addEventListener('pointerdown',e=>{e.preventDefault();kn.focus();drag={x:e.clientX,y:e.clientY,v:+$('vol-'+k).value};kn.classList.add('turning');try{kn.setPointerCapture(e.pointerId);}catch(_){}});
+ kn.addEventListener('pointermove',e=>{if(drag)setKnob(k,drag.v+((e.clientX-drag.x)-(e.clientY-drag.y))*.6);});
+ const end=()=>{drag=null;kn.classList.remove('turning');};kn.addEventListener('pointerup',end);kn.addEventListener('pointercancel',end);
+ kn.addEventListener('wheel',e=>{e.preventDefault();setKnob(k,+$('vol-'+k).value+(e.deltaY<0?5:-5));},{passive:false});
+ kn.addEventListener('keydown',e=>{const v=+$('vol-'+k).value,step={ArrowUp:5,ArrowRight:5,ArrowDown:-5,ArrowLeft:-5,PageUp:10,PageDown:-10}[e.key];if(step!==undefined){e.preventDefault();e.stopPropagation();setKnob(k,v+step);}else if(e.key==='Home'||e.key==='End'){e.preventDefault();e.stopPropagation();setKnob(k,e.key==='Home'?0:100);}});
+ kn.addEventListener('click',e=>e.preventDefault()); // keep the surrounding label from forwarding clicks to the hidden slider
+}
+document.addEventListener('visibilitychange',()=>{
+ if(!audio.ready||!(audio.musicOn||audio.radioOn))return;
+ if(document.hidden){audio.mtimers.forEach(clearTimeout);audio.mtimers=[];stopRadioLoop();audio.ctx.suspend();}
+ else{audio.ctx.resume();if(audio.musicOn)startMusic();if(audio.radioOn)startRadioLoop();}
+});
+
+// ---- Commander (Command Module α) -----------------------------------------------------
+// Mirrors the Commander Login on the main page (keep CMD_FACTIONS in step with index.html).
+const CMD_ALPHA_KEY='reliquary-command-alpha',CMD_SESSION_KEY='reliquary-commander';
+const CMD_FACTIONS={
+ eisdon:{name:'Eisdon',online:true,pinHash:'50a7fea0f74543785cd5fab7839d0d0369dd5bc98eee30170c08238373cc0cd5',icon:'<path d="M32 6 54 14v16c0 14-9 23-22 28C19 53 10 44 10 30V14z"/><path d="M18 40 28 24l6 9 5-6 8 13z" fill="currentColor" opacity=".55"/>'},
+ histannia:{name:'Histannia',online:false,icon:'<circle cx="32" cy="32" r="22"/><path d="M32 14 36 28 50 32 36 36 32 50 28 36 14 32 28 28z" fill="currentColor" opacity=".55"/>'},
+ harron:{name:'Harron',online:false,icon:'<path d="M32 8 52 20v24L32 56 12 44V20z"/><path d="M22 26h20v6H35v14h-6V32h-7z" fill="currentColor" opacity=".55"/>'}
+};
+let cmdPick=null;
+function commandAlpha(){try{return localStorage.getItem(CMD_ALPHA_KEY)==='1';}catch(e){return false;}}
+function commander(){try{const c=localStorage.getItem(CMD_SESSION_KEY);return commandAlpha()&&CMD_FACTIONS[c]?.online?c:null;}catch(e){return null;}}
+function applyCommander(){
+ const c=commander();document.body.classList.remove('is-commander',...Object.keys(CMD_FACTIONS).map(k=>'cmd-'+k));
+ if(c){document.body.classList.add('is-commander','cmd-'+c);$('cmd-badge').textContent=`${CMD_FACTIONS[c].name} Command`;}
+ if(audio.ready&&audio.musicOn&&!document.hidden&&isIndustrial()!==!!audio.ind)startMusic(); // switch soundtrack when the command changes
+ dirty=true;
+}
+function renderCommandDialog(focusPin){
+ const c=commander(),b=$('command-dialog-body');
+ if(c){b.innerHTML=`<h2 id="command-dialog-title">Change Command</h2><p class="muted">Log out of your current command, then log in to another.</p><div class="cmd-current"><span>Current command</span><strong>${CMD_FACTIONS[c].name}</strong></div><div class="dialog-actions"><button class="btn" type="button" data-close>Cancel</button><button class="btn primary" type="button" data-cmd-logout>Log out of ${CMD_FACTIONS[c].name}</button></div>`;return;}
+ b.innerHTML=`<h2 id="command-dialog-title">Commander Login</h2><p class="muted">Select a command, then enter its access PIN.</p><div class="cmd-factions" role="radiogroup" aria-label="Command">${Object.entries(CMD_FACTIONS).map(([k,f])=>`<button class="cmd-faction" type="button" role="radio" data-cmd-faction="${k}" aria-checked="${cmdPick===k}"${f.online?'':' disabled'}><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true">${f.icon}</svg><strong>${f.name}</strong><small>${f.online?'Channel open':'Channel offline'}</small></button>`).join('')}</div>`+
+  (cmdPick?`<form id="cmd-login-form"><label class="field">${CMD_FACTIONS[cmdPick].name} access PIN<input id="cmd-pin" type="password" inputmode="numeric" autocomplete="off" maxlength="12" required></label><p class="error" id="cmd-error" role="alert"></p><div class="dialog-actions"><button class="btn" type="button" data-close>Close</button><button class="btn primary" type="submit">Authenticate</button></div></form>`:`<div class="dialog-actions"><button class="btn" type="button" data-close>Close</button></div>`);
+ if(focusPin)$('cmd-pin')?.focus();
+}
+$('cmd-change').onclick=()=>{cmdPick=null;renderCommandDialog();$('command-dialog').showModal();};
+$('command-dialog').addEventListener('click',e=>{
+ if(e.target.closest('[data-close]')){$('command-dialog').close();return;}
+ if(e.target.closest('[data-cmd-logout]')){const c=commander();try{localStorage.removeItem(CMD_SESSION_KEY);}catch(x){}cmdPick=null;applyCommander();renderCommandDialog();toast(`Logged out of ${CMD_FACTIONS[c]?.name||'command'}.`);return;}
+ const f=e.target.closest('[data-cmd-faction]');if(f&&!f.disabled){cmdPick=f.dataset.cmdFaction;renderCommandDialog(true);}
+});
+$('command-dialog').addEventListener('submit',async e=>{
+ if(e.target.id!=='cmd-login-form')return;e.preventDefault();const f=CMD_FACTIONS[cmdPick],err=$('cmd-error');err.textContent='';if(!f?.online)return;
+ try{if(!window.crypto?.subtle)throw Error('unsupported');
+  if(await sha256Hex(cmdPick+':'+$('cmd-pin').value.trim())===f.pinHash){try{localStorage.setItem(CMD_SESSION_KEY,cmdPick);}catch(x){}cmdPick=null;applyCommander();$('command-dialog').close();toast(`Welcome, Commander. ${f.name} command is online.`);}
+  else{err.textContent='Access denied. Incorrect PIN.';$('cmd-pin').select();}
+ }catch(x){err.textContent='This browser cannot verify the PIN here. Open the site over https or use a current browser.';}
+});
+applyCommander();
+
+// ---- Command dock: Communications, Orders and (admin) Chat --------------------------------
+// Left-side switches flip each panel out; shown only in the command view (logged-in commander).
+function setDockOpen(k,open){
+ const p=$('dock-'+k),b=document.querySelector(`[data-dock="${k}"]`),fx=!reducedMotion.matches;
+ b.setAttribute('aria-pressed',String(open));p.classList.remove('flip-open','flip-close');clearTimeout(p._flipT);
+ if(open){p.hidden=false;if(fx){void p.offsetWidth;p.classList.add('flip-open');p._flipT=setTimeout(()=>p.classList.remove('flip-open'),1000);}if(k==='chat')renderChat();}
+ else if(fx&&!p.hidden){p.classList.add('flip-close');p._flipT=setTimeout(()=>{p.hidden=true;p.classList.remove('flip-close');},330);}
+ else p.hidden=true;
+}
+for(const b of document.querySelectorAll('[data-dock]'))b.onclick=()=>setDockOpen(b.dataset.dock,b.getAttribute('aria-pressed')!=='true');
+const hhmmss=d=>d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+const intercepts=[];
+function logIntercept(text){
+ if(!text)return;intercepts.push({at:new Date(),text});if(intercepts.length>40)intercepts.shift();
+ $('comms-intercepts').innerHTML=intercepts.slice().reverse().map(m=>`<li><time>${hhmmss(m.at)}</time>${esc(m.text)}</li>`).join('');
+}
+// Basic chat: stored in this browser (localStorage) and kept in step across its tabs. Swap in a
+// chat service later to share messages between players.
+const CHAT_KEY='reliquary-chat-v1';
+function chatMessages(){try{const v=JSON.parse(localStorage.getItem(CHAT_KEY)||'[]');return Array.isArray(v)?v:[];}catch(e){return [];}}
+function renderChat(){
+ const msgs=chatMessages(),log=$('chat-log');
+ log.innerHTML=msgs.length?msgs.map(m=>`<li><time>${hhmmss(new Date(m.at))}</time><b>${esc(m.from)}:</b> ${esc(m.text)}</li>`).join(''):'<li class="dim">&gt; Channel open. No messages yet.</li>';
+ log.scrollTop=log.scrollHeight;
+}
+$('chat-form').addEventListener('submit',e=>{
+ e.preventDefault();if(!isAdmin()||!commander())return;const inp=$('chat-input'),text=inp.value.trim();if(!text)return;
+ const msgs=chatMessages();msgs.push({from:`${CMD_FACTIONS[commander()].name} Command`,text:text.slice(0,300),at:Date.now()});
+ try{localStorage.setItem(CHAT_KEY,JSON.stringify(msgs.slice(-200)));}catch(x){toast('Could not save the message in this browser.');}
+ inp.value='';renderChat();
+});
+$('chat-clear').onclick=()=>{if(!isAdmin()||!confirm('Clear all chat messages in this browser?'))return;try{localStorage.removeItem(CHAT_KEY);}catch(x){}renderChat();};
+addEventListener('storage',e=>{if(e.key===CHAT_KEY&&!$('dock-chat').hidden)renderChat();});
+
+// ---- Start ------------------------------------------------------------------------
+// Keep the panel below the toolbar even when the toolbar wraps onto two rows.
+if(window.ResizeObserver)new ResizeObserver(()=>document.documentElement.style.setProperty('--bar-h',$('bar').offsetHeight+'px')).observe($('bar'));
+addEventListener('resize',resize);
+if(BACKGROUND_IMAGE){bgImg=new Image();bgImg.onload=()=>dirty=true;bgImg.src=BACKGROUND_IMAGE;}
+resize();
+let startAdmin=false;try{startAdmin=sessionStorage.getItem(ADMIN_KEY)===ADMIN_HASH;}catch(e){}
+setAdmin(startAdmin);
+load().then(()=>{renderPanel();dirty=true;});
+requestAnimationFrame(frame);
+canvas.focus({preventScroll:true});
+</script>
+</body>
+</html>
