@@ -1,0 +1,22 @@
+rules_version = '2';
+// Project RELIQUARY database rules. Paste into Firebase console > Firestore Database > Rules, replace
+// YOUR-ADMIN-EMAIL with the administrator e-mail (lower case, same as adminEmail in assets/cloud-config.js), then Publish.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'YOUR-ADMIN-EMAIL';
+    }
+    // Articles and the starmap: everyone can read, only the administrator can change them.
+    match /site/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    // Chat: everyone can read it live; only the administrator can post or clear it.
+    match /chat/{message} {
+      allow read: if true;
+      allow delete: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.text is string && request.resource.data.text.size() <= 300;
+    }
+  }
+}

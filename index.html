@@ -423,7 +423,7 @@ html.faction-dropdown-open,html.faction-dropdown-open body,html.faction-dropdown
 <p class="error" id="faction-filter-error" role="alert"></p>
 <p class="subtext" id="faction-filter-status" role="status"></p>
 <nav id="faction-grid" aria-label="Factions"></nav>
-<div class="sidebar-bottom"><div class="local"><span class="dot"></span>LOCAL-FIRST ARCHIVE<div class="storage-status" id="storage-status">No connection required</div></div></div>
+<div class="sidebar-bottom"><div class="local"><span class="dot"></span><span id="storage-mode">LOCAL-FIRST ARCHIVE</span><div class="storage-status" id="storage-status">No connection required</div></div></div>
 </div>
 <div class="directory-panel-actions" id="directory-close-actions"><button class="btn directory-close" id="directory-close" aria-label="Close Factions"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M12 8H4m4-4L4 8l4 4"/></svg></button></div>
 <section class="directory-placeholder" id="systems-content" aria-labelledby="systems-title" hidden><h2 id="systems-title" tabindex="-1">Systems</h2><p class="subtext">System directory coming later.</p></section>
@@ -487,7 +487,9 @@ html.faction-dropdown-open,html.faction-dropdown-open body,html.faction-dropdown
 <dialog id="faction-detail" aria-labelledby="faction-detail-title"><div class="dialog-head"><h2 id="faction-detail-title"></h2><button class="btn" data-close="faction-detail" aria-label="Close faction details">X</button></div><div class="faction-detail" id="faction-detail-body"></div></dialog>
 <dialog id="editor" aria-labelledby="editor-title"><form id="article-form"><div class="dialog-head"><h2 id="editor-title">New article</h2><button class="btn" type="button" data-close="editor" aria-label="Close editor">✕</button></div><input type="hidden" id="edit-id"><label class="field">Article title<input id="edit-title" required maxlength="100"></label><div class="form-grid"><label class="field">Category<select id="edit-category"></select></label><label class="field">Region / affiliation<input id="edit-region" maxlength="100" placeholder="e.g. Outer Reach"></label></div><label class="field">Short description<textarea id="edit-summary" required maxlength="500"></textarea></label><label class="field">Article body <span>Plain text. Separate paragraphs with an empty line.</span><textarea class="body-input" id="edit-body" required maxlength="50000"></textarea></label><label class="field">Tags <span>Comma-separated</span><input id="edit-tags" maxlength="250" placeholder="Exploration, Trade, Core worlds"></label><p class="error" id="edit-error" role="alert"></p><div class="form-actions"><button class="btn danger" id="delete-article" type="button">Delete article</button><div class="action-group"><button class="btn" type="button" data-close="editor">Cancel</button><button class="btn primary" type="submit">Save article ↗</button></div></div></form></dialog>
 <dialog id="admin-login" class="admin-dialog" aria-labelledby="admin-login-title"><form id="admin-form" method="dialog"><div class="dialog-head"><h2 id="admin-login-title">Administrator login</h2><button class="btn" type="button" data-close="admin-login" aria-label="Close administrator login">✕</button></div><p class="import-help">Sign in to create, edit, delete or import articles.</p><label class="field">Password<input id="admin-password" type="password" autocomplete="current-password" required></label><p class="error" id="admin-error" role="alert"></p><div class="form-actions"><span></span><div class="action-group"><button class="btn" type="button" data-close="admin-login">Cancel</button><button class="btn primary" type="submit">Sign in</button></div></div></form></dialog>
-<dialog id="backup" aria-labelledby="backup-title"><div class="dialog-head"><h2 id="backup-title">Take your universe with you</h2><button class="btn" data-close="backup" aria-label="Close import and export">✕</button></div><p class="import-help">Articles and bookmarks are saved in this browser on this device, not in the HTML file. Export a JSON backup regularly, especially before moving the app or clearing browser data.</p><div class="panel"><h3>Export archive</h3><p class="import-help">Download all your articles and bookmarks as a portable JSON file.</p><button class="btn primary" id="export">↓ Export JSON backup</button></div><br><div class="panel admin-only" id="import-panel"><h3>Import archive</h3><p class="import-help">Restore a backup made by this app. Import replaces the current archive and bookmarks after confirmation. Export first to keep a copy of your current work.</p><button class="btn" id="import">↑ Choose backup file</button><input id="import-file" type="file" accept="application/json,.json"><p class="error" id="import-error" role="alert"></p></div></dialog>
+<dialog id="backup" aria-labelledby="backup-title"><div class="dialog-head"><h2 id="backup-title">Take your universe with you</h2><button class="btn" data-close="backup" aria-label="Close import and export">✕</button></div><p class="import-help" id="backup-help">Articles and bookmarks are saved in this browser on this device, not in the HTML file. Export a JSON backup regularly, especially before moving the app or clearing browser data.</p><div class="panel"><h3>Export archive</h3><p class="import-help">Download all your articles and bookmarks as a portable JSON file.</p><button class="btn primary" id="export">↓ Export JSON backup</button></div><br><div class="panel admin-only" id="import-panel"><h3>Import archive</h3><p class="import-help">Restore a backup made by this app. Import replaces the current archive and bookmarks after confirmation. Export first to keep a copy of your current work.</p><button class="btn" id="import">↑ Choose backup file</button><input id="import-file" type="file" accept="application/json,.json"><p class="error" id="import-error" role="alert"></p></div></dialog>
+<script src="assets/cloud-config.js"></script>
+<script src="assets/cloud.js"></script>
 <script>
 'use strict';
 const CATEGORIES=['Systems','Planets','Factions','Ships','Characters','Lore'];
@@ -526,11 +528,47 @@ try{
   if(stored.placeholdersRemoved!==true)localStorage.setItem(STORAGE_KEY,JSON.stringify({version:1,placeholdersRemoved:true,articles,bookmarks}));
  }
 }catch(e){storageOK=false;storageLoadFailed=true;}
+// ---- Shared online storage (assets/cloud.js) ---------------------------------------------
+// When set up, articles are shared with every visitor (this browser keeps a cache); bookmarks stay personal.
+// When not set up, everything stays in this browser as before.
+const Cloud=window.ReliquaryCloud||{enabled:false},LOCAL_BACKUP_KEY='sirius-archive-v1-local-backup';
+const sharedArc={state:Cloud.enabled?'waiting':'off',offered:false,warned:false,errShown:false};
+function keepLocalBackup(){try{const raw=localStorage.getItem(STORAGE_KEY);if(raw&&!localStorage.getItem(LOCAL_BACKUP_KEY))localStorage.setItem(LOCAL_BACKUP_KEY,raw);}catch(e){}}
+function shareArticles(){
+ if(!Cloud.enabled||!isAdmin())return;
+ if(sharedArc.state!=='live'){if(!sharedArc.warned){sharedArc.warned=true;toast(sharedArc.state==='empty'?'The shared archive is empty. Choose whether to share this browser\'s articles first.':'Still connecting to the shared archive. This change is only in this browser for now.');}return;}
+ return Cloud.saveDoc('archive',{version:1,articles}).then(()=>true,e=>{toast('Not shared: '+e.message);return false;});
+}
+function applySharedArchive(v){
+ let next;try{next=validateArchive({version:1,articles:v&&v.articles,bookmarks:[]}).articles;}catch(e){return;}
+ keepLocalBackup();articles=next;sharedArc.state='live';storageLoadFailed=false;
+ const ids=new Set(articles.map(a=>a.id));bookmarks=bookmarks.filter(id=>ids.has(id));
+ try{localStorage.setItem(STORAGE_KEY,JSON.stringify({version:1,placeholdersRemoved:true,articles,bookmarks}));storageOK=true;}catch(e){}
+ if(view==='Article'&&!ids.has(currentId))navigate('Overview');else render();
+}
+function offerShareArchive(){
+ if(sharedArc.offered||sharedArc.state!=='empty'||!isAdmin())return;sharedArc.offered=true;
+ if(!articles.length){sharedArc.state='live';updateStorageStatus();return;}
+ setTimeout(()=>{
+  if(confirm(`Nothing has been shared online yet. Share the ${articles.length} article${articles.length===1?'':'s'} saved in this browser with every visitor?`)){sharedArc.state='live';shareArticles()?.then(ok=>ok&&toast('Archive shared with every visitor.'));}
+  else{keepLocalBackup();articles=[];bookmarks=[];sharedArc.state='live';persist();navigate('Overview');toast('Starting an empty shared archive. This browser\'s old articles are kept as a backup copy.');}
+  updateStorageStatus();
+ },250);
+}
+function startSharedArchive(){
+ if(!Cloud.enabled)return;
+ $('storage-mode').textContent='SHARED ARCHIVE';
+ $('backup-help').textContent='Articles are stored online and shared with every visitor; bookmarks stay in this browser. Export a JSON backup now and then to keep your own copy.';
+ Cloud.watchDoc('archive',v=>{if(v===null){if(sharedArc.state!=='live'){sharedArc.state='empty';offerShareArchive();updateStorageStatus();}}else applySharedArchive(v);},msg=>{sharedArc.error=true;updateStorageStatus();if(!sharedArc.errShown){sharedArc.errShown=true;toast('Shared archive: '+msg);}});
+ Cloud.onAuth(a=>{if(a!==isAdmin())setAdmin(a);if(a)offerShareArchive();});
+ updateStorageStatus();
+}
 function persist(){
+ if(Cloud.enabled){try{localStorage.setItem(STORAGE_KEY,JSON.stringify({version:1,placeholdersRemoved:true,articles,bookmarks}));}catch(e){}shareArticles();updateStorageStatus();return true;}
  if(storageLoadFailed){toast('Existing browser data could not be read. Changes are in memory only; export a backup.');return false;}
  try{localStorage.setItem(STORAGE_KEY,JSON.stringify({version:1,placeholdersRemoved:true,articles,bookmarks}));storageOK=true;return true;}catch(e){storageOK=false;toast('Browser storage is unavailable or full. Export a backup to keep your changes.');return false;}finally{updateStorageStatus();}
 }
-function updateStorageStatus(){$('storage-status').textContent=storageOK?'Saved in this browser':'Memory only · export to save';}
+function updateStorageStatus(){$('storage-status').textContent=Cloud.enabled?(sharedArc.state==='live'?'Shared online · live':sharedArc.error?'Offline · showing saved copy':sharedArc.state==='empty'?'Shared archive is empty':'Connecting to shared archive…'):storageOK?'Saved in this browser':'Memory only · export to save';}
 function toast(message){$('toast').textContent=message;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,5500);}
 function navigate(next){view=next;currentId=null;query='';$('search').value='';categoryFilter='All';setFactionsOpen(false);render();window.scrollTo(0,0);}
 function openArticle(id){if(!articles.some(a=>a.id===id))return;currentId=id;view='Article';render();window.scrollTo(0,0);}
@@ -922,7 +960,7 @@ $('main').addEventListener('click',e=>{
  button.textContent=paused?'Resume feed':'Pause feed';
 });
 $('main').addEventListener('click',e=>{if(e.target.closest('#edit-current'))showEditor(currentId);if(e.target.closest('#bookmark-toggle')){bookmarks=bookmarks.includes(currentId)?bookmarks.filter(id=>id!==currentId):[...bookmarks,currentId];const saved=persist();render();if(saved)toast('Bookmarks updated.');}});
-$('article-form').addEventListener('submit',e=>{e.preventDefault();if(!isAdmin()){$('editor').close();openAdminLogin();return;}const id=$('edit-id').value;const old=articles.find(a=>a.id===id);const article={...(old||{}),id:id||crypto.randomUUID(),title:$('edit-title').value.trim(),category:$('edit-category').value,region:$('edit-region').value.trim(),summary:$('edit-summary').value.trim(),body:$('edit-body').value.trim(),tags:$('edit-tags').value.split(',').map(t=>t.trim()).filter(Boolean),related:old?.related||[],custom:true};try{validateArchive({version:1,articles:old?articles.map(a=>a.id===id?article:a):[...articles,article],bookmarks});}catch(err){$('edit-error').textContent=err.message;return;}if(old)articles=articles.map(a=>a.id===id?article:a);else articles.push(article);const saved=persist();$('editor').close();openArticle(article.id);if(saved)toast('Article saved to this browser.');});
+$('article-form').addEventListener('submit',e=>{e.preventDefault();if(!isAdmin()){$('editor').close();openAdminLogin();return;}const id=$('edit-id').value;const old=articles.find(a=>a.id===id);const article={...(old||{}),id:id||crypto.randomUUID(),title:$('edit-title').value.trim(),category:$('edit-category').value,region:$('edit-region').value.trim(),summary:$('edit-summary').value.trim(),body:$('edit-body').value.trim(),tags:$('edit-tags').value.split(',').map(t=>t.trim()).filter(Boolean),related:old?.related||[],custom:true};try{validateArchive({version:1,articles:old?articles.map(a=>a.id===id?article:a):[...articles,article],bookmarks});}catch(err){$('edit-error').textContent=err.message;return;}if(old)articles=articles.map(a=>a.id===id?article:a);else articles.push(article);const saved=persist();$('editor').close();openArticle(article.id);if(saved)toast(Cloud.enabled?'Article saved and shared.':'Article saved to this browser.');});
 $('delete-article').onclick=()=>{if(!isAdmin())return;const id=$('edit-id').value;const a=articles.find(a=>a.id===id);if(!a||!confirm(`Delete “${a.title}”? This cannot be undone. Export a backup first if you want to keep it.`))return;articles=articles.filter(a=>a.id!==id).map(a=>({...a,related:a.related.filter(r=>r!==id)}));bookmarks=bookmarks.filter(b=>b!==id);const saved=persist();$('editor').close();navigate('All articles');if(saved)toast('Article deleted.');};
 // Administrator mode: article authoring is limited to signed-in administrators.
 // Note: this is a client-side gate for a static site; it deters casual edits but is not server-side security.
@@ -931,8 +969,8 @@ function isAdmin(){return document.body.classList.contains('is-admin');}
 function setAdmin(on){document.body.classList.toggle('is-admin',on);const b=$('admin-toggle');b.textContent=on?'Admin · Log out':'Admin login';b.setAttribute('aria-pressed',on?'true':'false');b.setAttribute('aria-label',on?'Administrator mode on. Log out':'Administrator login');try{on?sessionStorage.setItem(ADMIN_KEY,ADMIN_HASH):sessionStorage.removeItem(ADMIN_KEY);}catch(e){}}
 async function sha256Hex(text){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');}
 function openAdminLogin(){$('admin-form').reset();$('admin-error').textContent='';if(!$('admin-login').open)$('admin-login').showModal();$('admin-password').focus();}
-$('admin-toggle').onclick=()=>{if(isAdmin()){setAdmin(false);document.querySelectorAll('#editor[open]').forEach(d=>d.close());toast('Signed out of administrator mode.');}else openAdminLogin();};
-$('admin-form').addEventListener('submit',async e=>{e.preventDefault();const err=$('admin-error');err.textContent='';try{if(!window.crypto?.subtle)throw new Error('unsupported');if(await sha256Hex($('admin-password').value)===ADMIN_HASH){setAdmin(true);$('admin-login').close();toast('Administrator mode on. You can now create and edit articles.');}else{err.textContent='Incorrect password.';$('admin-password').select();}}catch(x){err.textContent='This browser cannot verify the password here. Open the site over https or use a current browser.';}});
+$('admin-toggle').onclick=()=>{if(isAdmin()){setAdmin(false);if(Cloud.enabled)Cloud.signOut().catch(()=>{});document.querySelectorAll('#editor[open]').forEach(d=>d.close());toast('Signed out of administrator mode.');}else openAdminLogin();};
+$('admin-form').addEventListener('submit',async e=>{e.preventDefault();const err=$('admin-error');err.textContent='';if(Cloud.enabled){const btn=$('admin-form').querySelector('[type=submit]');if(btn)btn.disabled=true;try{await Cloud.signIn($('admin-password').value);setAdmin(true);$('admin-login').close();toast('Administrator mode on. Articles you save are shared with every visitor.');offerShareArchive();}catch(x){err.textContent=x.message;$('admin-password').select();}finally{if(btn)btn.disabled=false;}return;}try{if(!window.crypto?.subtle)throw new Error('unsupported');if(await sha256Hex($('admin-password').value)===ADMIN_HASH){setAdmin(true);$('admin-login').close();toast('Administrator mode on. You can now create and edit articles.');}else{err.textContent='Incorrect password.';$('admin-password').select();}}catch(x){err.textContent='This browser cannot verify the password here. Open the site over https or use a current browser.';}});
 try{setAdmin(sessionStorage.getItem(ADMIN_KEY)===ADMIN_HASH);}catch(e){setAdmin(false);}
 $('backup-open').onclick=()=>{$('import-error').textContent='';$('backup').showModal();};
 $('export').onclick=()=>{const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),articles,bookmarks},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='universe-archive-'+new Date().toISOString().slice(0,10)+'.json';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Backup download requested. Keep the JSON file somewhere safe.');};
@@ -987,6 +1025,7 @@ $('main').addEventListener('submit',async e=>{
  }catch(x){err.textContent='This browser cannot verify the PIN here. Open the site over https or use a current browser.';}
 });
 render();
+startSharedArchive();
 </script>
 </body>
 </html>

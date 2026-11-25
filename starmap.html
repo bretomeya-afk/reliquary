@@ -196,11 +196,14 @@ body.cmd-eisdon .panel.flip-open::after{content:"";position:absolute;left:0;righ
 @keyframes crtLine{0%{opacity:0;transform:scaleX(0)}40%{opacity:1;transform:scaleX(1)}100%{opacity:0;transform:scaleX(1)}}
 @media(prefers-reduced-motion:reduce){body.cmd-eisdon .mech-lever::after,body.cmd-eisdon .vol-knob-cap{transition:none}}
 @media(prefers-reduced-motion:reduce){body.cmd-eisdon .panel.flip-open,body.cmd-eisdon .panel.flip-close,body.cmd-eisdon .panel.flip-open>*,body.cmd-eisdon .panel.flip-open::after{animation:none}body.cmd-eisdon .mech-lever::after{transition:none}}
-/* Command dock (Comms, Orders, admin Chat): switches on the left flip panels out. Command view only. */
-.cmd-rail,.cmd-dock{display:none}
+/* Command dock: switches on the left flip panels out. Comms and Orders are command view only; Chat is shown to every visitor. */
+.cmd-rail{position:fixed;left:16px;top:calc(var(--bar-h) + 18px);z-index:4;display:flex;flex-direction:column;gap:8px}
+.cmd-dock{position:fixed;left:124px;top:calc(var(--bar-h) + 18px);bottom:118px;z-index:4;display:flex;flex-direction:column;gap:10px;width:min(330px,calc(100vw - 460px));min-width:240px;pointer-events:none}
+body:not(.is-commander) [data-dock="comms"],body:not(.is-commander) [data-dock="orders"],body:not(.is-commander) #dock-comms,body:not(.is-commander) #dock-orders{display:none!important}
+.chat-ro{margin:10px 0 0;font-size:11px;color:#d9a13a}
+body.is-admin .chat-ro,body:not(.is-admin) #chat-form,body:not(.is-admin) #chat-clear{display:none}
 body.is-commander .cmd-rail{position:fixed;left:16px;top:calc(var(--bar-h) + 18px);z-index:4;display:flex;flex-direction:column;gap:8px}
 body.is-commander .cmd-dock{position:fixed;left:170px;top:calc(var(--bar-h) + 18px);bottom:118px;z-index:4;display:flex;flex-direction:column;gap:10px;width:min(330px,calc(100vw - 520px));min-width:240px;pointer-events:none}
-body:not(.is-admin) [data-dock="chat"],body:not(.is-admin) #dock-chat{display:none!important}
 .cmd-rail .mech-label{min-width:66px}
 .dock-panel{position:relative;flex:1 1 0;min-height:0;overflow:auto;pointer-events:auto;transform-origin:0 50%;border:9px solid transparent;padding:12px 14px 14px;border-radius:4px;color:#9dffbf;
  background:repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px) padding-box,radial-gradient(ellipse at 50% 30%,rgba(16,70,38,.55),rgba(2,14,8,.97) 80%) padding-box,radial-gradient(circle at 6px 6px,#7a8189 0 2px,transparent 2.6px) border-box,radial-gradient(circle at calc(100% - 6px) 6px,#7a8189 0 2px,transparent 2.6px) border-box,radial-gradient(circle at 6px calc(100% - 6px),#7a8189 0 2px,transparent 2.6px) border-box,radial-gradient(circle at calc(100% - 6px) calc(100% - 6px),#7a8189 0 2px,transparent 2.6px) border-box,linear-gradient(160deg,#3a3f44,#1d2023 50%,#141618) border-box;
@@ -216,6 +219,7 @@ body:not(.is-admin) [data-dock="chat"],body:not(.is-admin) #dock-chat{display:no
 .dock-note{margin:10px 0 0;font-size:11px;color:#7fb894}
 #dock-chat:not([hidden]){display:flex;flex-direction:column}
 .chat-log{flex:1 1 auto;min-height:40px;overflow:auto}
+[data-dock="chat"].unread .mech-label::after{content:"";display:inline-block;width:7px;height:7px;margin-left:6px;border-radius:50%;background:#46ff86;box-shadow:0 0 6px #46ff86;vertical-align:middle}
 .chat-form{display:flex;gap:6px;margin-top:10px}
 .chat-form input{flex:1;min-width:0;padding:7px 8px;border:1px solid #2a6a43;border-radius:2px;background:#010c06;color:#9dffbf;font:12px Consolas,'Lucida Console',monospace;box-shadow:inset 0 2px 5px rgba(0,0,0,.8)}
 .chat-form input:focus-visible{outline:2px solid #7dffa8;outline-offset:1px}
@@ -229,7 +233,7 @@ body:not(.is-admin) [data-dock="chat"],body:not(.is-admin) #dock-chat{display:no
 @keyframes dockFlipOpen{0%{transform:perspective(1100px) rotateY(96deg);opacity:.3}70%{transform:perspective(1100px) rotateY(-7deg);opacity:1}100%{transform:perspective(1100px) rotateY(0)}}
 @keyframes dockFlipClose{0%{transform:perspective(1100px) rotateY(0);opacity:1}100%{transform:perspective(1100px) rotateY(96deg);opacity:.2}}
 @media(prefers-reduced-motion:reduce){.dock-panel.flip-open,.dock-panel.flip-close,.dock-panel.flip-open>*,.dock-panel.flip-open::after{animation:none}}
-@media(max-width:900px){body.is-commander .cmd-dock{left:16px;top:calc(var(--bar-h) + 200px);width:calc(100vw - 32px)}}
+@media(max-width:900px){.cmd-dock{left:16px;top:calc(var(--bar-h) + 64px);width:calc(100vw - 32px)}body.is-commander .cmd-dock{left:16px;top:calc(var(--bar-h) + 200px);width:calc(100vw - 32px)}}
 @media(forced-colors:active){body.cmd-eisdon .bar::after,body.cmd-eisdon .bar::before{display:none}}
 body.mode-nebula #map{cursor:crosshair}
 .lock-ctl{position:relative}
@@ -287,7 +291,7 @@ body.mode-nebula #map{cursor:crosshair}
 </div>
 </header>
 <div class="cmd-rail" id="cmd-rail" role="group" aria-label="Command panels"><button class="btn mech-btn" type="button" data-dock="comms" aria-pressed="false" aria-controls="dock-comms"><span class="mech-lever" aria-hidden="true"></span><span class="mech-label">Comms</span></button><button class="btn mech-btn" type="button" data-dock="orders" aria-pressed="false" aria-controls="dock-orders"><span class="mech-lever" aria-hidden="true"></span><span class="mech-label">Orders</span></button><button class="btn mech-btn" type="button" data-dock="chat" aria-pressed="false" aria-controls="dock-chat"><span class="mech-lever" aria-hidden="true"></span><span class="mech-label">Chat</span></button></div>
-<div class="cmd-dock" id="cmd-dock"><section class="dock-panel" id="dock-comms" aria-label="Communications" hidden><div class="dock-head"><div><div class="eyebrow">Eisdon command net</div><h2>Communications</h2></div><span class="dock-led" aria-hidden="true"></span></div><div class="dock-sec">Priority messages</div><ul class="dock-log" id="comms-priority"><li class="dim">&gt; No priority messages</li></ul><div class="dock-sec">Gate traffic intercepts</div><ul class="dock-log" id="comms-intercepts" aria-live="polite"><li class="dim">&gt; Switch Radio on to monitor gate traffic</li></ul></section><section class="dock-panel" id="dock-orders" aria-label="Orders" hidden><div class="dock-head"><div><div class="eyebrow">Fleet command</div><h2>Orders</h2></div><span class="dock-led amber" aria-hidden="true"></span></div><div class="dock-sec">Standing orders</div><ul class="dock-log"><li class="dim">&gt; No standing orders</li></ul><div class="dock-sec">Order queue</div><ul class="dock-log"><li class="dim">&gt; Queue empty</li></ul><p class="dock-note">Fleet command comes online in a later update.</p></section><section class="dock-panel" id="dock-chat" aria-label="Command chat" hidden><div class="dock-head"><div><div class="eyebrow">Admin channel</div><h2>Chat</h2></div><span class="dock-led" aria-hidden="true"></span></div><ul class="dock-log chat-log" id="chat-log" aria-live="polite"></ul><form id="chat-form" class="chat-form" autocomplete="off"><label class="screen-reader" for="chat-input">Message</label><input id="chat-input" maxlength="300" placeholder="Type a message…" required><button class="btn primary" type="submit">Send</button></form><div class="chat-foot"><p class="dock-note">Local channel: messages stay in this browser and its open tabs until a chat server is connected.</p><button class="btn danger" type="button" id="chat-clear">Clear</button></div></section></div>
+<div class="cmd-dock" id="cmd-dock"><section class="dock-panel" id="dock-comms" aria-label="Communications" hidden><div class="dock-head"><div><div class="eyebrow">Eisdon command net</div><h2>Communications</h2></div><span class="dock-led" aria-hidden="true"></span></div><div class="dock-sec">Priority messages</div><ul class="dock-log" id="comms-priority"><li class="dim">&gt; No priority messages</li></ul><div class="dock-sec">Gate traffic intercepts</div><ul class="dock-log" id="comms-intercepts" aria-live="polite"><li class="dim">&gt; Switch Radio on to monitor gate traffic</li></ul></section><section class="dock-panel" id="dock-orders" aria-label="Orders" hidden><div class="dock-head"><div><div class="eyebrow">Fleet command</div><h2>Orders</h2></div><span class="dock-led amber" aria-hidden="true"></span></div><div class="dock-sec">Standing orders</div><ul class="dock-log"><li class="dim">&gt; No standing orders</li></ul><div class="dock-sec">Order queue</div><ul class="dock-log"><li class="dim">&gt; Queue empty</li></ul><p class="dock-note">Fleet command comes online in a later update.</p></section><section class="dock-panel" id="dock-chat" aria-label="Command chat" hidden><div class="dock-head"><div><div class="eyebrow">Open channel</div><h2>Chat</h2></div><span class="dock-led" aria-hidden="true"></span></div><ul class="dock-log chat-log" id="chat-log" aria-live="polite"></ul><p class="chat-ro">Read only. Sign in as administrator to post.</p><form id="chat-form" class="chat-form" autocomplete="off"><label class="screen-reader" for="chat-input">Message</label><input id="chat-input" maxlength="300" placeholder="Type a message…" required><button class="btn primary" type="submit">Send</button></form><div class="chat-foot"><p class="dock-note" id="chat-note">Local channel: messages stay in this browser and its open tabs until shared storage is set up.</p><button class="btn danger" type="button" id="chat-clear">Clear</button></div></section></div>
 <canvas id="map" tabindex="0" role="img" aria-label="Starmap. Use W, A, S and D to move, Q and E or the mouse wheel to zoom. The Details panel lists every star system."></canvas>
 <aside class="panel" id="panel" aria-live="polite"></aside>
 <div class="hud" id="hud"><span id="hud-pos"></span><span class="keys"> &nbsp;·&nbsp; <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move &nbsp;<kbd>Shift</kbd> faster &nbsp;<kbd>Q</kbd><kbd>E</kbd>/wheel zoom &nbsp;drag to pan</span><span id="mode-hint"></span></div>
@@ -296,6 +300,8 @@ body.mode-nebula #map{cursor:crosshair}
 <dialog id="command-dialog" aria-labelledby="command-dialog-title"><div id="command-dialog-body"></div></dialog>
 <dialog id="login-dialog" aria-labelledby="login-title"><form id="login-form"><h2 id="login-title">Administrator login</h2><p class="muted">Sign in to place star systems and gate lanes.</p><label class="field">Password<input id="login-password" type="password" autocomplete="current-password" required></label><p class="error" id="login-error" role="alert"></p><div class="dialog-actions"><button class="btn" type="button" data-close>Cancel</button><button class="btn primary" type="submit">Sign in</button></div></form></dialog>
 <dialog id="system-dialog" aria-labelledby="system-dialog-title"><form id="system-form"><h2 id="system-dialog-title">New star system</h2><p class="muted" id="system-dialog-pos"></p><label class="field">Name<input id="system-name" maxlength="80" required></label><label class="field">Notes (optional)<textarea id="system-notes" maxlength="2000"></textarea></label><div class="dialog-actions"><button class="btn" type="button" data-close>Cancel</button><button class="btn primary" type="submit">Place system</button></div></form></dialog>
+<script src="assets/cloud-config.js"></script>
+<script src="assets/cloud.js"></script>
 <script>
 'use strict';
 // ---- Configuration ----------------------------------------------------------
@@ -306,6 +312,9 @@ const BACKGROUND_BOUNDS={x:-4000,y:-2500,w:8000,h:5000};
 // Published map for every visitor. Export from admin mode and replace this file in the repository.
 const PUBLISHED_URL='starmap-data.json';
 const STORAGE_KEY='reliquary-starmap-v1';
+// Shared online storage (assets/cloud.js). When set up, the map, locks and chat are shared with every visitor and
+// this browser's copy is only a cache. When not set up, everything stays in this browser as before.
+const Cloud=window.ReliquaryCloud||{enabled:false},LOCAL_BACKUP_KEY='reliquary-starmap-v1-local-backup';
 // Shared with the main page's administrator login (password is checked against this SHA-256 hash).
 const ADMIN_HASH='dbd9045db770ddd312fa5a0a19f8dca0c90b80437ad3f64a95c8f29cb8938025',ADMIN_KEY='universe-archive-admin';
 const ZMIN=.15,ZMAX=6;
@@ -431,12 +440,53 @@ function validate(raw){
  return {version:2,systems,lanes,nebulae};
 }
 function save(){
- try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data));return true;}
- catch(e){toast('Could not save in this browser. Use Export to keep a copy.');return false;}
+ let ok=true;try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data));}catch(e){ok=false;}
+ if(Cloud.enabled){queueShare();return true;}
+ if(!ok)toast('Could not save in this browser. Use Export to keep a copy.');
+ return ok;
 }
 async function load(){
  try{const raw=localStorage.getItem(STORAGE_KEY);if(raw){data=validate(JSON.parse(raw));return;}}catch(e){}
  try{const r=await fetch(PUBLISHED_URL,{cache:'no-cache'});if(r.ok)data=validate(await r.json());}catch(e){}
+}
+// ---- Shared online storage -------------------------------------------------------------
+// shared.map: 'off' (not set up), 'waiting' (connecting), 'empty' (nothing shared yet) or 'live'.
+const shared={map:Cloud.enabled?'waiting':'off',timer:0,offered:false,warned:false,errShown:false,chat:[],chatStop:null};
+function queueShare(){
+ if(!isAdmin())return;
+ if(shared.map!=='live'){if(!shared.warned){shared.warned=true;toast(shared.map==='empty'?'The shared map is empty. Choose whether to share this map first.':'Still connecting to the shared map. This change is only in this browser for now.');}return;}
+ clearTimeout(shared.timer);shared.timer=setTimeout(pushMap,250); // short delay batches rapid edits; others see them almost at once
+}
+function pushMap(){
+ clearTimeout(shared.timer);
+ return Cloud.saveDoc('starmap',data).then(()=>true,e=>{toast('Not shared: '+e.message);return false;});
+}
+function keepLocalBackup(){ // the first time the shared map replaces this browser's own map, keep a copy of it
+ try{const raw=localStorage.getItem(STORAGE_KEY);if(raw&&!localStorage.getItem(LOCAL_BACKUP_KEY))localStorage.setItem(LOCAL_BACKUP_KEY,raw);}catch(e){}
+}
+function applySharedMap(v){
+ let next;try{next=validate(v);}catch(e){return;}
+ keepLocalBackup();data=next;shared.map='live';
+ try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data));}catch(e){}
+ const exists=r=>r&&(r.type==='system'?sys(r.id):r.type==='lane'?data.lanes.some(l=>l.id===r.id):data.nebulae.some(n=>n.id===r.id));
+ if(selected&&!exists(selected))selected=null;if(hover&&!exists(hover))hover=null;
+ if(laneStart&&!sys(laneStart))laneStart=null;
+ renderPanel();dirty=true;
+}
+function offerShare(){
+ if(shared.offered||shared.map!=='empty'||!isAdmin())return;shared.offered=true;
+ const n=data.systems.length+data.lanes.length+data.nebulae.length;
+ if(!n){shared.map='live';return;}
+ setTimeout(()=>{
+  if(confirm(`Nothing has been shared online yet. Share the starmap saved in this browser (${data.systems.length} systems, ${data.lanes.length} lanes, ${data.nebulae.length} nebulae) with every visitor?`)){shared.map='live';pushMap().then(ok=>ok&&toast('Starmap shared with every visitor.'));}
+  else{keepLocalBackup();data={version:2,systems:[],lanes:[],nebulae:[]};shared.map='live';selected=hover=null;renderPanel();dirty=true;toast('Starting an empty shared map. This browser\'s old map is kept as a backup copy.');}
+ },250);
+}
+function startShared(){
+ if(!Cloud.enabled)return;
+ Cloud.watchDoc('starmap',v=>{if(v===null){if(shared.map!=='live'){shared.map='empty';offerShare();}}else applySharedMap(v);},msg=>{if(!shared.errShown){shared.errShown=true;toast('Shared map: '+msg);}});
+ shared.chatStop=Cloud.watchChat(m=>{const fresh=m.length&&shared.chat.length&&m[m.length-1].at!==shared.chat[shared.chat.length-1].at;shared.chat=m;if(!$('dock-chat').hidden)renderChat();else if(fresh)markUnread();},msg=>toast('Chat: '+msg));
+ Cloud.onAuth(a=>{if(a!==isAdmin())setAdmin(a);if(a)offerShare();});
 }
 
 // ---- Camera ---------------------------------------------------------------------
@@ -903,9 +953,17 @@ function setAdmin(on){
  try{on?sessionStorage.setItem(ADMIN_KEY,ADMIN_HASH):sessionStorage.removeItem(ADMIN_KEY);}catch(e){}
  setMode('select');applyLocks();
 }
-$('admin-toggle').onclick=()=>{if(isAdmin()){setAdmin(false);toast('Signed out of administrator mode.');}else{$('login-form').reset();$('login-error').textContent='';$('login-dialog').showModal();$('login-password').focus();}};
+$('admin-toggle').onclick=()=>{if(isAdmin()){setAdmin(false);if(Cloud.enabled)Cloud.signOut().catch(()=>{});toast('Signed out of administrator mode.');}else{$('login-form').reset();$('login-error').textContent='';$('login-dialog').showModal();$('login-password').focus();}};
 $('login-form').addEventListener('submit',async e=>{
- e.preventDefault();try{if(!window.crypto?.subtle)throw 0;
+ e.preventDefault();
+ if(Cloud.enabled){ // shared storage: the password is checked by Firebase Authentication
+  const btn=$('login-form').querySelector('[type=submit]');btn.disabled=true;$('login-error').textContent='';
+  try{await Cloud.signIn($('login-password').value);$('login-dialog').close();setAdmin(true);offerShare();toast('Administrator mode on. Changes are shared with every visitor.');}
+  catch(x){$('login-error').textContent=x.message;$('login-password').select();}
+  finally{btn.disabled=false;}
+  return;
+ }
+ try{if(!window.crypto?.subtle)throw 0;
   if(await sha256Hex($('login-password').value)===ADMIN_HASH){$('login-dialog').close();setAdmin(true);toast('Administrator mode on. Use the tools at the top to edit the map.');}
   else{$('login-error').textContent='Incorrect password.';$('login-password').select();}
  }catch(x){$('login-error').textContent='This browser cannot verify the password here. Open the site over https or use a current browser.';}
@@ -1207,7 +1265,7 @@ applyCommander();
 function setDockOpen(k,open){
  const p=$('dock-'+k),b=document.querySelector(`[data-dock="${k}"]`),fx=!reducedMotion.matches;
  b.setAttribute('aria-pressed',String(open));p.classList.remove('flip-open','flip-close');clearTimeout(p._flipT);
- if(open){p.hidden=false;if(fx){void p.offsetWidth;p.classList.add('flip-open');p._flipT=setTimeout(()=>p.classList.remove('flip-open'),1000);}if(k==='chat')renderChat();}
+ if(open){p.hidden=false;if(fx){void p.offsetWidth;p.classList.add('flip-open');p._flipT=setTimeout(()=>p.classList.remove('flip-open'),1000);}if(k==='chat'){b.classList.remove('unread');renderChat();}}
  else if(fx&&!p.hidden){p.classList.add('flip-close');p._flipT=setTimeout(()=>{p.hidden=true;p.classList.remove('flip-close');},330);}
  else p.hidden=true;
 }
@@ -1218,23 +1276,28 @@ function logIntercept(text){
  if(!text)return;intercepts.push({at:new Date(),text});if(intercepts.length>40)intercepts.shift();
  $('comms-intercepts').innerHTML=intercepts.slice().reverse().map(m=>`<li><time>${hhmmss(m.at)}</time>${esc(m.text)}</li>`).join('');
 }
-// Basic chat: stored in this browser (localStorage) and kept in step across its tabs. Swap in a
-// chat service later to share messages between players.
+// Basic chat. Every visitor can open and read it; administrators post. With shared storage set up, messages
+// are stored online and appear live in every browser; otherwise they stay in this browser and its open tabs.
+function markUnread(){$('cmd-rail').querySelector('[data-dock="chat"]').classList.add('unread');}
 const CHAT_KEY='reliquary-chat-v1';
-function chatMessages(){try{const v=JSON.parse(localStorage.getItem(CHAT_KEY)||'[]');return Array.isArray(v)?v:[];}catch(e){return [];}}
+function chatMessages(){if(Cloud.enabled)return shared.chat;try{const v=JSON.parse(localStorage.getItem(CHAT_KEY)||'[]');return Array.isArray(v)?v:[];}catch(e){return [];}}
 function renderChat(){
  const msgs=chatMessages(),log=$('chat-log');
  log.innerHTML=msgs.length?msgs.map(m=>`<li><time>${hhmmss(new Date(m.at))}</time><b>${esc(m.from)}:</b> ${esc(m.text)}</li>`).join(''):'<li class="dim">&gt; Channel open. No messages yet.</li>';
  log.scrollTop=log.scrollHeight;
 }
 $('chat-form').addEventListener('submit',e=>{
- e.preventDefault();if(!isAdmin()||!commander())return;const inp=$('chat-input'),text=inp.value.trim();if(!text)return;
- const msgs=chatMessages();msgs.push({from:`${CMD_FACTIONS[commander()].name} Command`,text:text.slice(0,300),at:Date.now()});
+ e.preventDefault();if(!isAdmin())return;const inp=$('chat-input'),text=inp.value.trim();if(!text)return;
+ const msg={from:commander()?`${CMD_FACTIONS[commander()].name} Command`:'Administrator',text:text.slice(0,300),at:Date.now()};
+ if(Cloud.enabled){inp.value='';Cloud.addChat(msg).catch(x=>{toast('Message not sent: '+x.message);if(!inp.value)inp.value=text;});return;}
+ const msgs=chatMessages();msgs.push(msg);
  try{localStorage.setItem(CHAT_KEY,JSON.stringify(msgs.slice(-200)));}catch(x){toast('Could not save the message in this browser.');}
  inp.value='';renderChat();
 });
-$('chat-clear').onclick=()=>{if(!isAdmin()||!confirm('Clear all chat messages in this browser?'))return;try{localStorage.removeItem(CHAT_KEY);}catch(x){}renderChat();};
-addEventListener('storage',e=>{if(e.key===CHAT_KEY&&!$('dock-chat').hidden)renderChat();});
+$('chat-clear').onclick=()=>{
+ if(Cloud.enabled){if(isAdmin()&&confirm('Clear all chat messages for everyone?'))Cloud.clearChat().catch(x=>toast('Chat not cleared: '+x.message));return;}
+ if(!isAdmin()||!confirm('Clear all chat messages in this browser?'))return;try{localStorage.removeItem(CHAT_KEY);}catch(x){}renderChat();};
+addEventListener('storage',e=>{if(e.key===CHAT_KEY){if(!$('dock-chat').hidden)renderChat();else markUnread();}});
 
 // ---- Start ------------------------------------------------------------------------
 // Keep the panel below the toolbar even when the toolbar wraps onto two rows.
@@ -1244,7 +1307,8 @@ if(BACKGROUND_IMAGE){bgImg=new Image();bgImg.onload=()=>dirty=true;bgImg.src=BAC
 resize();
 let startAdmin=false;try{startAdmin=sessionStorage.getItem(ADMIN_KEY)===ADMIN_HASH;}catch(e){}
 setAdmin(startAdmin);
-load().then(()=>{renderPanel();dirty=true;});
+if(Cloud.enabled)$('chat-note').textContent='Live channel: everyone on the site sees these messages as they are sent.';
+load().then(()=>{renderPanel();dirty=true;startShared();});
 requestAnimationFrame(frame);
 canvas.focus({preventScroll:true});
 </script>
