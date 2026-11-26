@@ -1,10 +1,10 @@
 rules_version = '2';
-// Project RELIQUARY database rules. Paste into Firebase console > Firestore Database > Rules, replace
-// YOUR-ADMIN-EMAIL with the administrator e-mail (lower case, same as adminEmail in assets/cloud-config.js), then Publish.
+// Project RELIQUARY database rules. Paste into Firebase console > Firestore Database > Rules (replacing everything there),
+// then Publish. The administrator e-mail must match adminEmail in assets/cloud-config.js (lower case).
 service cloud.firestore {
   match /databases/{database}/documents {
     function isAdmin() {
-      return request.auth != null && request.auth.token.email == 'YOUR-ADMIN-EMAIL';
+      return request.auth != null && request.auth.token.email == 'bretomeya@gmail.com';
     }
     // Articles and the starmap: everyone can read, only the administrator can change them.
     match /site/{doc} {
@@ -18,14 +18,28 @@ service cloud.firestore {
       allow create: if isAdmin()
         && request.resource.data.text is string && request.resource.data.text.size() <= 300;
     }
-    // Commander presence: everyone can see who is online; a logged-in commander's browser writes a heartbeat.
-    match /presence/{command} {
+    // Commanders online: one record per browser. Several people can be logged into the same command at once.
+    match /sessions/{browser} {
       allow read: if true;
-      allow create, update: if command in ['eisdon', 'gallia', 'histannia', 'harron']
-        && request.resource.data.keys().hasOnly(['online', 'sid', 'at'])
-        && request.resource.data.online is bool
-        && request.resource.data.sid is string && request.resource.data.sid.size() <= 20
+      allow create, update: if browser.size() <= 20
+        && request.resource.data.keys().hasOnly(['command', 'at'])
+        && request.resource.data.command in ['', 'eisdon', 'gallia', 'histannia', 'harron']
         && request.resource.data.at == request.time;
+    }
+    // Fleets (ids like gallia-2): anyone logged into a command can place and move its fleets; only the administrator changes the ship count (3 to 10).
+    match /fleets/{fleet} {
+      allow read: if true;
+      allow create: if validFleet(fleet) && (isAdmin() || request.resource.data.ships == 5);
+      allow update: if validFleet(fleet) && (isAdmin() || request.resource.data.ships == resource.data.ships);
+    }
+    function validFleet(fleet) {
+      let d = request.resource.data;
+      return fleet.matches('^(eisdon|gallia|histannia|harron)-[1-9]$')
+        && d.keys().hasOnly(['ships', 'at', 'to', 'depart', 'arrive', 'route'])
+        && d.ships is int && d.ships >= 3 && d.ships <= 10
+        && d.at is string && d.at.size() <= 40 && d.to is string && d.to.size() <= 40
+        && d.depart is int && d.arrive is int && d.arrive - d.depart <= 5000000
+        && (!('route' in d) || (d.route is list && d.route.size() <= 40));
     }
   }
 }

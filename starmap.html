@@ -63,6 +63,8 @@ body.is-admin #admin-toggle{color:var(--accent);border-color:var(--accent);box-s
 .hud kbd{display:inline-block;min-width:18px;padding:0 4px;border:1px solid var(--line);border-radius:3px;text-align:center;font:10px/16px Consolas,monospace;color:var(--text)}
 #mode-hint{display:block;margin-top:4px;color:var(--accent)}
 #mode-hint:empty{display:none}
+#fleet-hint{display:block;margin-top:4px;color:#ffd57a}#fleet-hint:empty{display:none}
+canvas.over-fleet{cursor:pointer}canvas.fleet-armed{cursor:crosshair}
 .zoom{position:fixed;right:16px;bottom:16px;z-index:4;display:flex;flex-direction:column;gap:6px}
 .zoom .btn{width:38px;padding:0;font-size:16px}
 .toast{position:fixed;left:50%;bottom:24px;z-index:9;transform:translateX(-50%);padding:10px 18px;border-radius:6px;background:#bfeaff;color:#031421;font-size:13px;box-shadow:0 6px 30px rgba(0,0,0,.5)}
@@ -205,7 +207,7 @@ body.cmd-eisdon .panel.flip-open::after{content:"";position:absolute;left:0;righ
 /* Command dock: switches on the left flip panels out. Comms and Orders are command view only; Chat is shown to every visitor. */
 .cmd-rail{position:fixed;left:16px;top:calc(var(--bar-h) + 18px);z-index:4;display:flex;flex-direction:column;gap:8px}
 .cmd-dock{position:fixed;left:124px;top:calc(var(--bar-h) + 18px);bottom:118px;z-index:4;display:flex;flex-direction:column;gap:10px;width:min(330px,calc(100vw - 460px));min-width:240px;pointer-events:none}
-body:not(.is-commander) [data-dock="comms"],body:not(.is-commander) [data-dock="orders"],body:not(.is-commander) #dock-comms,body:not(.is-commander) #dock-orders{display:none!important}
+body:not(.is-commander):not(.is-admin) [data-dock="fleet"],body:not(.is-commander):not(.is-admin) #dock-fleet,body:not(.is-commander) [data-dock="comms"],body:not(.is-commander) [data-dock="orders"],body:not(.is-commander) #dock-comms,body:not(.is-commander) #dock-orders{display:none!important}
 .chat-ro{margin:10px 0 0;font-size:11px;color:#d9a13a}
 body.is-admin .chat-ro,body:not(.is-admin) #chat-form,body:not(.is-admin) #chat-clear{display:none}
 body.is-commander .cmd-rail{position:fixed;left:16px;top:calc(var(--bar-h) + 18px);z-index:4;display:flex;flex-direction:column;gap:8px}
@@ -223,6 +225,48 @@ body.is-commander .cmd-dock{position:fixed;left:170px;top:calc(var(--bar-h) + 18
 .dock-log li{padding:2px 0;border-bottom:1px dashed rgba(125,255,168,.12)}.dock-log li:last-child{border-bottom:0}
 .dock-log .dim{opacity:.6}.dock-log time{color:#5fae7d;margin-right:6px}.dock-log b{color:#d9ffe6;font-weight:600}
 .dock-note{margin:10px 0 0;font-size:11px;color:#7fb894}
+.fleet-pips{margin-left:8px;letter-spacing:1px;color:#7dffa8}.fleet-pips span{opacity:.3}
+.fleet-actions,.fleet-admin{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 4px}
+.fleet-admin{padding-top:6px;border-top:1px dashed rgba(125,255,168,.2)}.fleet-admin>span{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#d9a13a}
+.fleet-comms{display:flex;align-items:center;gap:10px;margin:0 0 6px;padding-bottom:8px;border-bottom:1px dashed rgba(125,255,168,.2)}
+.dock-panel .btn.fleet-comms-sw{flex-shrink:0;min-width:0;text-shadow:0 1px 0 #000}
+.fleet-comms-sw .mech-label{min-width:104px!important}
+.fleet-signal{display:inline-flex;align-items:flex-end;gap:2px;height:16px;padding:2px 3px;border:1px solid #050606;border-radius:2px;background:#03140b;box-shadow:inset 0 1px 3px rgba(0,0,0,.9)}
+.fleet-signal i{display:block;width:3px;border-radius:1px;background:rgba(125,255,168,.12)}
+.fleet-signal i:nth-child(1){height:3px}.fleet-signal i:nth-child(2){height:5px}.fleet-signal i:nth-child(3){height:7px}.fleet-signal i:nth-child(4){height:9px}.fleet-signal i:nth-child(5){height:11px}
+.fleet-signal.on i{background:#7dffa8;box-shadow:0 0 4px rgba(70,255,134,.8)}
+.fleet-signal.on i:nth-child(5){animation:fleetSig 3s ease-in-out infinite} /* steady signal, only the top bar breathes gently */
+@keyframes fleetSig{0%,100%{opacity:1}50%{opacity:.45}}
+/* Eisdon: a little green oscilloscope screen with a scrolling wave, like an old radio or tape deck */
+.fleet-scope{display:none;position:relative;width:58px;height:20px;overflow:hidden;border:1px solid #050606;border-radius:3px;background:repeating-linear-gradient(0deg,rgba(0,0,0,.3) 0 1px,transparent 1px 3px),radial-gradient(ellipse at center,rgba(30,110,60,.6),#02120a 80%);box-shadow:inset 0 0 6px rgba(0,0,0,.9),inset 0 0 1px rgba(125,255,168,.5)}
+.fleet-scope svg{position:absolute;left:0;top:2px;width:116px;height:16px;overflow:visible}
+.fleet-scope-wave,.fleet-scope-flat{fill:none;stroke:#7dffa8;stroke-width:1.3;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 2px rgba(70,255,134,.9))}
+.fleet-scope-wave{display:none}.fleet-scope.on .fleet-scope-wave{display:block}.fleet-scope.on .fleet-scope-flat{display:none}.fleet-scope-flat{opacity:.45}
+.fleet-scope.on svg{animation:fleetScroll 1.6s linear infinite}.fleet-scope-amp{transform-origin:0 8px;transform-box:view-box}.fleet-scope.on .fleet-scope-amp{animation:fleetAmp 2.6s ease-in-out infinite alternate}
+@keyframes fleetScroll{from{transform:translateX(0)}to{transform:translateX(-58px)}}
+@keyframes fleetAmp{from{transform:scaleY(.55)}to{transform:scaleY(1)}}
+body.cmd-eisdon .fleet-scope{display:inline-block}body.cmd-eisdon .fleet-signal{display:none}
+.fleet-band{white-space:nowrap;font:10px/1.3 'OCR A Extended',Consolas,monospace;letter-spacing:.1em;text-transform:uppercase;opacity:.75}
+body.cmd-gallia .fleet-signal{border-color:#15181b;background:#04111d}body.cmd-gallia .fleet-signal i{background:rgba(92,200,255,.14)}
+body.cmd-gallia .fleet-signal.on i{background:#8fdcff;box-shadow:0 0 4px rgba(92,200,255,.85)}body.cmd-gallia .fleet-band{font-family:Consolas,monospace}
+@media(prefers-reduced-motion:reduce){.fleet-signal.on i,.fleet-scope.on svg,.fleet-scope.on .fleet-scope-amp{animation:none}}.fleet-voice{margin:-2px 0 6px!important;font-size:10px;opacity:.8}body.cmd-gallia .fleet-comms{border-bottom-color:rgba(92,200,255,.2)}
+.fleet-list{display:flex;flex-direction:column;gap:4px;margin:4px 0 8px}
+.fleet-row{display:grid;grid-template-columns:1fr auto;gap:2px 8px;width:100%;padding:6px 8px;border:1px solid rgba(125,255,168,.25);border-radius:2px;background:rgba(10,40,22,.3);color:inherit;font:12px/1.35 'OCR A Extended',Consolas,'Lucida Console',monospace;text-align:left;cursor:pointer}
+.fleet-row:hover{border-color:#7dffa8}.fleet-row.sel{border-color:#d9a13a;background:rgba(80,55,10,.35);box-shadow:inset 3px 0 0 #d9a13a}
+.fleet-row-name{color:#d9ffe6;font-weight:600}.fleet-row-name kbd{margin-left:4px;padding:0 4px;border:1px solid currentColor;border-radius:2px;font:10px Consolas,monospace;opacity:.7}
+.fleet-row-ships{justify-self:end;opacity:.75}.fleet-row-st{grid-column:1/-1;opacity:.8;font-size:11px}
+.fleet-voice-line{display:flex;align-items:center;gap:6px;margin:6px 0 2px}.fleet-voice-line .fleet-voice{flex:1;margin:0!important}
+.fleet-edit{flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;width:24px;height:22px;padding:0;border:1px solid #2a6a43;border-radius:2px;background:rgba(10,40,22,.35);color:#9dffbf;cursor:pointer}
+.fleet-edit svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
+.fleet-edit:hover,.fleet-edit[aria-expanded="true"]{border-color:#d9a13a;color:#ffd57a}.fleet-edit:focus-visible{outline:2px solid #7dffa8;outline-offset:2px}
+body.cmd-gallia .fleet-edit{border-color:#2f6a95;background:rgba(10,40,70,.35);color:#bfe6ff}body.cmd-gallia .fleet-edit:hover,body.cmd-gallia .fleet-edit[aria-expanded="true"]{border-color:#8fdcff;color:#fff}
+.fleet-voice-row{display:flex;align-items:center;gap:6px;margin:2px 0 2px;font-size:10px;letter-spacing:.2em;text-transform:uppercase}
+.fleet-voice-row select{flex:1;min-width:0;padding:3px 4px;border:1px solid #2a6a43;border-radius:2px;background:#03140b;color:#9dffbf;font:11px Consolas,monospace;letter-spacing:0;text-transform:none}
+body.cmd-gallia .fleet-row{border-color:rgba(92,200,255,.3);background:rgba(10,40,70,.35);font-family:Consolas,'Lucida Console',monospace}
+body.cmd-gallia .fleet-row:hover{border-color:#5cc8ff}body.cmd-gallia .fleet-row.sel{border-color:#8fdcff;background:rgba(31,127,207,.3);box-shadow:inset 3px 0 0 #5cc8ff}
+body.cmd-gallia .fleet-row-name{color:#e6f5ff}body.cmd-gallia .fleet-voice-row select{border-color:#2f6a95;background:#04111d;color:#bfe6ff}
+.dock-panel .btn:disabled{opacity:.4;cursor:default}
+body.cmd-gallia .fleet-pips{color:#8fdcff}body.cmd-gallia .fleet-admin{border-top-color:rgba(92,200,255,.2)}body.cmd-gallia .fleet-admin>span{color:#5cc8ff}
 #dock-chat:not([hidden]){display:flex;flex-direction:column}
 .chat-log{flex:1 1 auto;min-height:40px;overflow:auto}
 [data-dock="chat"].unread .mech-label::after{content:"";display:inline-block;width:7px;height:7px;margin-left:6px;border-radius:50%;background:#46ff86;box-shadow:0 0 6px #46ff86;vertical-align:middle}
@@ -393,11 +437,11 @@ body.mode-nebula #map{cursor:crosshair}
 <button class="btn" type="button" id="admin-toggle">Admin login</button>
 </div>
 </header>
-<div class="cmd-rail" id="cmd-rail" role="group" aria-label="Command panels"><button class="btn mech-btn" type="button" data-dock="comms" aria-pressed="false" aria-controls="dock-comms"><span class="mech-lever" aria-hidden="true"></span><span class="mech-label">Comms</span></button><button class="btn mech-btn" type="button" data-dock="orders" aria-pressed="false" aria-controls="dock-orders"><span class="mech-lever" aria-hidden="true"></span><span class="mech-label">Orders</span></button><button class="btn mech-btn" type="button" data-dock="chat" aria-pressed="false" aria-controls="dock-chat"><span class="mech-lever" aria-hidden="true"></span><span class="mech-label">Chat</span></button></div>
-<div class="cmd-dock" id="cmd-dock"><section class="dock-panel" id="dock-comms" aria-label="Communications" hidden><div class="dock-head"><div><div class="eyebrow" id="comms-net">Command net</div><h2>Communications</h2></div><span class="dock-led" aria-hidden="true"></span></div><div class="dock-sec">Priority messages</div><ul class="dock-log" id="comms-priority"><li class="dim">&gt; No priority messages</li></ul><div class="dock-sec">Gate traffic intercepts</div><ul class="dock-log" id="comms-intercepts" aria-live="polite"><li class="dim">&gt; Switch Radio on to monitor gate traffic</li></ul></section><section class="dock-panel" id="dock-orders" aria-label="Orders" hidden><div class="dock-head"><div><div class="eyebrow">Fleet command</div><h2>Orders</h2></div><span class="dock-led amber" aria-hidden="true"></span></div><div class="dock-sec">Standing orders</div><ul class="dock-log"><li class="dim">&gt; No standing orders</li></ul><div class="dock-sec">Order queue</div><ul class="dock-log"><li class="dim">&gt; Queue empty</li></ul><p class="dock-note">Fleet command comes online in a later update.</p></section><section class="dock-panel" id="dock-chat" aria-label="Command chat" hidden><div class="dock-head"><div><div class="eyebrow">Open channel</div><h2>Chat</h2></div><span class="dock-led" aria-hidden="true"></span></div><div class="chat-wrap"><ul class="dock-log chat-log" id="chat-log" aria-live="polite" tabindex="0" aria-label="Chat messages (scroll with the mouse wheel, arrow keys or the arrow buttons)"></ul><div class="chat-scroll"><button class="btn chat-step" type="button" id="chat-up" aria-label="Scroll chat up" title="Scroll up">▲</button><button class="btn chat-step" type="button" id="chat-down" aria-label="Scroll chat down" title="Scroll down">▼</button></div><button class="btn chat-latest" type="button" id="chat-latest" hidden>▼ Latest</button></div><p class="chat-ro">Read only. Sign in as administrator to post.</p><form id="chat-form" class="chat-form" autocomplete="off"><label class="screen-reader" for="chat-input">Message</label><input id="chat-input" maxlength="300" placeholder="Type a message…" required><button class="btn primary" type="submit">Send</button></form><div class="chat-foot"><p class="dock-note" id="chat-note">Local channel: messages stay in this browser and its open tabs until shared storage is set up.</p><button class="btn danger" type="button" id="chat-clear">Clear</button></div></section></div>
+<div class="cmd-rail" id="cmd-rail" role="group" aria-label="Command panels"><button class="btn mech-btn" type="button" data-dock="comms" aria-pressed="false" aria-controls="dock-comms"><span class="mech-lever" aria-hidden="true"></span><span class="mech-label">Comms</span></button><button class="btn mech-btn" type="button" data-dock="orders" aria-pressed="false" aria-controls="dock-orders"><span class="mech-lever" aria-hidden="true"></span><span class="mech-label">Orders</span></button><button class="btn mech-btn" type="button" data-dock="fleet" aria-pressed="false" aria-controls="dock-fleet"><span class="mech-lever" aria-hidden="true"></span><span class="mech-label">Fleet</span></button><button class="btn mech-btn" type="button" data-dock="chat" aria-pressed="false" aria-controls="dock-chat"><span class="mech-lever" aria-hidden="true"></span><span class="mech-label">Chat</span></button></div>
+<div class="cmd-dock" id="cmd-dock"><section class="dock-panel" id="dock-comms" aria-label="Communications" hidden><div class="dock-head"><div><div class="eyebrow" id="comms-net">Command net</div><h2>Communications</h2></div><span class="dock-led" aria-hidden="true"></span></div><div class="dock-sec">Priority messages</div><ul class="dock-log" id="comms-priority"><li class="dim">&gt; No priority messages</li></ul><div class="dock-sec">Gate traffic intercepts</div><ul class="dock-log" id="comms-intercepts" aria-live="polite"><li class="dim">&gt; Switch Radio on to monitor gate traffic</li></ul></section><section class="dock-panel" id="dock-orders" aria-label="Orders" hidden><div class="dock-head"><div><div class="eyebrow">Fleet command</div><h2>Orders</h2></div><span class="dock-led amber" aria-hidden="true"></span></div><div class="dock-sec">Standing orders</div><ul class="dock-log"><li class="dim">&gt; No standing orders</li></ul><div class="dock-sec">Order queue</div><ul class="dock-log"><li class="dim">&gt; Queue empty</li></ul><p class="dock-note">Fleet movement is in the Fleet panel. Standing orders come in a later update.</p></section><section class="dock-panel" id="dock-fleet" aria-label="Fleet" hidden><div class="dock-head"><div><div class="eyebrow">Fleet command</div><h2>Fleet</h2></div><span class="dock-led" aria-hidden="true"></span></div><div id="fleet-body"></div></section><section class="dock-panel" id="dock-chat" aria-label="Command chat" hidden><div class="dock-head"><div><div class="eyebrow">Open channel</div><h2>Chat</h2></div><span class="dock-led" aria-hidden="true"></span></div><div class="chat-wrap"><ul class="dock-log chat-log" id="chat-log" aria-live="polite" tabindex="0" aria-label="Chat messages (scroll with the mouse wheel, arrow keys or the arrow buttons)"></ul><div class="chat-scroll"><button class="btn chat-step" type="button" id="chat-up" aria-label="Scroll chat up" title="Scroll up">▲</button><button class="btn chat-step" type="button" id="chat-down" aria-label="Scroll chat down" title="Scroll down">▼</button></div><button class="btn chat-latest" type="button" id="chat-latest" hidden>▼ Latest</button></div><p class="chat-ro">Read only. Sign in as administrator to post.</p><form id="chat-form" class="chat-form" autocomplete="off"><label class="screen-reader" for="chat-input">Message</label><input id="chat-input" maxlength="300" placeholder="Type a message…" required><button class="btn primary" type="submit">Send</button></form><div class="chat-foot"><p class="dock-note" id="chat-note">Local channel: messages stay in this browser and its open tabs until shared storage is set up.</p><button class="btn danger" type="button" id="chat-clear">Clear</button></div></section></div>
 <canvas id="map" tabindex="0" role="img" aria-label="Starmap. Use W, A, S and D to move, Q and E or the mouse wheel to zoom. The Details panel lists every star system."></canvas>
 <aside class="panel" id="panel" aria-live="polite"></aside>
-<div class="hud" id="hud"><span id="hud-pos"></span><span class="keys"> &nbsp;·&nbsp; <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move &nbsp;<kbd>Shift</kbd> faster &nbsp;<kbd>Q</kbd><kbd>E</kbd>/wheel zoom &nbsp;drag to pan</span><span id="mode-hint"></span></div>
+<div class="hud" id="hud"><span id="hud-pos"></span><span class="keys"> &nbsp;·&nbsp; <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move &nbsp;<kbd>Shift</kbd> faster &nbsp;<kbd>Q</kbd><kbd>E</kbd>/wheel zoom &nbsp;drag to pan</span><span id="mode-hint"></span><span id="fleet-hint"></span></div>
 <div class="zoom"><button class="btn" type="button" id="zoom-in" aria-label="Zoom in">+</button><button class="btn" type="button" id="zoom-out" aria-label="Zoom out">−</button><button class="btn" type="button" id="zoom-reset" aria-label="Reset view">⌂</button></div>
 <div class="toast" id="toast" role="status" hidden></div>
 <dialog id="command-dialog" aria-labelledby="command-dialog-title"><div id="command-dialog-body"></div></dialog>
@@ -822,6 +866,7 @@ function draw(){
  drawTraffic(performance.now());
  if(mode==='lane'&&laneStart&&mouse&&sys(laneStart)){const s=sys(laneStart),[ax,ay]=toScreen(s.x,s.y);ctx.save();ctx.setLineDash([6,6]);ctx.strokeStyle='rgba(255,210,122,.8)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(mouse[0],mouse[1]);ctx.stroke();ctx.restore();}
  data.systems.forEach(drawSystem);
+ if(FLEET_ON)drawFleets();
  $('hud-pos').innerHTML=`<strong>X ${Math.round(cam.x)} · Y ${Math.round(cam.y)}</strong> · Zoom ${cam.zoom.toFixed(2)}× · ${data.systems.length} system${data.systems.length===1?'':'s'} · ${data.lanes.length} gate lane${data.lanes.length===1?'':'s'}${data.nebulae.length?` · ${data.nebulae.length} nebula${data.nebulae.length===1?'':'e'}`:''}`;
 }
 
@@ -944,7 +989,7 @@ canvas.addEventListener('pointermove',e=>{
   const dx=e.offsetX-down.lx,dy=e.offsetY-down.ly;down.lx=e.offsetX;down.ly=e.offsetY;
   if(!down.moved&&Math.hypot(e.offsetX-down.x,e.offsetY-down.y)>3){down.moved=true;if(!down.drag&&!down.dragNeb)canvas.classList.add('dragging');}
   if(down.moved){if(down.drag){const s=sys(down.drag);s.x+=dx/cam.zoom;s.y+=dy/cam.zoom;}else if(down.dragNeb){const n=neb(down.dragNeb);n.x+=dx/cam.zoom;n.y+=dy/cam.zoom;}else{cam.x-=dx/cam.zoom;cam.y-=dy/cam.zoom;}dirty=true;}
- }else{let h=hit(e.offsetX,e.offsetY);if(h?.type==='nebula'&&!isAdmin())h=null;if(JSON.stringify(h)!==JSON.stringify(hover)){hover=h;canvas.classList.toggle('over-item',!!h&&(h.type!=='nebula'||isSel('nebula',h.id)));dirty=true;}else if(mode==='lane'&&laneStart)dirty=true;}
+ }else{let h=hit(e.offsetX,e.offsetY);if(h?.type==='nebula'&&!isAdmin())h=null;if(JSON.stringify(h)!==JSON.stringify(hover)){hover=h;canvas.classList.toggle('over-item',!!h&&(h.type!=='nebula'||isSel('nebula',h.id)));dirty=true;}else if(mode==='lane'&&laneStart)dirty=true;if(FLEET_ON)canvas.classList.toggle('over-fleet',!!fleetHitAt(e.offsetX,e.offsetY));}
 });
 canvas.addEventListener('pointerleave',()=>{if(hover){hover=null;dirty=true;}mouse=null;});
 canvas.addEventListener('pointerup',e=>{
@@ -955,6 +1000,7 @@ canvas.addEventListener('pointerup',e=>{
 canvas.addEventListener('pointercancel',()=>{down=null;canvas.classList.remove('dragging');});
 canvas.addEventListener('contextmenu',e=>{if(mode==='lane'&&laneStart){e.preventDefault();laneStart=null;updateHint();dirty=true;}});
 function click(t,sx,sy){
+ if(FLEET_ON&&fleetClick(t,sx,sy))return;
  if(canEdit('nebulae')&&mode==='nebula'){const s=t?.type==='system'?sys(t.id):null,[wx,wy]=s?[s.x,s.y]:toWorld(sx,sy),n=addNebula(wx,wy);setMode('select');selected={type:'nebula',id:n.id};renderPanel();dirty=true;toast('Nebula placed. Adjust it in the panel.');return;}
  if(canEdit('systems')&&mode==='system'&&(!t||t.type==='nebula')){const [wx,wy]=toWorld(sx,sy);openSystemDialog(wx,wy);return;}
  if(canEdit('lanes')&&mode==='lane'){
@@ -973,6 +1019,9 @@ addEventListener('keydown',e=>{
  if(typing(e)||e.ctrlKey||e.metaKey||e.altKey)return;
  const k=e.key.toLowerCase();
  if(MOVE_KEYS.includes(k)){keys.add(k);if(k.startsWith('arrow'))e.preventDefault();return;}
+ if(k==='m'&&FLEET_ON){armFleetMove();return;}
+ if(FLEET_ON&&/^[1-9]$/.test(k)&&selectFleetByNumber(+k))return; // 1, 2, 3: select your fleets
+ if(k==='escape'&&FLEET_ON&&fleetCancel())return;
  if(k==='escape'){if(laneStart)laneStart=null;else if(mode!=='select')setMode('select');else{selected=null;renderPanel();}updateHint();dirty=true;}
  if((k==='delete'||k==='backspace')&&isAdmin()&&selected){e.preventDefault();deleteSelected();}
 });
@@ -990,6 +1039,7 @@ function frame(t){
   if(keys.has('q')||keys.has('-'))zoomAt(Math.exp(-1.6*dt));
  }
  if(!reducedMotion.matches&&!trafficOff()&&data.lanes.some(l=>effectiveTraffic(l)>0))dirty=true; // keep ship traffic moving
+ if(FLEET_ON&&fleetsAnimating())dirty=true; // fleets crossing lanes, gate flashes and the selection ring
  if(dirty){dirty=false;draw();}
  requestAnimationFrame(frame);
 }
@@ -1415,6 +1465,7 @@ function applyCommander(){
  const c=commander();document.body.classList.remove('is-commander',...Object.keys(CMD_FACTIONS).map(k=>'cmd-'+k));
  Cloud.syncPresence?.(); // update the shared online status after a login or logout
  if(c){document.body.classList.add('is-commander','cmd-'+c);$('cmd-badge').textContent=`${CMD_FACTIONS[c].name} Command`;updateTreasury();$('comms-net').textContent=`${CMD_FACTIONS[c].name} command net`;}
+ window.fleetHook?.();
  if(!$('dock-chat').hidden)renderChat(); // recolour and keep the log in place after a command change
  if(audio.ready&&audio.musicOn&&!document.hidden&&soundtrack()!==audio.track)startMusic(); // switch soundtrack when the command changes
  dirty=true;
@@ -1449,7 +1500,7 @@ if(Cloud.trackPresence)Cloud.trackPresence(commander); // show this command as o
 function setDockOpen(k,open){
  const p=$('dock-'+k),b=document.querySelector(`[data-dock="${k}"]`),fx=!reducedMotion.matches;
  b.setAttribute('aria-pressed',String(open));p.classList.remove('flip-open','flip-close');clearTimeout(p._flipT);
- if(open){p.hidden=false;if(fx){p.style.setProperty('--scan-h',p.offsetHeight+'px');void p.offsetWidth;p.classList.add('flip-open');p._flipT=setTimeout(()=>p.classList.remove('flip-open'),1000);}if(k==='chat'){b.classList.remove('unread');renderChat(true);}}
+ if(open){p.hidden=false;if(fx){p.style.setProperty('--scan-h',p.offsetHeight+'px');void p.offsetWidth;p.classList.add('flip-open');p._flipT=setTimeout(()=>p.classList.remove('flip-open'),1000);}if(k==='chat'){b.classList.remove('unread');renderChat(true);}if(k==='fleet')renderFleetPanel(true);}
  else if(fx&&!p.hidden){p.classList.add('flip-close');p._flipT=setTimeout(()=>{p.hidden=true;p.classList.remove('flip-close');},330);}
  else p.hidden=true;
 }
@@ -1491,6 +1542,340 @@ $('chat-clear').onclick=()=>{
  if(Cloud.enabled){if(isAdmin()&&confirm('Clear all chat messages for everyone?'))Cloud.clearChat().catch(x=>toast('Chat not cleared: '+x.message));return;}
  if(!isAdmin()||!confirm('Clear all chat messages in this browser?'))return;try{localStorage.removeItem(CHAT_KEY);}catch(x){}renderChat();};
 addEventListener('storage',e=>{if(e.key===CHAT_KEY){if(!$('dock-chat').hidden)renderChat();else markUnread();}});
+
+// ---- Fleets (Command Module RTS, basic) ---------------------------------------------------------
+// Each command has three fleets (1st, 2nd and 3rd), each starting with 5 ships (admin can set 3 to 10). A commander
+// selects a fleet (in the Fleet panel, with keys 1-3, or by clicking it on the map while it moves), places it on a
+// star system, presses M (or Move) and clicks any star system. The fleet plots the
+// shortest course through open gate lanes, prepares for FLEET_PREP_MS, then crosses each lane in FLEET_HOP_MS, its
+// ships entering each gate one after another. Positions are worked out from shared timestamps, so every browser sees
+// the same movement. Commanders control and see only their own command's fleet; the administrator (when not logged
+// into a command) sees every fleet and can add or remove ships.
+var FLEET_ON=false;
+const FLEET_MIN=3,FLEET_MAX=10,FLEET_START=5,FLEET_KEY='reliquary-fleets-v1',FLEET_COMMS_KEY='reliquary-fleet-comms';
+const FLEET_HOP_MS=120000;  // travel time per gate lane (2 minutes)
+const FLEET_PREP_MS=10000;  // wait between the order and the first ship entering the gate (the fleet replies then)
+const FLEET_REPORT_MS=10000; // wait after the last gate before the fleet reports its arrival
+// Look of each command's ships: Eisdon heavier amber craft with short, thick exhaust in a tighter group; Gallia smaller,
+// crisp blue craft with long fine trails in a wider group. gap = seconds between ships entering a gate.
+const FLEET_STYLE={
+ eisdon:{col:'255,170,70',core:'255,236,200',size:1.25,trail:6,trailW:1.6,spread:7,gap:1.4},
+ gallia:{col:'90,180,255',core:'225,245,255',size:1,trail:10,trailW:.9,spread:10,gap:1.1}};
+// Fleets per command (ids like 'gallia-2'). Each fleet's formation differs, worked out from its id.
+const FLEET_COUNT=3,FLEET_ORD=[['1st','First'],['2nd','Second'],['3rd','Third'],['4th','Fourth'],['5th','Fifth']];
+const FLEET_INFO={};
+for(const c of Object.keys(FLEET_STYLE))for(let n=1;n<=FLEET_COUNT;n++)FLEET_INFO[`${c}-${n}`]={...FLEET_STYLE[c],cmd:c,num:n,name:`${FLEET_ORD[n-1][0]} Fleet`,callsign:`${CMD_FACTIONS[c].name} ${FLEET_ORD[n-1][1]} Fleet`};
+const fleetKeys=Object.keys(FLEET_INFO);
+const fleetCmd=k=>FLEET_INFO[k]?.cmd||k;
+function fleetName(k){return `${CMD_FACTIONS[fleetCmd(k)].name} ${FLEET_INFO[k].name}`;}
+function cleanFleet(v){
+ const d={ships:FLEET_START,at:'',to:'',depart:0,arrive:0,route:[]};if(!v||typeof v!=='object')return d;const n=Math.round(+v.ships);
+ return {ships:Number.isFinite(n)?clamp(n,FLEET_MIN,FLEET_MAX):FLEET_START,at:typeof v.at==='string'?v.at.slice(0,40):'',to:typeof v.to==='string'?v.to.slice(0,40):'',depart:+v.depart||0,arrive:+v.arrive||0,
+  route:Array.isArray(v.route)?v.route.filter(x=>typeof x==='string').slice(0,40):[]};
+}
+const FLEET_WAVE='0,9.18 1,10.90 2,11.58 3,11.40 4,10.82 5,10.33 6,10.07 7,9.83 8,9.18 9,7.84 10,5.93 11,4.01 12,2.82 13,2.94 14,4.42 15,6.77 16,9.18 17,10.90 18,11.58 19,11.40 20,10.82 21,10.33 22,10.07 23,9.83 24,9.18 25,7.84 26,5.93 27,4.01 28,2.82 29,2.94 30,4.42 31,6.77 32,9.18 33,10.90 34,11.58 35,11.40 36,10.82 37,10.33 38,10.07 39,9.83 40,9.18 41,7.84 42,5.93 43,4.01 44,2.82 45,2.94 46,4.42 47,6.77 48,9.18 49,10.90 50,11.58 51,11.40 52,10.82 53,10.33 54,10.07 55,9.83 56,9.18 57,7.84 58,5.93 59,4.01 60,2.82 61,2.94 62,4.42 63,6.77 64,9.18 65,10.90 66,11.58 67,11.40 68,10.82 69,10.33 70,10.07 71,9.83 72,9.18 73,7.84 74,5.93 75,4.01 76,2.82 77,2.94 78,4.42 79,6.77 80,9.18 81,10.90 82,11.58 83,11.40 84,10.82 85,10.33 86,10.07 87,9.83 88,9.18 89,7.84 90,5.93 91,4.01 92,2.82 93,2.94 94,4.42 95,6.77 96,9.18'; // comms oscilloscope wave: 6 periods, scrolled by 3 so the loop is seamless
+let fleetVoiceEdit=null,fleets={},fleetSel=null,fleetArm=null,fleetLog=[],fleetSig='',fleetSpoken=new Set(),fleetComms=true;
+try{fleetComms=localStorage.getItem(FLEET_COMMS_KEY)!=='off';}catch(e){}
+function setFleets(o){fleets={};for(const k of fleetKeys)fleets[k]=cleanFleet(o&&(o[k]||(FLEET_INFO[k].num===1?o[fleetCmd(k)]:null)));} // older single-fleet saves become the 1st Fleet
+function loadLocalFleets(){let v={};try{v=JSON.parse(localStorage.getItem(FLEET_KEY)||'{}')||{};}catch(e){}setFleets(v);}
+if(Cloud.enabled)setFleets({});else loadLocalFleets();
+function fleetsVisible(){return !!commander()||isAdmin();}
+function visibleFleetKeys(){const c=commander();return c?fleetKeys.filter(k=>fleetCmd(k)===c):isAdmin()?fleetKeys:[];} // a commander sees only their own command's fleets
+function canCommandFleet(k){return !!fleets[k]&&commander()===fleetCmd(k);} // commanders control only their own command's fleets
+function fleetRoute(f){return f.route.length>=2?f.route:f.at&&f.to&&f.at!==f.to?[f.at,f.to]:null;}
+// Where a fleet is: 'preparing' (order received, about to enter the gate), 'transit' (crossing a lane),
+// 'docked' (at a star system) or 'none' (not placed yet).
+function fleetState(k,now=Date.now()){
+ const f=fleets[k];if(!f)return {kind:'none'};const r=fleetRoute(f);
+ if(r&&now<f.arrive){const ss=r.map(sys);if(ss.every(Boolean)){
+  const hops=ss.length-1,hop=(f.arrive-f.depart)/hops,base={route:ss,hops,hopMs:hop,dest:ss[hops],eta:Math.max(1,Math.ceil((f.arrive-now)/1000))};
+  if(now<f.depart)return {...base,kind:'preparing',s:ss[0],wait:Math.max(1,Math.ceil((f.depart-now)/1000))};
+  const j=Math.min(hops-1,Math.floor((now-f.depart)/hop));return {...base,kind:'transit',hop:j,a:ss[j],b:ss[j+1],p:clamp((now-f.depart-j*hop)/hop,0,1)};
+ }}
+ const s=sys(f.to||f.at);return s?{kind:'docked',s}:{kind:'none'};
+}
+function laneBetween(a,b){return data.lanes.find(l=>(l.a===a&&l.b===b)||(l.a===b&&l.b===a));}
+// Shortest course (fewest gates) between two systems; closed lanes are avoided unless includeClosed.
+function plotRoute(from,to,includeClosed){
+ const adj={};for(const l of data.lanes){if((!includeClosed&&l.condition==='closed')||!sys(l.a)||!sys(l.b))continue;(adj[l.a]=adj[l.a]||[]).push(l.b);(adj[l.b]=adj[l.b]||[]).push(l.a);}
+ const prev={[from]:null},q=[from];while(q.length){const x=q.shift();if(x===to)break;for(const y of adj[x]||[])if(!(y in prev)){prev[y]=x;q.push(y);}}
+ if(!(to in prev))return null;const r=[];for(let x=to;x!==null;x=prev[x])r.unshift(x);return r;
+}
+const fmtMin=ms=>{const m=Math.max(1,Math.round(ms/60000));return `${m} minute${m===1?'':'s'}`;};
+const fmtClock=s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+// Ships look like the gate traffic (a glowing point with an engine trail) in the command's colours and fly in a
+// staggered, uneven group that keeps its shape and moves as one. Each ship keeps its own clock, a moment behind the ship ahead, so the fleet
+// strings out through every gate and gathers again beyond it. A fleet at a star system is hidden on the map.
+function shipTraits(k,i){const r=rng(strHash(k+'#'+i));return {lon:(r()-.5)*2,lat:(r()-.5)*2,lag:i===0?0:(i+(r()-.5)*.8)*FLEET_INFO[k].gap*1000,w1:.6+r()*.9,w2:.5+r()*.8,ph1:r()*6.28,ph2:r()*6.28,size:.85+r()*.45};}
+// Steady cruise along the lane, with a short speed-up out of each gate and slow-down into the next.
+function gateEase(p,a=.06){return p<a?p*p/(2*a*(1-a)):p>1-a?1-(1-p)*(1-p)/(2*a*(1-a)):(p-a/2)/(1-a);}
+function fleetTail(k){let m=0;for(let i=0;i<fleets[k].ships;i++)m=Math.max(m,shipTraits(k,i).lag);return m;} // last ship's delay behind the leader
+function fleetShips(k,now=Date.now()){
+ const f=fleets[k],r=fleetRoute(f);if(!r||!f.arrive||now<f.depart)return [];const ss=r.map(sys);if(!ss.every(Boolean))return [];
+ const info=FLEET_INFO[k],hops=ss.length-1,hop=(f.arrive-f.depart)/hops,t=reducedMotion.matches?0:now/1000,zs=clamp(Math.sqrt(cam.zoom),.7,1.4),spread=info.spread*zs,out=[];
+ for(let i=0;i<f.ships;i++){
+  const tr=shipTraits(k,i),el=now-f.depart-tr.lag;if(el<=0||el>=hops*hop)continue; // waiting at the gate, or arrived
+  const j=Math.min(hops-1,Math.floor(el/hop)),p=(el-j*hop)/hop,e=gateEase(p),edge=clamp(Math.min(e,1-e)/.05,0,1);
+  const [ax,ay]=toScreen(ss[j].x,ss[j].y),[bx,by]=toScreen(ss[j+1].x,ss[j+1].y),sl=Math.hypot(bx-ax,by-ay)||1,ux=(bx-ax)/sl,uy=(by-ay)/sl;
+  const lon=tr.lon*spread*edge,lat=tr.lat*spread*.7*edge; // fixed place in the staggered group: the fleet moves as one
+  out.push({x:ax+(bx-ax)*e+ux*lon-uy*lat,y:ay+(by-ay)*e+uy*lon+ux*lat,ux,uy,ax,ay,bx,by,size:tr.size*info.size,fade:Math.min(1,edge*3+.25),gateIn:el-j*hop,last:j===hops-1,zs});
+ }
+ return out;
+}
+function fleetHitAt(sx,sy){
+ if(!FLEET_ON)return null;let best=null;const now=Date.now();
+ for(const k of visibleFleetKeys())for(const sh of fleetShips(k,now)){const d=Math.hypot(sh.x-sx,sh.y-sy);if(d<12&&(!best||d<best.d))best={k,d};}
+ return best;
+}
+function gateFlash(x,y,t,col,zs,big){if(t<0||t>1)return;ctx.strokeStyle=`rgba(${col},${(big?.9:.6)*(1-t)})`;ctx.lineWidth=big?1.6:1;ctx.beginPath();ctx.arc(x,y,((big?5:3)+(big?20:9)*t)*zs,0,6.283);ctx.stroke();}
+function routeLine(ids,col,alpha){if(!ids||ids.length<2)return;ctx.save();ctx.setLineDash([5,6]);ctx.lineWidth=1.5;ctx.strokeStyle=`rgba(${col},${alpha})`;ctx.beginPath();ids.forEach((id,i)=>{const s=sys(id),[x,y]=toScreen(s.x,s.y);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();ctx.restore();}
+function drawFleets(){
+ const ks=visibleFleetKeys();if(!ks.length)return;const now=Date.now();
+ ctx.save();
+ if(fleetArm==='move'&&fleetSel&&hover?.type==='system'){ // planned course while choosing a destination
+  const st=fleetState(fleetSel),to=sys(hover.id);
+  if(st.kind==='docked'&&to&&to.id!==st.s.id){const r=plotRoute(st.s.id,to.id);if(r)routeLine(r,FLEET_INFO[fleetSel].col,.9);else{const [ax,ay]=toScreen(st.s.x,st.s.y),[bx,by]=toScreen(to.x,to.y);ctx.setLineDash([5,5]);ctx.lineWidth=1.6;ctx.strokeStyle='rgba(255,96,80,.85)';ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();ctx.setLineDash([]);}}
+ }
+ for(const k of ks){
+  const f=fleets[k],info=FLEET_INFO[k],col=info.col,st=fleetState(k,now),on=fleetSel===k;
+  if(st.kind==='preparing'||st.kind==='transit')routeLine(st.route.slice(st.kind==='transit'?st.hop:0).map(s=>s.id),col,.55); // the course still to fly
+  if(st.kind==='docked'||st.kind==='preparing'){ // hidden at a system: a ring on its star while selected
+   const [x,y]=toScreen(st.s.x,st.s.y),r=sysRadius()*starScale(st.s)+14;
+   if(on){ctx.strokeStyle=fleetArm?'rgba(255,214,120,.95)':`rgba(${col},.8)`;ctx.lineWidth=1.3;ctx.setLineDash([3,5]);ctx.lineDashOffset=reducedMotion.matches?0:-now/120;ctx.beginPath();ctx.arc(x,y,r,0,6.283);ctx.stroke();ctx.setLineDash([]);}
+  }
+  const ships=fleetShips(k,now);if(!ships.length)continue;
+  ctx.globalCompositeOperation='lighter';
+  for(const sh of ships){ // drawn like the gate traffic: gate flash on entry and exit, trail, soft glow, bright core
+   const a=sh.fade,zs=sh.zs;
+   gateFlash(sh.ax,sh.ay,sh.gateIn/700,col,zs,false);
+   ctx.strokeStyle=`rgba(${col},${.45*a})`;ctx.lineWidth=info.trailW;ctx.beginPath();ctx.moveTo(sh.x,sh.y);ctx.lineTo(sh.x-sh.ux*info.trail*zs,sh.y-sh.uy*info.trail*zs);ctx.stroke();
+   ctx.fillStyle=`rgba(${col},${.28*a})`;ctx.beginPath();ctx.arc(sh.x,sh.y,3*sh.size*zs,0,6.283);ctx.fill();
+   ctx.fillStyle=`rgba(${info.core},${a})`;ctx.beginPath();ctx.arc(sh.x,sh.y,1*sh.size*zs,0,6.283);ctx.fill();
+  }
+  ctx.globalCompositeOperation='source-over';
+  if(cam.zoom>=.45||on){
+   let cx=0,cy=0,top=Infinity,right=-Infinity;for(const sh of ships){cx+=sh.x;cy+=sh.y;top=Math.min(top,sh.y);right=Math.max(right,sh.x);}cx/=ships.length;cy/=ships.length;const zs=ships[0].zs;
+   if(on){ctx.strokeStyle=`rgba(${col},.8)`;ctx.lineWidth=1.2;ctx.setLineDash([3,5]);ctx.lineDashOffset=reducedMotion.matches?0:-now/120;ctx.beginPath();ctx.arc(cx,cy,info.spread*zs+10,0,6.283);ctx.stroke();ctx.setLineDash([]);}
+   ctx.font='600 10px Segoe UI,Arial,sans-serif';ctx.textAlign='left';const t=`${info.name} · ${f.ships}`,lx=right+10,ly=cy+4;ctx.fillStyle='rgba(0,0,0,.65)';ctx.fillText(t,lx+1,ly+1);ctx.fillStyle=`rgba(${col},.95)`;ctx.fillText(t,lx,ly);
+  }
+ }
+ ctx.restore();
+}
+function fleetsAnimating(){const ks=visibleFleetKeys();if(!ks.length)return false;const now=Date.now();return !!fleetSel||ks.some(k=>fleets[k].arrive&&now<fleets[k].arrive+FLEET_MAX*2000);}
+// ---- Fleet comms: spoken radio replies (and their messages), switchable with the Comms switch in the Fleet panel.
+// A key-up chirp and a hiss of static play around the browser's voice, then a squelch tail. Every fleet has its own
+// voice (VOICE_CAST, first match wins, and fleets of one command avoid sharing a voice). Gallia's cast mixes subtle and
+// stronger French accents and Eisdon's subtle and stronger German accents, male and female: 'subtle' has a multilingual French or German voice read the line as English,
+// 'strong' has the voice read it with its own pronunciation. Microsoft Edge's online "Natural" voices sound the most real;
+// other browsers fall back to whatever French or English voices they have. Each fleet's voice can be changed in the
+// Fleet panel (remembered in this browser), with a Test button.
+const VOICE_CAST={
+ 'eisdon-1':[{re:/florian.*multilingual/i,accent:'subtle'},{re:/\b(conrad|killian|klaus|bernd|christoph|kasper|ralf|jonas|jan|stefan|markus|yannick)\b.*natural/i,lang:/^de/i,accent:'strong'},{re:/\b(conrad|killian|klaus|bernd|christoph|kasper|ralf|jonas|jan|stefan|markus|yannick)\b/i,lang:/^de/i,accent:'strong'},{lang:/^de/i,accent:'strong'},{lang:/^en/i}], // male, subtle German accent
+ 'eisdon-2':[{re:/\b(katja|amala|elke|gisela|klarissa|louisa|maja|tanja|ingrid|leni|hedda|anna|petra)\b.*natural/i,lang:/^de/i,accent:'strong'},{re:/seraphina.*multilingual/i,accent:'strong'},{re:/\b(katja|amala|elke|gisela|klarissa|louisa|maja|tanja|ingrid|leni|hedda|anna|petra)\b|google deutsch/i,lang:/^de/i,accent:'strong'},{lang:/^de/i,accent:'strong'},{lang:/^en/i}], // female, stronger
+ 'eisdon-3':[{re:/\b(conrad|killian|klaus|bernd|christoph|kasper|ralf|jonas|jan|stefan|markus|yannick)\b.*natural/i,lang:/^de/i,accent:'strong'},{re:/florian.*multilingual/i,accent:'strong'},{re:/\b(conrad|killian|klaus|bernd|christoph|kasper|ralf|jonas|jan|stefan|markus|yannick)\b/i,lang:/^de/i,accent:'strong'},{lang:/^de/i,accent:'strong'},{lang:/^en/i}], // male, stronger
+ 'gallia-1':[{re:/remy.*multilingual/i,accent:'subtle'},{re:/\b(henri|alain|claude|jerome|yves|maurice|gerard)\b.*natural/i,lang:/^fr/i,accent:'strong'},{re:/\bthomas\b/i,lang:/^fr/i,accent:'strong'},{lang:/^fr/i,accent:'strong'},{lang:/^en-gb/i}], // male, subtle
+ 'gallia-2':[{re:/\b(denise|eloise|celeste|coralie|jacqueline|josephine|yvette|brigitte)\b.*natural/i,lang:/^fr/i,accent:'strong'},{re:/vivienne.*multilingual/i,accent:'strong'},{re:/\b(audrey|amelie|aurelie|julie|hortense)\b|google fran/i,lang:/^fr/i,accent:'strong'},{lang:/^fr/i,accent:'strong'},{lang:/^en-gb/i}], // female, stronger
+ 'gallia-3':[{re:/vivienne.*multilingual/i,accent:'subtle'},{re:/\b(henri|alain|claude|jerome|yves|maurice|gerard)\b.*natural/i,lang:/^fr/i,accent:'strong'},{re:/remy.*multilingual/i,accent:'strong'},{lang:/^fr/i,accent:'strong'},{lang:/^en-gb/i}]}; // female subtle, else a stronger male
+const VOICE_TUNE={1:{rate:1.03,pitch:1},2:{rate:1,pitch:1.04},3:{rate:.97,pitch:.95}}; // small differences per fleet number
+let fleetVoices=[];
+function loadVoices(){try{fleetVoices=window.speechSynthesis?.getVoices()||[];}catch(e){}}
+loadVoices();try{window.speechSynthesis?.addEventListener('voiceschanged',loadVoices);}catch(e){}
+const FLEET_VOICE_KEY='reliquary-fleet-voice-';
+const shortVoice=n=>n.replace(/^Microsoft\s+/,'').replace(/\s*\(Natural\)/,'').replace(/\s+Online/,'').replace(/Multilingual/,' Multilingual').replace(/\s+/g,' ');
+const ACCENT_NAME={fr:'French',de:'German'},CMD_ACCENT={gallia:'fr',eisdon:'de'}; // each command's accent language
+function voicePlan(v,accent){if(!v)return {v:null,accent:'none'};const fr=!/^en/i.test(v.lang),acc=fr?(accent==='subtle'&&/multilingual/i.test(v.name)?'subtle':'strong'):'none';return {v,lang:acc==='subtle'?'en-GB':v.lang,accent:acc};}
+function hasVoiceOverride(k){try{return !!localStorage.getItem(FLEET_VOICE_KEY+k);}catch(e){return false;}}
+function voiceOverride(k){try{const raw=localStorage.getItem(FLEET_VOICE_KEY+k);if(!raw)return null;const i=raw.lastIndexOf('|'),name=i>0?raw.slice(0,i):raw,acc=i>0?raw.slice(i+1):'',v=fleetVoices.find(x=>x.name===name);return v?voicePlan(v,acc):null;}catch(e){return null;}}
+function castVoice(k,used){
+ const o=voiceOverride(k);if(o)return o;let fb=null;
+ for(const p of VOICE_CAST[k]||[]){if(!p.accent&&fb&&fb.accent!=='none')return fb; // keep a French accent (sharing a voice) rather than drop to English
+  const vs=fleetVoices.filter(v=>(!p.re||p.re.test(v.name))&&(!p.lang||p.lang.test(v.lang)));const v=vs.find(v=>!used.has(v.name));if(v)return voicePlan(v,p.accent);if(!fb&&vs[0])fb=voicePlan(vs[0],p.accent);}
+ if(fb)return fb;const en=fleetVoices.filter(v=>/^en/i.test(v.lang));return voicePlan(en.find(v=>!used.has(v.name))||en[0]||null);
+}
+function fleetVoice(k){ // the voice plan for fleet k, worked out with its command's other fleets so they sound different
+ if(!fleetVoices.length)loadVoices();const used=new Set(),mine=fleetKeys.filter(x=>fleetCmd(x)===fleetCmd(k));
+ for(const x of mine){const o=x!==k&&voiceOverride(x);if(o&&o.v)used.add(o.v.name);} // voices chosen by hand are kept for their fleets
+ for(const x of mine){const p=castVoice(x,used);if(x===k)return p;if(p.v)used.add(p.v.name);}
+ return {v:null,accent:'none'};
+}
+function voiceNote(k){if(!window.speechSynthesis)return 'Voice: not available in this browser';const p=fleetVoice(k);if(!p.v)return 'Voice: browser default';const an=ACCENT_NAME[p.v.lang.slice(0,2).toLowerCase()]||'';return `Voice: ${shortVoice(p.v.name)}`+(p.accent==='subtle'?` · subtle ${an} accent`:p.accent==='strong'?` · stronger ${an} accent`:'');}
+const fleetFx={noise:null,src:null,gain:null};
+function radioChirp(end){
+ const ctx=audio.ctx,now=ctx.currentTime,o=ctx.createOscillator(),g=ctx.createGain(),bp=ctx.createBiquadFilter();
+ o.type='square';o.frequency.setValueAtTime(end?1150:1500,now);if(end)o.frequency.setValueAtTime(850,now+.06);bp.type='bandpass';bp.frequency.value=1400;
+ g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(.025,now+.005);g.gain.setValueAtTime(.025,now+(end?.1:.06));g.gain.linearRampToValueAtTime(0,now+(end?.12:.075));
+ o.connect(bp);bp.connect(g);g.connect(audio.master);o.start(now);o.stop(now+.14);
+}
+function radioStatic(on){
+ const ctx=audio.ctx,now=ctx.currentTime;
+ if(on){
+  if(!fleetFx.noise){const b=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(Math.random()<.002?3:1);fleetFx.noise=b;}
+  if(fleetFx.src)return;const src=ctx.createBufferSource(),bp=ctx.createBiquadFilter(),g=ctx.createGain();src.buffer=fleetFx.noise;src.loop=true;bp.type='bandpass';bp.frequency.value=2200;bp.Q.value=.6;
+  g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(.018,now+.05);src.connect(bp);bp.connect(g);g.connect(audio.master);src.start();fleetFx.src=src;fleetFx.gain=g;
+ }else if(fleetFx.src){const {src,gain}=fleetFx;fleetFx.src=null;gain.gain.cancelScheduledValues(now);gain.gain.setValueAtTime(.05,now);gain.gain.linearRampToValueAtTime(0,now+.18);src.stop(now+.2);} // squelch tail
+}
+// ui: an answer to something you just did (shown as a plain message even with comms off, so you still get feedback).
+// Reports from several fleets queue up and play one after another.
+const sayQ=[];let saying=false;
+function fleetSay(k,text,ui){
+ fleetLog.push({at:new Date(),k,text});if(fleetLog.length>60)fleetLog.shift();renderFleetPanel(true);
+ if(!fleetComms){if(ui)toast(`${fleetName(k)}: ${text}`);return;}
+ toast(`${fleetName(k)}: ${text}`);
+ if(sayQ.length<4)sayQ.push({k,text:`${FLEET_INFO[k]?.callsign||CMD_FACTIONS[k]?.name+' Fleet'}. ${text}`});if(!saying)nextSay();
+}
+function nextSay(){
+ const item=sayQ.shift(),ss=window.speechSynthesis;if(!item||!ss||(!fleetComms&&!item.force)){saying=false;sayQ.length=0;return;}saying=true;
+ let fx=false;try{ensureAudio();fx=true;radioStatic(false);radioChirp(false);radioStatic(true);}catch(e){}
+ let fin=false;const done=()=>{if(fin)return;fin=true;if(fx){try{radioStatic(false);radioChirp(true);if(!sayQ.length)idleAudio();}catch(e){}}setTimeout(nextSay,fx?450:0);};
+ try{
+  const u=new SpeechSynthesisUtterance(item.text),fv=fleetVoice(item.k),tune=VOICE_TUNE[FLEET_INFO[item.k]?.num]||VOICE_TUNE[1];if(fv.v){u.voice=fv.v;u.lang=fv.lang;}
+  u.rate=tune.rate;u.pitch=tune.pitch;u.volume=1;u.onend=u.onerror=done;setTimeout(done,25000);
+  setTimeout(()=>ss.speak(u),fx?140:0); // speak just after the key-up chirp
+ }catch(e){done();}
+}
+function setFleetComms(on){
+ fleetComms=on;try{localStorage.setItem(FLEET_COMMS_KEY,on?'on':'off');}catch(e){}
+ if(!on){sayQ.length=0;try{window.speechSynthesis?.cancel();if(audio.ready){radioStatic(false);idleAudio();}}catch(e){}}
+ try{if(!saying){ensureAudio();if(on){radioChirp(false);radioStatic(true);setTimeout(()=>{radioStatic(false);idleAudio();},380);}else{radioStatic(true);radioStatic(false);setTimeout(()=>{radioChirp(true);idleAudio();},120);}}}catch(e){} // the switch keys the radio: chirp and a burst of static on, squelch off
+ renderFleetPanel(true);toast(on?'Fleet comms live.':'Fleet comms silent.');
+}
+// Reports during a voyage, worked out from the fleet's shared timestamps so everyone logged into the command hears
+// the same thing: the reply as the fleet enters the first gate, a report at each system it passes through, and the
+// arrival report FLEET_REPORT_MS after the last ship is through the final gate.
+function fleetEvents(k){
+ const f=fleets[k],r=fleetRoute(f);if(!r||!f.arrive)return [];const ss=r.map(sys);if(!ss.every(Boolean))return [];
+ const hops=ss.length-1,hop=(f.arrive-f.depart)/hops,D=ss[hops].name,ev=[];
+ ev.push({id:f.depart+':go',t:f.depart,text:hops===1?`Navigating to ${D} via the ${ss[0].name} to ${D} lane. Estimated arrival in ${fmtMin(f.arrive-f.depart)}.`
+  :`Course plotted to ${D}: ${hops} gates, via ${ss.slice(1,-1).map(s=>s.name).join(', ')}. Navigating via the ${ss[0].name} to ${ss[1].name} lane. Estimated arrival in ${fmtMin(f.arrive-f.depart)}.`});
+ for(let j=1;j<hops;j++)ev.push({id:f.depart+':'+j,t:f.depart+j*hop,text:`Passing ${ss[j].name}. Entering the ${ss[j].name} to ${ss[j+1].name} lane. Estimated arrival at ${D} in ${fmtMin(f.arrive-f.depart-j*hop)}.`});
+ ev.push({id:f.depart+':end',t:f.arrive+fleetTail(k)+FLEET_REPORT_MS,text:`Arrived at ${D}. Holding position.`});
+ return ev;
+}
+let fleetEvReady=false;
+function runFleetEvents(){
+ const c=commander(),now=Date.now();if(!c)return;
+ for(const k of fleetKeys){if(fleetCmd(k)!==c)continue;for(const e of fleetEvents(k)){const id=k+':'+e.id;if(fleetSpoken.has(id)||now<e.t)continue;fleetSpoken.add(id);if(fleetEvReady&&now-e.t<5000)fleetSay(k,e.text);}} // skip reports that are already old
+}
+function commitFleet(k){
+ if(Cloud.enabled&&Cloud.saveFleet)Cloud.saveFleet(k,fleets[k]).catch(e=>toast(e.message));
+ else try{localStorage.setItem(FLEET_KEY,JSON.stringify(fleets));}catch(e){toast('Could not save the fleet in this browser.');}
+ renderFleetPanel(true);setFleetHint();dirty=true;
+}
+function placeFleet(k,id){
+ const s=sys(id);if(!s||!canCommandFleet(k)||fleetState(k).kind!=='none')return;
+ Object.assign(fleets[k],{at:id,to:'',depart:0,arrive:0,route:[]});fleetArm=null;commitFleet(k);fleetSay(k,`Fleet deployed at ${s.name}. Awaiting orders.`,true);
+}
+function orderMove(k,id){
+ const st=fleetState(k),dest=sys(id),f=fleets[k];if(!dest||!canCommandFleet(k))return;
+ if(st.kind!=='docked'||Date.now()<f.arrive+fleetTail(k)){fleetArm=null;setFleetHint();return;}
+ const from=st.s;if(from.id===id)return;
+ const r=plotRoute(from.id,id);
+ if(!r){fleetSay(k,plotRoute(from.id,id,true)?`Unable to comply. Every gate route to ${dest.name} passes through a closed lane.`:`Unable to comply. There is no gate route from ${from.name} to ${dest.name}.`,true);return;}
+ const now=Date.now(),depart=now+FLEET_PREP_MS;
+ Object.assign(f,{at:from.id,to:id,route:r,depart,arrive:depart+(r.length-1)*FLEET_HOP_MS});fleetArm=null;commitFleet(k);
+ toast(`Orders sent to the ${FLEET_INFO[k].name}: ${dest.name}, ${r.length-1} gate${r.length===2?'':'s'}.`);
+}
+function armFleetMove(){
+ if(!FLEET_ON||!fleetsVisible())return;
+ const k=fleetSel;if(!k){if(commander()){openFleetPanel();toast('Select a fleet first: in the Fleet panel, or press 1, 2 or 3.');}return;}
+ if(!canCommandFleet(k)){toast('You can only command your own fleet.');return;}
+ fleetSel=k;const st=fleetState(k);
+ if(st.kind==='none'){fleetArm=null;toast('Place the fleet on a star system first (Fleet panel).');}
+ else if(st.kind!=='docked'){fleetArm=null;toast(`${fleetName(k)} is under way. Estimated arrival at ${st.dest.name} in ${fmtClock(st.eta)}.`);}
+ else if(Date.now()<fleets[k].arrive+fleetTail(k)){fleetArm=null;toast(`${fleetName(k)} is still coming through the gate. Stand by.`);}
+ else fleetArm='move';
+ setFleetHint();renderFleetPanel(true);dirty=true;
+}
+function openFleetPanel(){if($('dock-fleet').hidden)setDockOpen('fleet',true);}
+// Selecting a fleet (panel, number key or map click) brings up its comms in the Fleet panel.
+function selectFleet(k){if(!visibleFleetKeys().includes(k))return false;if(fleetSel!==k)fleetVoiceEdit=null;fleetSel=k;fleetArm=null;openFleetPanel();setFleetHint();renderFleetPanel(true);dirty=true;return true;}
+function selectFleetByNumber(n){const c=commander();if(!c)return false;const k=`${c}-${n}`;return FLEET_INFO[k]?selectFleet(k):false;}
+function fleetCancel(){if(fleetArm)fleetArm=null;else if(fleetSel)fleetSel=null;else return false;setFleetHint();renderFleetPanel(true);dirty=true;return true;}
+// Map clicks: an armed order takes the clicked system; otherwise clicking a moving fleet selects it.
+function fleetClick(t,sx,sy){
+ if(!FLEET_ON||!fleetsVisible())return false;
+ if(fleetArm&&fleetSel){
+  if(t?.type==='system'){if(fleetArm==='place')placeFleet(fleetSel,t.id);else orderMove(fleetSel,t.id);return true;}
+  if(fleetHitAt(sx,sy)?.k===fleetSel)return true;
+  fleetArm=null;setFleetHint();renderFleetPanel(true);dirty=true;return true; // clicking empty space cancels the order
+ }
+ if(mode!=='select')return false;
+ const h=fleetHitAt(sx,sy);let pick=h?.k||null;
+ if(pick&&t?.type==='system'){const s=sys(t.id),[x,y]=toScreen(s.x,s.y);if(Math.hypot(x-sx,y-sy)<h.d)pick=null;} // the star is closer
+ if(pick){selectFleet(pick);return true;}
+ if(fleetSel){fleetSel=null;setFleetHint();renderFleetPanel(true);dirty=true;}
+ return false;
+}
+function adjustShips(k,d){
+ if(!isAdmin()||!fleets[k])return;const n=clamp(fleets[k].ships+d,FLEET_MIN,FLEET_MAX);if(n===fleets[k].ships)return;
+ fleets[k].ships=n;commitFleet(k);toast(`${fleetName(k)}: ${n} ships.`);
+}
+function setFleetHint(){
+ const h=$('fleet-hint'),k=fleetSel;canvas.classList.toggle('fleet-armed',!!fleetArm);if(!h)return;
+ const st=k?fleetState(k):null;
+ h.textContent=!k||!fleetsVisible()?'':fleetArm==='place'?`${fleetName(k)}: click a star system to deploy the fleet. Esc to cancel.`:fleetArm==='move'?`${fleetName(k)}: click a destination star system. Esc to cancel.`:canCommandFleet(k)?(st.kind==='docked'?`${fleetName(k)} ready. Press M to move.`:`${fleetName(k)} under way.`):`${fleetName(k)} selected.`;
+}
+function fleetStatusText(k){
+ const st=fleetState(k);
+ if(st.kind==='preparing')return `Preparing to jump to ${st.dest.name} · ${st.hops} gate${st.hops===1?'':'s'} · first gate in ${st.wait} s`;
+ if(st.kind==='transit')return `En route to ${st.dest.name} · ${st.a.name} → ${st.b.name} (gate ${st.hop+1} of ${st.hops}) · ETA ${fmtClock(st.eta)}`;
+ return st.kind==='docked'?`Holding at ${st.s.name}`:'Not deployed';
+}
+function fleetShortStatus(k){const st=fleetState(k);return st.kind==='preparing'?`Preparing · ${st.dest.name}`:st.kind==='transit'?`En route · ${st.dest.name} · ${fmtClock(st.eta)}`:st.kind==='docked'?`Holding · ${st.s.name}`:'Not deployed';}
+function voiceOptions(k){
+ let cur='';try{cur=localStorage.getItem(FLEET_VOICE_KEY+k)||'';}catch(e){}
+ const opt=(val,label)=>`<option value="${esc(val)}"${val===cur?' selected':''}>${esc(label)}</option>`,by=re=>fleetVoices.filter(v=>re.test(v.lang)).sort((a,b)=>a.name.localeCompare(b.name));
+ const al=CMD_ACCENT[fleetCmd(k)]||'fr',fr=by(new RegExp('^'+al,'i')).map(v=>/multilingual/i.test(v.name)?opt(v.name+'|subtle',shortVoice(v.name)+' · subtle accent')+opt(v.name+'|strong',shortVoice(v.name)+' · stronger accent'):opt(v.name+'|strong',shortVoice(v.name)+' · strong accent')).join('');
+ const auto=(()=>{const p=fleetVoice(k);return p.v&&!cur?` (${shortVoice(p.v.name).split(' - ')[0]})`:'';})();
+ return opt('','Automatic'+auto)+`<optgroup label="${ACCENT_NAME[al]} voices">${fr}</optgroup><optgroup label="English voices (no accent)">${by(/^en/i).map(v=>opt(v.name,shortVoice(v.name))).join('')}</optgroup>`;
+}
+function renderFleetPanel(force){
+ const el=$('fleet-body');if(!el||$('dock-fleet').hidden)return;
+ const ks=visibleFleetKeys(),sig=ks.map(k=>{const s=fleetState(k);return s.kind+(s.hop||0)+fleets[k].ships;}).join()+fleetSel+fleetArm+isAdmin()+commander()+fleetComms+fleetLog.length+fleetVoices.length;
+ if(!force&&sig===fleetSig){for(const k of ks){const a=el.querySelector(`[data-fleet-short="${k}"]`);if(a)a.textContent=fleetShortStatus(k);const b=el.querySelector(`[data-fleet-status="${k}"]`);if(b)b.textContent=fleetStatusText(k);}return;}
+ fleetSig=sig;if(document.activeElement?.id==='fleet-voice'&&!force)return;
+ const c=commander(),k=ks.includes(fleetSel)?fleetSel:null;
+ let h=`<div class="fleet-comms"><button class="btn mech-btn fleet-comms-sw" type="button" data-fleet-comms aria-pressed="${fleetComms}" title="Turn the fleets' spoken reports and their messages on or off"><span class="mech-lever" aria-hidden="true"></span><span class="mech-label">${fleetComms?'Comms live':'Comms silent'}</span></button><span class="fleet-signal${fleetComms?' on':''}" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="fleet-scope${fleetComms?' on':''}" aria-hidden="true"><svg viewBox="0 0 96 16" preserveAspectRatio="none"><g class="fleet-scope-amp"><polyline class="fleet-scope-wave" points="${FLEET_WAVE}"/></g><line class="fleet-scope-flat" x1="0" y1="8" x2="96" y2="8"/></svg></span><span class="fleet-band">${fleetComms?'Net open':'Net muted'}</span></div>`;
+ h+=`<div class="dock-sec">Fleets</div>`+(ks.length?`<div class="fleet-list" role="listbox" aria-label="Fleets">${ks.map(x=>`<button type="button" class="fleet-row${x===k?' sel':''}" role="option" aria-selected="${x===k}" data-fleet-pick="${x}"><span class="fleet-row-name">${!c?esc(CMD_FACTIONS[fleetCmd(x)].name)+' ':''}${esc(FLEET_INFO[x].name)}${c?` <kbd>${FLEET_INFO[x].num}</kbd>`:''}</span><span class="fleet-row-ships">${fleets[x].ships} ships</span><span class="fleet-row-st" data-fleet-short="${x}">${esc(fleetShortStatus(x))}</span></button>`).join('')}</div>`:'<p class="dock-note">No fleets are assigned to this command yet.</p>');
+ if(k){
+  const f=fleets[k],st=fleetState(k),ctl=canCommandFleet(k),log=fleetLog.filter(m=>m.k===k);
+  h+=`<div class="fleet-card sel"><div class="dock-sec">${esc(fleetName(k))}</div><ul class="dock-log"><li>Ships <b>${f.ships}</b><span class="fleet-pips" aria-hidden="true">${'▮'.repeat(f.ships)}<span>${'▯'.repeat(FLEET_MAX-f.ships)}</span></span></li><li>Status <b data-fleet-status="${k}">${esc(fleetStatusText(k))}</b></li></ul>`+
+   `<div class="fleet-actions">${ctl&&st.kind==='none'?`<button class="btn primary" type="button" data-fleet-place="${k}">Place fleet</button>`:''}${st.kind!=='none'?`<button class="btn" type="button" data-fleet-locate="${k}">Locate</button>`:''}${ctl&&st.kind==='docked'?`<button class="btn${fleetArm==='move'?' primary':''}" type="button" data-fleet-move="${k}">Move (M)</button>`:''}</div>`+
+   (isAdmin()?`<div class="fleet-admin"><span>Admin</span><button class="btn" type="button" data-fleet-ships="${k}" data-d="-1"${f.ships<=FLEET_MIN?' disabled':''}>− Remove ship</button><button class="btn" type="button" data-fleet-ships="${k}" data-d="1"${f.ships>=FLEET_MAX?' disabled':''}>+ Add ship</button></div>`:'')+
+   (ctl&&window.speechSynthesis?`<div class="fleet-voice-line"><p class="dock-note fleet-voice">${esc(voiceNote(k))}${hasVoiceOverride(k)?' · chosen by you':''}</p><button class="fleet-edit" type="button" data-fleet-voice-edit="${k}" aria-expanded="${fleetVoiceEdit===k}" title="Change this fleet's voice" aria-label="Change ${esc(FLEET_INFO[k].name)} voice"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></button></div>`+
+    (fleetVoiceEdit===k?`<div class="fleet-voice-row"><label class="screen-reader" for="fleet-voice">Voice</label><select id="fleet-voice" data-fleet-voice="${k}">${voiceOptions(k)}</select><button class="btn" type="button" data-fleet-test="${k}">Test</button><button class="btn" type="button" data-fleet-voice-done>Done</button></div>`:''):'')+
+   `<div class="dock-sec">${esc(FLEET_INFO[k].name)} comms</div><ul class="dock-log" aria-live="polite">${log.length?log.slice().reverse().map(m=>`<li><time>${hhmmss(m.at)}</time>${esc(m.text)}</li>`).join(''):'<li class="dim">&gt; No transmissions</li>'}</ul></div>`;
+ }else if(ks.length)h+=`<p class="dock-note">Select a fleet to see its status and comms${c?' (or press 1, 2 or 3)':''}.</p>`;
+ h+=`<p class="dock-note">Select a fleet, press M (or Move), then click any star system: the fleet plots a course through open gate lanes. It answers and enters the first gate ${FLEET_PREP_MS/1000} seconds after the order, and each gate lane takes ${FLEET_HOP_MS/60000} minutes. Fleets are hidden while at a system and show on the map only while they cross a lane; click a moving fleet to select it.</p>`;
+ el.innerHTML=h;
+}
+const el$=k=>k?document.querySelector(`[data-fleet-voice-edit="${k}"]`):null; // the edit (pencil) button of fleet k
+$('dock-fleet').addEventListener('change',e=>{
+ if(e.target.id!=='fleet-voice')return;const k=e.target.dataset.fleetVoice;if(!canCommandFleet(k))return;
+ try{e.target.value?localStorage.setItem(FLEET_VOICE_KEY+k,e.target.value):localStorage.removeItem(FLEET_VOICE_KEY+k);}catch(x){}
+ renderFleetPanel(true);$('fleet-voice')?.focus();
+});
+try{window.speechSynthesis?.addEventListener('voiceschanged',()=>renderFleetPanel(true));}catch(e){}
+$('dock-fleet').addEventListener('click',e=>{
+ if(e.target.closest('[data-fleet-comms]')){setFleetComms(!fleetComms);return;}
+ const pk=e.target.closest('[data-fleet-pick]');if(pk){if(fleetSel===pk.dataset.fleetPick){fleetSel=null;fleetArm=null;setFleetHint();renderFleetPanel(true);dirty=true;}else selectFleet(pk.dataset.fleetPick);return;}
+ const ve=e.target.closest('[data-fleet-voice-edit]');if(ve){fleetVoiceEdit=fleetVoiceEdit===ve.dataset.fleetVoiceEdit?null:ve.dataset.fleetVoiceEdit;renderFleetPanel(true);(fleetVoiceEdit?$('fleet-voice'):el$(ve.dataset.fleetVoiceEdit))?.focus();return;}
+ if(e.target.closest('[data-fleet-voice-done]')){const k=fleetVoiceEdit;fleetVoiceEdit=null;renderFleetPanel(true);el$(k)?.focus();return;}
+ const tb=e.target.closest('[data-fleet-test]');if(tb){const k=tb.dataset.fleetTest;if(!canCommandFleet(k))return;sayQ.unshift({k,force:true,text:`${FLEET_INFO[k].callsign}. Navigating to Harrow via the Valcourt to Harrow lane. Estimated arrival in 2 minutes.`});if(!saying)nextSay();return;} // voice test, even with comms off
+ const b=e.target.closest('[data-fleet-place],[data-fleet-locate],[data-fleet-move],[data-fleet-ships]');if(!b||b.disabled)return;
+ if(b.dataset.fleetShips){adjustShips(b.dataset.fleetShips,+b.dataset.d);return;}
+ const k=b.dataset.fleetPlace||b.dataset.fleetLocate||b.dataset.fleetMove;if(!fleets[k])return;fleetSel=k;
+ if(b.dataset.fleetMove){armFleetMove();return;}
+ if(b.dataset.fleetPlace){if(!canCommandFleet(k))return;fleetArm='place';}
+ else{fleetArm=null;const st=fleetState(k),s=st.kind==='transit'?st.b:st.s;if(s)flyTo(s);}
+ setFleetHint();renderFleetPanel(true);dirty=true;
+});
+window.fleetHook=()=>{if(fleetSel&&!visibleFleetKeys().includes(fleetSel)){fleetSel=null;fleetArm=null;}if(fleetArm&&!canCommandFleet(fleetSel))fleetArm=null;setFleetHint();renderFleetPanel(true);dirty=true;};
+if(Cloud.enabled&&Cloud.watchFleets)Cloud.watchFleets(o=>{setFleets(o);renderFleetPanel();setFleetHint();dirty=true;},msg=>toast('Fleets: '+msg));
+addEventListener('storage',e=>{if(e.key===FLEET_KEY&&!Cloud.enabled){loadLocalFleets();renderFleetPanel();dirty=true;}});
+setTimeout(()=>{runFleetEvents();fleetEvReady=true;},Cloud.enabled?4000:500); // reports already due when the page opens are not replayed
+setInterval(()=>{if(fleetEvReady)runFleetEvents();renderFleetPanel();if(fleetSel)setFleetHint();},250);
+FLEET_ON=true;
 
 // ---- Start ------------------------------------------------------------------------
 // Keep the panel below the toolbar even when the toolbar wraps onto two rows.

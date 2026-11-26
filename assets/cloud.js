@@ -4,8 +4,9 @@
 //   site/{name}        public read, admin write. Each holds a JSON string; big values are split across
 //                      site/{name}~1, ~2 ... (written together in one batch) to stay under Firestore's 1 MB limit.
 //   chat/{auto id}     public read, admin write (live for every visitor).
-//   presence/{command} public read; any browser logged into that command writes a heartbeat {online, sid, at}
-//                      (at = server time) about once a minute. A command counts as online while its heartbeat is fresh.
+//   sessions/{browser} public read; each browser logged into a command writes a heartbeat {command, at}
+//                      (at = server time) about once a minute. A command's online count is its number of fresh records.
+//   fleets/{fleet}     public read (ids like gallia-2); any browser can place or move a fleet, only the administrator changes its ship count.
 (function(){
 'use strict';
 const SDK='https://www.gstatic.com/firebasejs/10.12.2/';
@@ -96,35 +97,51 @@ async function clearChat(){
   for(let i=0;i<refs.length;i+=400){const b=db.batch();refs.slice(i,i+400).forEach(r=>b.delete(r));await b.commit();}
  }catch(e){throw Error(friendly(e));}
 }
-// Commander presence. trackPresence(getCommand, onChange) starts the heartbeat for whichever command this browser is
-// logged into (getCommand() returns its key or null), watches every command's status and calls onChange on updates.
-// Call syncPresence() right after a commander logs in or out so the change shows at once.
-const PRESENCE_FRESH=150000,PRESENCE_BEAT=60000,CMD_KEYS=['eisdon','gallia','histannia','harron'];
-const pres={sid:Math.random().toString(36).slice(2,12),cur:null,get:null,data:{},cbs:[],started:false};
-function firePresence(){pres.cbs.forEach(cb=>{try{cb();}catch(e){console.error(e);}});}
-function presenceStatus(){const now=Date.now(),o={};for(const k in pres.data){const v=pres.data[k];o[k]=!!(v.online&&now-v.at<PRESENCE_FRESH);}return o;}
-async function writePresence(cmd,online){
- if(!CMD_KEYS.includes(cmd))return;await ready();const F=window.firebase,ref=db.collection('presence').doc(cmd),at=F.firestore.FieldValue.serverTimestamp();
- if(online){await ref.set({online:true,sid:pres.sid,at});return;}
- await db.runTransaction(async tx=>{const s=await tx.get(ref);if(s.exists&&s.data().sid===pres.sid)tx.set(ref,{online:false,sid:pres.sid,at});}); // only clear our own heartbeat
+// Fleets (Command Module RTS): fleets/{command-n} = {ships, at, to, depart, arrive, route} (for example fleets/gallia-2). Anyone logged into a command can
+// place and move its fleet; only the administrator can change the number of ships (enforced by firestore.rules).
+function watchFleets(cb,onError){
+ let stop=()=>{},closed=false;
+ ready().then(()=>{if(closed)return;stop=db.collection('fleets').onSnapshot(s=>{const o={};s.forEach(d=>{o[d.id]=d.data();});cb(o);},e=>onError&&onError(friendly(e)));}).catch(e=>onError&&onError(friendly(e)));
+ return()=>{closed=true;stop();};
 }
+async function saveFleet(cmd,f){
+ if(!/^(eisdon|gallia|histannia|harron)-[1-9]$/.test(cmd))throw Error('Unknown fleet.');await ready();
+ try{await db.collection('fleets').doc(cmd).set({ships:Math.round(f.ships),at:String(f.at||'').slice(0,40),to:String(f.to||'').slice(0,40),depart:Math.round(+f.depart||0),arrive:Math.round(+f.arrive||0),route:Array.isArray(f.route)?f.route.slice(0,40).map(x=>String(x).slice(0,40)):[]});}
+ catch(e){throw Error(/permission-denied/.test(e&&e.code||'')?'The shared database refused the fleet order. Publish the latest firestore.rules in Firebase.':friendly(e));}
+}
+// Commander presence. Several people on different computers can be logged into the same command at once, so each
+// browser has its own presence record: sessions/{browser id} = {command, at} (command '' when logged out; at = server
+// time). The browser id is kept in localStorage, so the main page and the starmap open in the same browser count as
+// one person. trackPresence(getCommand, onChange) starts the heartbeat for whichever command this browser is logged
+// into (getCommand() returns its key or null), watches everyone's records and calls onChange on updates.
+// presenceStatus() returns {command: number of people online}. Call syncPresence() right after a login or logout.
+const PRESENCE_FRESH=150000,PRESENCE_BEAT=60000,CMD_KEYS=['eisdon','gallia','histannia','harron'];
+function browserId(){const k='reliquary-presence-id';try{let v=localStorage.getItem(k);if(!/^[a-z0-9]{12}$/.test(v||'')){v=Array.from(crypto.getRandomValues(new Uint8Array(12)),x=>'abcdefghijklmnopqrstuvwxyz0123456789'[x%36]).join('');localStorage.setItem(k,v);}return v;}catch(e){return Math.random().toString(36).slice(2,14).padEnd(12,'0');}}
+const pres={id:browserId(),cur:null,get:null,data:{},skew:0,cbs:[],started:false,bc:null};
+function firePresence(){pres.cbs.forEach(cb=>{try{cb();}catch(e){console.error(e);}});}
+function presenceStatus(){const now=Date.now()+pres.skew,o={};for(const k of CMD_KEYS)o[k]=0;for(const id in pres.data){const v=pres.data[id];if(CMD_KEYS.includes(v.command)&&now-v.at<PRESENCE_FRESH)o[v.command]++;}return o;}
+async function writePresence(cmd){await ready();await db.collection('sessions').doc(pres.id).set({command:cmd||'',at:window.firebase.firestore.FieldValue.serverTimestamp()});}
 function syncPresence(beat){
- if(!enabled||!pres.get)return;let c=null;try{c=pres.get()||null;}catch(e){}
- if(c!==pres.cur){if(pres.cur)writePresence(pres.cur,false).catch(()=>{});pres.cur=c;if(c)writePresence(c,true).catch(()=>{});}
- else if(beat&&c)writePresence(c,true).catch(()=>{});
+ if(!enabled||!pres.get)return;let c=null;try{c=pres.get()||null;}catch(e){}if(!CMD_KEYS.includes(c))c=null;
+ if(c!==pres.cur){const was=pres.cur;pres.cur=c;if(c||was)writePresence(c).catch(()=>{});}
+ else if(beat&&c)writePresence(c).catch(()=>{});
 }
 function trackPresence(getCmd,onChange){
  if(onChange)pres.cbs.push(onChange);pres.get=getCmd;
  if(!enabled||pres.started)return;pres.started=true;
  ready().then(()=>{
-  db.collection('presence').onSnapshot(s=>{const d={};s.forEach(x=>{const v=x.data({serverTimestamps:'estimate'});d[x.id]={online:!!v.online,sid:v.sid,at:v.at&&v.at.toMillis?v.at.toMillis():0};});pres.data=d;firePresence();},()=>{});
+  db.collection('sessions').onSnapshot(s=>{const d={};s.forEach(x=>{const v=x.data({serverTimestamps:'estimate'}),at=v.at&&v.at.toMillis?v.at.toMillis():0;d[x.id]={command:v.command||'',at};
+    if(x.id===pres.id&&!x.metadata.hasPendingWrites&&at)pres.skew=Math.max(-864e5,Math.min(864e5,at-Date.now()));}); // learn this computer's clock offset from its own record
+   pres.data=d;firePresence();},()=>{});
   syncPresence();
  }).catch(()=>{});
- setInterval(()=>{syncPresence(true);firePresence();},PRESENCE_BEAT); // heartbeat, and let stale commanders drop to offline
+ setInterval(()=>{syncPresence(true);firePresence();},PRESENCE_BEAT); // heartbeat, and let closed browsers drop to offline
  addEventListener('storage',e=>{if(e.key==='reliquary-commander'||e.key==='reliquary-command-alpha')syncPresence();});
- addEventListener('pagehide',()=>{if(pres.cur)writePresence(pres.cur,false).catch(()=>{});});
+ // Closing one tab marks this browser offline; any other open tab of the site in the same browser re-announces itself.
+ try{pres.bc=new BroadcastChannel('reliquary-presence');pres.bc.onmessage=()=>setTimeout(()=>{pres.cur=null;syncPresence();},1500);}catch(e){}
+ addEventListener('pagehide',()=>{if(pres.cur){writePresence(null).catch(()=>{});try{pres.bc&&pres.bc.postMessage('closing');}catch(e){}}});
  addEventListener('pageshow',e=>{if(e.persisted){pres.cur=null;syncPresence();}});
 }
-window.ReliquaryCloud={enabled,adminEmail,ready,isAdmin,onAuth,signIn,signOut,watchDoc,saveDoc,watchChat,addChat,clearChat,trackPresence,syncPresence,presenceStatus};
+window.ReliquaryCloud={enabled,adminEmail,ready,isAdmin,onAuth,signIn,signOut,watchDoc,saveDoc,watchChat,addChat,clearChat,trackPresence,syncPresence,presenceStatus,watchFleets,saveFleet};
 if(enabled)ready().catch(()=>{});
 })();
