@@ -381,7 +381,7 @@ body.cmd-gallia .chat-log{scrollbar-color:rgba(92,200,255,.55) rgba(0,0,0,.4)}bo
 .dock-panel .btn.chat-step{min-height:22px;width:26px;padding:0;font-size:10px;opacity:.85}
 .dock-panel .btn.chat-latest{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);min-height:24px;padding:2px 10px;font-size:10px}
 .chat-latest[hidden]{display:none!important}
-#chat-log b.f-eisdon{color:#9dffbf}#chat-log b.f-gallia{color:#8fdcff}#chat-log b.f-histannia{color:#e3c6ff}#chat-log b.f-harron{color:#ffc28f}
+#chat-log b.f-eisdon{color:#9dffbf}#chat-log b.f-gallia{color:#8fdcff}#chat-log b.f-secara{color:#9cc2ff}#chat-log b.f-histannia{color:#e3c6ff}#chat-log b.f-harron{color:#ffc28f}
 body.mode-nebula #map{cursor:crosshair}
 .lock-ctl{position:relative}
 #lock-toggle.any-locked{border-color:#ffd27a;color:#ffe2a6;box-shadow:0 0 10px rgba(255,210,122,.25)}
@@ -414,10 +414,112 @@ body.mode-nebula #map{cursor:crosshair}
 @media(max-width:700px){.brand-name{font-size:17px}.brand-name small{display:none}.panel{top:auto;bottom:64px;left:16px;right:16px;width:auto;max-height:42vh}.hud .keys{display:none}}
 @media(prefers-reduced-transparency:reduce){.bar,.panel,.hud{background:#041a2e;-webkit-backdrop-filter:none;backdrop-filter:none}}
 @media(forced-colors:active){.btn,.panel,.hud,.bar{border-color:CanvasText}.brand-name{text-shadow:none}}
+
+/* ---- Secaran Republic interface (Command Module α): smooth space-grey hull plating with panel seams, Republic blue
+   displays and chamfered controls. Generated from the Gallia interface with Secaran colours, plus the rules below. ---- */
+body.cmd-secara .cmd-treasury{background:linear-gradient(#091730,#030d1e);border-color:#272b32;border-radius:3px;color:#d9e7ff;text-shadow:0 0 5px rgba(92,152,255,.6)}
+body.cmd-secara .cmd-treasury::after{color:#5c98ff;text-shadow:0 0 5px rgba(92,152,255,.6)}
+body.cmd-secara .fleet-signal{border-color:#191c20;background:#030d1e}
+body.cmd-secara .fleet-signal i{background:rgba(92,152,255,.14)}
+body.cmd-secara .fleet-signal.on i{background:#8fb8ff;box-shadow:0 0 4px rgba(92,152,255,.85)}
+body.cmd-secara .fleet-band{font-family:Consolas,monospace}
+body.cmd-secara .fleet-comms{border-bottom-color:rgba(92,152,255,.2)}
+body.cmd-secara .fleet-edit{border-color:#2c5498;background:rgba(8,32,72,.35);color:#bfd6ff}
+body.cmd-secara .fleet-edit:hover,body.cmd-secara .fleet-edit[aria-expanded="true"]{border-color:#8fb8ff;color:#ffffff}
+body.cmd-secara .fleet-row{border-color:rgba(92,152,255,.3);background:rgba(8,32,72,.35);font-family:Consolas,'Lucida Console',monospace}
+body.cmd-secara .fleet-row:hover{border-color:#5c98ff}
+body.cmd-secara .fleet-row.sel{border-color:#8fb8ff;background:rgba(27,94,211,.3);box-shadow:inset 3px 0 0 #5c98ff}
+body.cmd-secara .fleet-row-name{color:#e6efff}
+body.cmd-secara .fleet-voice-row select{border-color:#2c5498;background:#030d1e;color:#bfd6ff}
+body.cmd-secara .fleet-pips{color:#8fb8ff}
+body.cmd-secara .fleet-admin{border-top-color:rgba(92,152,255,.2)}
+body.cmd-secara .fleet-admin>span{color:#5c98ff}
+body.cmd-secara{--accent:#5c98ff;--text:#ffffff;--muted:#9eadc7;--line:#272b32;--panel:#121824;font-family:'Segoe UI',Bahnschrift,Arial,sans-serif}
+body.cmd-secara .bar{background:repeating-linear-gradient(0deg,transparent 0 22px,rgba(2,2,3,.22) 22px 23px,rgba(255,255,255,.07) 23px 24px),linear-gradient(180deg,#6d7a8b 0%,#545e6b 18%,#424a54 50%,#3a404a 54%,#4b535f 86%,#5d6877 100%);border-bottom:1px solid #191c20;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 4px 14px rgba(2,2,3,.6);-webkit-backdrop-filter:none;backdrop-filter:none}
+body.cmd-secara .bar::after{content:"";position:absolute;left:0;right:0;bottom:-4px;height:3px;background:linear-gradient(90deg,transparent,#256ce5 12%,#8fb8ff 50%,#256ce5 88%,transparent);box-shadow:0 0 10px rgba(92,152,255,.7);pointer-events:none}
+body.cmd-secara .brand-name{color:#ffffff;text-shadow:0 1px 0 #020203,0 0 10px rgba(92,152,255,.15)}
+body.cmd-secara .brand-name small{color:#6ca2ff}
+body.cmd-secara .brand-kicker{color:#c5cad1}
+body.cmd-secara .cmd-badge{background:linear-gradient(#091730,#030d1e);border-color:#3d4655;border-radius:3px;color:#8fb8ff;font-family:Consolas,'Lucida Console',monospace;letter-spacing:.18em;text-shadow:0 0 6px rgba(92,152,255,.7);box-shadow:inset 0 1px 4px rgba(2,2,3,.8)}
+body.cmd-secara .cmd-badge::before{background:#3982ff;box-shadow:0 0 7px #3982ff}
+body.cmd-secara .cmd-change{border:1px solid #21252a;border-radius:3px;background:repeating-linear-gradient(0deg,transparent 0 22px,rgba(2,2,3,.22) 22px 23px,rgba(255,255,255,.07) 23px 24px),linear-gradient(#687484,#4d5562 50%,#3c424c);color:#8fb8ff;text-shadow:0 1px 0 #020203;box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 1px 0 #191c20,0 2px 4px rgba(2,2,3,.5)}
+body.cmd-secara .cmd-change:hover{background:repeating-linear-gradient(0deg,transparent 0 22px,rgba(2,2,3,.22) 22px 23px,rgba(255,255,255,.07) 23px 24px),linear-gradient(#768293,#57616f 50%,#434b56);color:#d9e7ff}
+body.cmd-secara .cmd-change:focus-visible{outline-color:#256ce5}
+body.cmd-secara .btn,body.cmd-secara .home-icon{border:1px solid #21252a;border-radius:4px;background:repeating-linear-gradient(0deg,transparent 0 22px,rgba(2,2,3,.22) 22px 23px,rgba(255,255,255,.07) 23px 24px),linear-gradient(#687484,#4d5562 50%,#3c424c);color:#fefefe;font-weight:600;font-size:11px;letter-spacing:.05em;text-transform:uppercase;text-shadow:0 1px 0 rgba(2,2,3,.7);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 1px 0 #191c20,0 2px 4px rgba(2,2,3,.5)}
+body.cmd-secara .home-icon svg{filter:none}
+body.cmd-secara .bar .btn{padding:6px 10px}
+body.cmd-secara .btn:hover,body.cmd-secara .home-icon:hover{background:repeating-linear-gradient(0deg,transparent 0 22px,rgba(2,2,3,.22) 22px 23px,rgba(255,255,255,.07) 23px 24px),linear-gradient(#768293,#57616f 50%,#434b56);border-color:#256ce5;color:#ffffff}
+body.cmd-secara .btn:active{transform:translateY(1px);box-shadow:inset 0 1px 3px rgba(2,2,3,.35)}
+body.cmd-secara .btn[aria-pressed="true"]{background:linear-gradient(#0f316d,#082049);border-color:#256ce5;color:#cddfff;text-shadow:0 0 6px rgba(92,152,255,.8);box-shadow:inset 0 2px 4px rgba(2,2,3,.6),0 0 10px rgba(60,132,255,.45)}
+body.cmd-secara .btn.primary{background:linear-gradient(#4183f6,#1b5ed3);border-color:#0c3a89;color:#ffffff;text-shadow:0 1px 0 rgba(2,2,3,.35)}
+body.cmd-secara .btn.danger{color:#ff9c86}
+body.cmd-secara .btn:disabled{opacity:.5}
+body.cmd-secara .admin-tools{border-right:1px solid #272b32;box-shadow:1px 0 0 rgba(255,255,255,.12)}
+body.cmd-secara .panel{top:calc(var(--bar-h) + 18px)}
+body.cmd-secara .panel,body.cmd-secara .lock-menu,body.cmd-secara dialog,body.cmd-secara .dock-panel{border:8px solid transparent;border-radius:9px;-webkit-backdrop-filter:none;backdrop-filter:none;color:#bfd6ff;
+ background:repeating-linear-gradient(0deg,rgba(92,152,255,.035) 0 1px,transparent 1px 24px) padding-box,repeating-linear-gradient(90deg,rgba(92,152,255,.035) 0 1px,transparent 1px 24px) padding-box,radial-gradient(ellipse at 50% 20%,#0c2145,#030d1e 75%) padding-box,repeating-linear-gradient(0deg,transparent 0 22px,rgba(2,2,3,.22) 22px 23px,rgba(255,255,255,.07) 23px 24px) border-box,linear-gradient(180deg,#727f90,#545e6b 22%,#3f4751 50%,#4f5764 78%,#667181) border-box;
+ box-shadow:0 0 0 1px #191c20,inset 0 0 0 1px #091325,inset 0 0 18px rgba(35,108,235,.22),0 10px 28px rgba(2,2,3,.6)}
+body.cmd-secara .panel{padding:14px 14px 16px;transform-origin:100% 0}
+body.cmd-secara .panel h2,body.cmd-secara dialog h2,body.cmd-secara .dock-panel h2{color:#d9e7ff;letter-spacing:.08em;text-transform:uppercase;text-shadow:0 0 8px rgba(92,152,255,.5)}
+body.cmd-secara .eyebrow,body.cmd-secara .dock-sec{color:#5c98ff;letter-spacing:.22em}
+body.cmd-secara .panel .muted,body.cmd-secara .panel .field,body.cmd-secara .panel .notes,body.cmd-secara dialog .muted,body.cmd-secara dialog .field,body.cmd-secara .dock-note{color:#8da6d1}
+body.cmd-secara .panel .btn,body.cmd-secara .panel .list button,body.cmd-secara .lock-menu .btn,body.cmd-secara dialog .btn,body.cmd-secara .dock-panel .btn{background:linear-gradient(rgba(37,87,173,.35),rgba(8,32,72,.35));border:1px solid #2c59a6;border-radius:3px;color:#bfd6ff;box-shadow:inset 0 1px 0 rgba(150,188,255,.15);text-shadow:none;text-transform:uppercase;letter-spacing:.06em;font:600 11px 'Segoe UI',Bahnschrift,Arial,sans-serif}
+body.cmd-secara .panel .list button{text-transform:none;letter-spacing:.02em;font-size:12px}
+body.cmd-secara .panel .btn:hover,body.cmd-secara .panel .list button:hover,body.cmd-secara .lock-menu .btn:hover,body.cmd-secara dialog .btn:hover,body.cmd-secara .dock-panel .btn:hover{border-color:#5c98ff;color:#eaf2ff;background:rgba(56,118,224,.35)}
+body.cmd-secara .panel .btn[aria-pressed="true"],body.cmd-secara .lock-menu .btn[aria-pressed="true"]{background:rgba(92,152,255,.28);border-color:#8fb8ff;color:#ffffff;box-shadow:0 0 8px rgba(92,152,255,.4)}
+body.cmd-secara .panel .btn.primary,body.cmd-secara dialog .btn.primary,body.cmd-secara .dock-panel .btn.primary{background:linear-gradient(#357bf3,#1858c6);border-color:#8fb8ff;color:#ffffff}
+body.cmd-secara .panel .btn.danger,body.cmd-secara dialog .btn.danger,body.cmd-secara .dock-panel .btn.danger{border-color:#9c4a3e;color:#ffab9c}
+body.cmd-secara .field input,body.cmd-secara .field textarea,body.cmd-secara select,body.cmd-secara .chat-form input,body.cmd-secara dialog input{background:#020814;border:1px solid #2c59a6;border-radius:3px;color:#cddfff;font-family:Consolas,'Lucida Console',monospace;box-shadow:inset 0 2px 5px rgba(2,2,3,.8)}
+body.cmd-secara .chat-form input:focus-visible{outline-color:#5c98ff}
+body.cmd-secara .hud{color:#8fb8ff;font-family:Consolas,'Lucida Console',monospace;letter-spacing:.03em;text-shadow:0 0 5px rgba(92,152,255,.55);border:4px solid #4f5764;border-radius:7px;background:linear-gradient(#06142c,#020c1d);box-shadow:0 0 0 1px #191c20,inset 0 0 0 1px #091325,inset 0 0 14px rgba(35,108,235,.25),0 6px 18px rgba(2,2,3,.6)}
+body.cmd-secara .hud strong{color:#d9e7ff}
+body.cmd-secara .hud kbd{background:#05193b;border-color:#2c59a6;color:#bfd6ff}
+body.cmd-secara .toast{background:repeating-linear-gradient(0deg,transparent 0 22px,rgba(2,2,3,.22) 22px 23px,rgba(255,255,255,.07) 23px 24px),linear-gradient(180deg,#6d7a8b 0%,#545e6b 18%,#424a54 50%,#3a404a 54%,#4b535f 86%,#5d6877 100%);border:1px solid #191c20;border-left:4px solid #256ce5;border-radius:4px;color:#fefefe;text-shadow:0 1px 0 #020203}
+body.cmd-secara .audio-vol{padding:0 6px;min-height:42px;border:1px solid #21252a;border-radius:4px;background:repeating-linear-gradient(0deg,transparent 0 22px,rgba(2,2,3,.22) 22px 23px,rgba(255,255,255,.07) 23px 24px),linear-gradient(#687484,#4d5562 50%,#3c424c);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 1px 0 #191c20,0 2px 4px rgba(2,2,3,.5)}
+body.cmd-secara .audio-vol[hidden]{display:flex}
+body.cmd-secara .audio-vol input{display:none}
+body.cmd-secara .neb-range input,body.cmd-secara #lane-traffic{accent-color:#5c98ff}
+body.cmd-secara #command-dialog .cmd-faction{background:rgba(8,32,72,.45);border-color:#2c59a6}
+body.cmd-secara #command-dialog .cmd-faction[aria-checked="true"],body.cmd-secara #command-dialog .cmd-current strong{border-color:#5c98ff;color:#8fb8ff}
+body.cmd-secara .btn.mech-btn{gap:7px;padding:3px 8px 3px 5px;min-height:42px}
+body.cmd-secara .mech-btn svg{display:none}
+body.cmd-secara .mech-lever{display:inline-block;position:relative;flex-shrink:0;width:28px;height:28px;border:1px solid #191c20;border-radius:5px;background:repeating-linear-gradient(0deg,transparent 0 22px,rgba(2,2,3,.22) 22px 23px,rgba(255,255,255,.07) 23px 24px),linear-gradient(#949eab,#636f7e 55%,#4f5865);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 2px 0 #191c20,0 3px 4px rgba(2,2,3,.5);transition:transform .08s,box-shadow .08s}
+body.cmd-secara .mech-lever::after{content:"";position:absolute;inset:6px;border-radius:3px;background:radial-gradient(circle at 50% 40%,#21314e,#0a1425 75%);box-shadow:inset 0 1px 3px rgba(2,2,3,.8),0 0 0 1px #3b4454;transition:background .12s,box-shadow .12s}
+body.cmd-secara .mech-btn[aria-pressed="true"] .mech-lever{transform:translateY(1px);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 1px 0 #191c20,0 1px 2px rgba(2,2,3,.5)}
+body.cmd-secara .mech-btn[aria-pressed="true"] .mech-lever::after{background:radial-gradient(circle at 50% 45%,#eaf2ff 0,#7faeff 35%,#1a61db 80%);box-shadow:0 0 0 1px #0c3a89,0 0 10px rgba(92,152,255,.85)}
+body.cmd-secara .mech-label{display:inline-block;min-width:74px;padding:3px 7px;border:1px solid #2c3340;border-radius:3px;text-align:center;font:11px/1.3 Consolas,'Lucida Console',monospace;letter-spacing:.06em;text-transform:uppercase;color:#2c5397;text-shadow:none;background:linear-gradient(#061328,#020a18);box-shadow:inset 0 1px 4px rgba(2,2,3,.9)}
+body.cmd-secara .mech-btn[aria-pressed="true"] .mech-label{color:#bfd6ff;text-shadow:0 0 6px rgba(92,152,255,.85);background:radial-gradient(ellipse at center,#0b2758,#030e21 85%)}
+body.cmd-secara .btn.mech-btn,body.cmd-secara .btn.mech-btn[aria-pressed="true"]{background:repeating-linear-gradient(0deg,transparent 0 22px,rgba(2,2,3,.22) 22px 23px,rgba(255,255,255,.07) 23px 24px),linear-gradient(#687484,#4d5562 50%,#3c424c);color:#fefefe;border-color:#21252a;box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 1px 0 #191c20,0 2px 4px rgba(2,2,3,.5);text-shadow:none;transform:none}
+body.cmd-secara .vol-knob{display:inline-block;position:relative;width:96px;height:28px;padding:0;border-radius:4px;cursor:ew-resize;touch-action:none;counter-reset:vol var(--lvl,0);background:linear-gradient(#061328,#020a18);box-shadow:0 0 0 1px #3b4454,inset 0 2px 5px rgba(2,2,3,.9)}
+body.cmd-secara .vol-knob-cap{position:absolute;left:6px;right:34px;top:9px;bottom:9px;transform:none;border-radius:1px;background:repeating-linear-gradient(90deg,transparent 0 4px,#020a18 4px 6px),linear-gradient(90deg,#256ce5,#8fb8ff var(--lvlp,0%),#0f2751 var(--lvlp,0%));box-shadow:0 0 6px rgba(92,152,255,.25)}
+body.cmd-secara .vol-knob::after{content:counter(vol);position:absolute;right:5px;top:50%;transform:translateY(-50%);width:26px;text-align:right;font:700 11px/1 Consolas,'Lucida Console',monospace;color:#bfd6ff;text-shadow:0 0 5px rgba(92,152,255,.8)}
+body.cmd-secara .vol-knob:focus-visible{outline:2px solid #256ce5;outline-offset:3px}
+body.cmd-secara .panel.flip-open{animation:galSlideOpen .42s cubic-bezier(.2,.8,.3,1) both}
+body.cmd-secara .panel.flip-close{animation:galSlideClose .3s ease-in both}
+body.cmd-secara .panel.flip-open>*,body.cmd-secara .dock-panel.flip-open>*{animation:galDisplayOn .5s .3s both}
+body.cmd-secara .panel.flip-open::after,body.cmd-secara .dock-panel.flip-open::after{content:"";position:absolute;left:0;right:0;top:0;height:3px;pointer-events:none;background:linear-gradient(90deg,transparent,#bfd6ff,transparent);box-shadow:0 0 12px #5c98ff;animation:galScan .55s .28s both}
+body.cmd-secara .dock-panel{padding:12px 14px 14px;transform-origin:0 50%}
+body.cmd-secara .dock-panel.flip-open{animation:galDockOpen .42s cubic-bezier(.2,.8,.3,1) both}
+body.cmd-secara .dock-panel.flip-close{animation:galDockClose .3s ease-in both}
+body.cmd-secara .dock-led{background:#3982ff;box-shadow:0 0 8px #3982ff}
+body.cmd-secara .dock-led.amber{background:#f2b632;box-shadow:0 0 8px #f2b632}
+body.cmd-secara .dock-log{color:#bfd6ff;font-family:Consolas,'Lucida Console',monospace;text-shadow:0 0 5px rgba(92,152,255,.4)}
+body.cmd-secara .dock-log li{border-bottom-color:rgba(92,152,255,.14)}
+body.cmd-secara .dock-log time{color:#5c85cb}
+body.cmd-secara .dock-log b{color:#e6efff}
+body.cmd-secara [data-dock="chat"].unread .mech-label::after{background:#5c98ff;box-shadow:0 0 6px #5c98ff}
+@media(prefers-reduced-motion:reduce){body.cmd-secara .panel.flip-open,body.cmd-secara .panel.flip-close,body.cmd-secara .dock-panel.flip-open,body.cmd-secara .dock-panel.flip-close,body.cmd-secara .panel.flip-open>*,body.cmd-secara .dock-panel.flip-open>*,body.cmd-secara .panel.flip-open::after,body.cmd-secara .dock-panel.flip-open::after{animation:none}body.cmd-secara .mech-lever,body.cmd-secara .mech-lever::after{transition:none}}
+@media(forced-colors:active){body.cmd-secara .bar::after{display:none}}
+body.cmd-secara .chat-log{scrollbar-color:rgba(92,152,255,.55) rgba(2,2,3,.4)}
+body.cmd-secara .chat-log::-webkit-scrollbar-thumb{background:rgba(92,152,255,.55)}
+body.cmd-secara .btn,body.cmd-secara .home-icon,body.cmd-secara .cmd-change,body.cmd-secara .mech-lever{border-radius:0;clip-path:polygon(7px 0,calc(100% - 7px) 0,100% 7px,100% calc(100% - 7px),calc(100% - 7px) 100%,7px 100%,0 calc(100% - 7px),0 7px)}
+body.cmd-secara .cmd-badge,body.cmd-secara .cmd-treasury,body.cmd-secara .mech-label{border-radius:0;clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px)}
+body.cmd-secara .bar::after{background:linear-gradient(90deg,transparent,#3d7bff 10%,#9cc2ff 46%,#d6453d 47.5%,#d6453d 52.5%,#9cc2ff 54%,#3d7bff 90%,transparent)}
+body.cmd-secara .cmd-badge::before{border-radius:1px}
 </style>
 </head>
 <body>
-<script>/* Command Module α: Eisdon commanders get the industrial interface, Gallia commanders the polished-steel interface (set on the main page). */try{const c=localStorage.getItem('reliquary-commander');if(localStorage.getItem('reliquary-command-alpha')==='1'&&(c==='eisdon'||c==='gallia'))document.body.classList.add('is-commander','cmd-'+c);}catch(e){}</script>
+<script>/* Command Module α: Eisdon commanders get the industrial interface, Gallia the polished-steel interface and the Secaran Republic the space-grey Republic interface (set on the main page). */try{const c=localStorage.getItem('reliquary-commander');if(localStorage.getItem('reliquary-command-alpha')==='1'&&['eisdon','gallia','secara'].includes(c))document.body.classList.add('is-commander','cmd-'+c);}catch(e){}</script>
 <header class="bar" id="bar">
 <a class="home-icon" href="index.html" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h4.5v-6h4v6h4.5V9.5"/></svg></a>
 <div class="brand"><span class="brand-kicker">Project</span><span class="brand-name">RELIQUARY<small>STARMAP</small></span></div><div class="cmd-ident"><div class="cmd-id-row"><span class="cmd-badge" id="cmd-badge">Eisdon Command</span><span class="cmd-treasury" id="cmd-treasury" role="status" title="Treasury and hourly income"></span></div><button class="cmd-change" id="cmd-change" type="button" aria-haspopup="dialog">Change Command</button></div>
@@ -1126,7 +1228,8 @@ $('login-form').addEventListener('submit',async e=>{
 
 // ---- Audio: space ambience + gate traffic radio (off by default, open to everyone) ----
 // The music is synthesised with the Web Audio API. The radio chatter plays recorded gate-traffic
-// lines with the radio filter already applied, three voices taking turns: an Asian female voice
+// lines with the radio filter already applied, three voices (each exchange keeps the same two voices from start
+// to finish: the caller and the one answering; the caller's voice rotates between exchanges): an Asian female voice
 // (Luna), a slightly deep male voice (Guy) and a lighter male voice (Brian). The recordings are
 // stored in assets/radio/radio-data.js (loaded the first time Radio is turned on), which works both
 // on a web server and when the page is opened straight from disk.
@@ -1247,12 +1350,13 @@ function idleAudio(){ // both off: let the fades finish, then sleep the audio en
  setTimeout(()=>{if(!audio.musicOn&&!audio.radioOn&&audio.ready)audio.ctx.suspend();},1200);
 }
 // Soundtrack follows the command view: Eisdon industrial beat, Gallia French horn theme, otherwise space ambience.
-function soundtrack(){const b=document.body.classList;return b.contains('cmd-eisdon')?'eisdon':b.contains('cmd-gallia')?'gallia':'space';}
+function soundtrack(){const b=document.body.classList;return b.contains('cmd-eisdon')?'eisdon':b.contains('cmd-gallia')?'gallia':b.contains('cmd-secara')?'secara':'space';}
 function startMusic(){
  audio.mtimers.forEach(clearTimeout);audio.mtimers=[];const t=soundtrack();audio.track=t;
- rampGain(audio.subG,t==='gallia'?0:.16,1.5); // the space sub drone would clash with the horn key
+ rampGain(audio.subG,t==='gallia'||t==='secara'?0:.16,1.5); // the space sub drone would clash with the horn key
  if(t==='eisdon'){stopPads();stopGallia();startIndustrial();}
  else if(t==='gallia'){stopPads();stopIndustrial();startGallia();}
+ else if(t==='secara'){stopPads();stopIndustrial();startSecara();} // Secaran Republic: choir, low brass, war drums
  else{stopIndustrial();stopGallia();padChord();musicLater(sparkle,2500);}
 }
 // ---- Gallia theme: a noble French horn melody (plays instead of the space ambience in the Gallia command view) ----
@@ -1293,16 +1397,114 @@ function timpani(t,m,v){
  o.connect(g);g.connect(audio.gal.gain);const sg=c.createGain();sg.gain.value=.5;g.connect(sg);sg.connect(audio.reverb);o.start(t);o.stop(t+1.7);
  noiseHit(t,{dur:.07,type:'lowpass',freq:900,gain:.03*v,to:audio.gal.gain});
 }
-function startGallia(){
+// ---- Secaran Republic theme: grim, epic and martial, in D minor at 64 BPM. A wordless choir ("ah") swells over a deep
+// organ pedal, low brass in octaves carries the theme, war drums pound under it, timpani roll into each phrase and a
+// great bell tolls at the turn of every section. After the bridge comes a fast, orchestral battle section at 132 BPM:
+// a galloping string ostinato (cellos and violas in octaves), tremolo violins, the brass theme, timpani, deep
+// ensemble drums, snare rolls into each phrase and cymbal swells, before the slow, full climax returns.
+// Synthesised in the browser on the Gallia orchestra's bus; no files.
+const SEC_BPM=64,SEC_FAST_BPM=132;
+const SEC_CH={Dm:[38,[50,57,62,65]],Bb:[34,[46,53,58,62]],Gm:[31,[43,50,55,58]],A:[33,[45,52,57,61]],F:[29,[41,48,53,57]],C:[36,[48,55,60,64]],Eb:[39,[51,55,58,63]]};
+// Bar: chord, brass melody [midi, beats] (0 = rest), h = harmony horn, d = drum pattern (0 none, 1 sparse, 2 full,
+// 3 driving), roll = timpani roll into the next bar, bell = toll on the downbeat, ch = choir level (0-1).
+const SEC_INTRO=[{c:'Dm',d:0,bell:1,ch:.6},{c:'Bb',d:1,ch:.7},{c:'Gm',d:1,ch:.8},{c:'A',d:1,ch:.9,roll:1}];
+const SEC_THEME=[{c:'Dm',m:[[62,1],[65,1],[69,1.5],[67,.5]],d:2,ch:.8},{c:'Bb',m:[[65,1.5],[64,.5],[62,2]],d:2,ch:.8},{c:'Gm',m:[[58,1],[62,1],[67,1.5],[65,.5]],d:2,ch:.8},{c:'A',m:[[64,3],[0,1]],d:2,ch:.9,roll:1},
+ {c:'Dm',m:[[69,1],[72,1],[74,2]],d:2,ch:.9},{c:'Bb',m:[[72,1],[70,1],[69,1],[67,1]],d:2,ch:.9},{c:'Gm',m:[[67,1.5],[69,.5],[70,1],[67,1]],d:2,ch:.9},{c:'A',m:[[69,4]],d:3,ch:1,roll:1}];
+const SEC_BRIDGE=[{c:'F',d:1,bell:1,ch:.7},{c:'C',d:1,ch:.75},{c:'Bb',m:[[65,2],[62,2]],d:1,ch:.8},{c:'A',m:[[64,4]],d:3,ch:1,roll:1}];
+// Battle section (fast: 132 BPM). o = galloping string ostinato, tr = tremolo violins (level), sn = snare roll into
+// the next bar (1 short, 2 long), st = brass chord accents, cy = cymbal swell into the next bar (1) or crash (2).
+const SEC_BATTLE=[{c:'Dm',d:4,o:1,ch:.5,cy:2},{c:'Dm',d:4,o:1,ch:.6,st:1},{c:'Bb',d:4,o:1,tr:.6,ch:.7,st:1},{c:'A',d:4,o:1,tr:.8,ch:.8,st:1,sn:2,cy:1,roll:1},
+ {c:'Dm',m:[[62,.5],[62,.5],[65,1],[69,1],[67,1]],d:4,o:1,tr:.6,ch:.7,cy:2},{c:'Bb',m:[[65,1],[64,.5],[62,.5],[58,2]],d:4,o:1,tr:.6,ch:.7},
+ {c:'Gm',m:[[67,.5],[67,.5],[70,1],[69,1],[67,1]],d:4,o:1,tr:.7,ch:.8},{c:'A',m:[[69,1.5],[67,.5],[64,2]],d:4,o:1,tr:.8,ch:.8,sn:1},
+ {c:'Dm',m:[[74,1],[72,.5],[70,.5],[69,2]],d:4,o:1,tr:.8,ch:.9,cy:2},{c:'Eb',m:[[70,1],[67,1],[63,2]],d:4,o:1,tr:.8,ch:.9,st:1},
+ {c:'Bb',m:[[65,.5],[67,.5],[69,1],[70,1],[72,1]],d:4,o:1,tr:.9,ch:.9},{c:'A',m:[[73,4]],d:4,o:1,tr:1,ch:1,sn:2,cy:1,roll:1},
+ {c:'Dm',m:[[74,2],[69,2]],h:65,d:4,o:1,tr:1,ch:1,bell:1,cy:2},{c:'Bb',m:[[70,2],[65,2]],h:62,d:4,o:1,tr:1,ch:1},
+ {c:'Gm',m:[[67,1],[70,1],[74,2]],h:70,d:4,o:1,tr:1,ch:1,sn:1},{c:'A',m:[[73,3],[0,1]],h:69,d:4,o:1,tr:1,ch:1,st:1,sn:2,cy:1,roll:1}].map(b=>({...b,bpm:SEC_FAST_BPM}));
+const SEC_CLIMAX=SEC_THEME.map((b,i)=>({...b,h:b.m?b.m[0][0]+(i%4===3?4:3):0,d:3,ch:1,bell:i===0?1:0}));
+function secScore(){return [...SEC_INTRO,...SEC_THEME,...SEC_BRIDGE,...SEC_BATTLE,...SEC_CLIMAX,{c:'Dm',d:3,bell:1,ch:1},{c:'Bb',d:2,ch:.9},{c:'A',d:3,ch:1,roll:1},{c:'Dm',d:1,bell:1,ch:.7}];}
+function secChoir(t,dur,chord,lvl){ // wordless choir: detuned voices through "ah" formants, slow swell
+ const c=audio.ctx,[root,notes]=SEC_CH[chord],out=c.createGain(),mix=c.createGain();
+ out.gain.setValueAtTime(0,t);out.gain.linearRampToValueAtTime(.05*lvl,t+1.4);out.gain.setValueAtTime(.05*lvl,t+dur-.3);out.gain.linearRampToValueAtTime(0,t+dur+1.6);
+ for(const [f,q,g] of [[750,5,1],[1150,6,.55],[2700,8,.22]]){const bp=c.createBiquadFilter();bp.type='bandpass';bp.frequency.value=f;bp.Q.value=q;const bg=c.createGain();bg.gain.value=g;mix.connect(bp);bp.connect(bg);bg.connect(out);}
+ out.connect(audio.gal.gain);const sg=c.createGain();sg.gain.value=1.1;out.connect(sg);sg.connect(audio.reverb);
+ const vib=c.createOscillator(),vg=c.createGain();vib.frequency.value=5.2;vg.gain.value=6;vib.connect(vg);vib.start(t);vib.stop(t+dur+2);
+ for(const m of [root+12,...notes])for(const d of [-11,0,10]){const o=c.createOscillator();o.type='sawtooth';o.frequency.value=mf(m);o.detune.value=d;vg.connect(o.detune);o.connect(mix);o.start(t);o.stop(t+dur+2);}
+}
+function secPedal(t,dur,chord){ // organ pedal: deep root with a fifth, slow in and out
+ const c=audio.ctx,root=SEC_CH[chord][0],g=c.createGain(),lp=c.createBiquadFilter();lp.type='lowpass';lp.frequency.value=320;
+ g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.05,t+.6);g.gain.setValueAtTime(.05,t+dur-.2);g.gain.linearRampToValueAtTime(0,t+dur+.6);lp.connect(g);g.connect(audio.gal.gain);
+ for(const [m,type,a] of [[root,'triangle',1],[root-12,'sine',.9],[root+7,'triangle',.35]]){const o=c.createOscillator(),og=c.createGain();o.type=type;o.frequency.value=mf(m);og.gain.value=a;o.connect(og);og.connect(lp);o.start(t);o.stop(t+dur+.8);}
+}
+function secDrum(t,v,pan){ // war drum: deep pitched thump with a skin slap, in a big room
+ const c=audio.ctx,o=c.createOscillator(),g=c.createGain(),p=panNode(pan||0);o.frequency.setValueAtTime(95,t);o.frequency.exponentialRampToValueAtTime(42,t+.35);
+ g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.22*v,t+.006);g.gain.exponentialRampToValueAtTime(.0005,t+1.1);o.connect(g);g.connect(p);p.connect(audio.gal.gain);
+ const sg=c.createGain();sg.gain.value=.45;p.connect(sg);sg.connect(audio.reverb);o.start(t);o.stop(t+1.2);
+ noiseHit(t,{dur:.12,type:'lowpass',freq:700,gain:.05*v,to:audio.gal.gain,pan:pan||0,send:.4});
+}
+function secString(t,m,v,dur){ // one bowed string-section note (several players slightly out of tune, no synth sweep)
+ const c=audio.ctx,g=c.createGain(),lp=c.createBiquadFilter(),hp=c.createBiquadFilter();lp.type='lowpass';lp.frequency.value=1500+700*v;lp.Q.value=.4;hp.type='highpass';hp.frequency.value=70;
+ const a=.012*v;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(a,t+.025);g.gain.setTargetAtTime(a*.6,t+.04,.06);g.gain.setValueAtTime(a*.6,t+dur);g.gain.linearRampToValueAtTime(0,t+dur+.09);
+ lp.connect(hp);hp.connect(g);g.connect(audio.gal.gain);const sg=c.createGain();sg.gain.value=.75;g.connect(sg);sg.connect(audio.reverb);
+ for(const det of [-13,-5,4,12]){const o=c.createOscillator();o.type='sawtooth';o.frequency.value=mf(m);o.detune.value=det+(Math.random()*4-2);o.connect(lp);o.start(t);o.stop(t+dur+.12);}
+}
+function secTremolo(t,dur,chord,lvl){ // high violins, bowed tremolo on the chord
+ const c=audio.ctx,notes=SEC_CH[chord][1],g=c.createGain(),lp=c.createBiquadFilter(),am=c.createGain(),lfo=c.createOscillator(),ld=c.createGain();
+ lp.type='lowpass';lp.frequency.value=3000;lp.Q.value=.3;const a=.0045*lvl;
+ g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(a,t+.25);g.gain.setValueAtTime(a,t+dur-.05);g.gain.linearRampToValueAtTime(0,t+dur+.35);
+ am.gain.value=.7;lfo.frequency.value=11.5;ld.gain.value=.3;lfo.connect(ld);ld.connect(am.gain);lfo.start(t);lfo.stop(t+dur+.5);
+ lp.connect(am);am.connect(g);g.connect(audio.gal.gain);const sg=c.createGain();sg.gain.value=1;g.connect(sg);sg.connect(audio.reverb);
+ for(const m of notes.slice(1).map(n=>n+12))for(const det of [-9,0,9]){const o=c.createOscillator();o.type='sawtooth';o.frequency.value=mf(m);o.detune.value=det;o.connect(lp);o.start(t);o.stop(t+dur+.5);}
+}
+function secSnareRoll(t,dur){ // orchestral snare roll that swells into the next bar
+ const n=Math.round(dur/.045);for(let i=0;i<n;i++){const v=.15+.85*(i/n);noiseHit(t+i*dur/n,{dur:.08,type:'bandpass',freq:3200,q:.8,gain:.022*v,to:audio.gal.gain,send:.6});}
+}
+function secCymbal(t,swell){ // suspended cymbal: a swell rising into t, or a crash on t
+ const c=audio.ctx,s=c.createBufferSource(),f=c.createBiquadFilter(),g=c.createGain();s.buffer=noiseBuf();s.loop=true;f.type='highpass';f.frequency.value=5200;
+ const st=Math.max(swell?t-swell:t,c.currentTime);g.gain.setValueAtTime(0,st);
+ if(swell){g.gain.linearRampToValueAtTime(.0015,st+(t-st)*.3);g.gain.exponentialRampToValueAtTime(.022,t);}else g.gain.linearRampToValueAtTime(.03,t+.004);
+ g.gain.exponentialRampToValueAtTime(.0001,t+3.2);s.connect(f);f.connect(g);g.connect(audio.gal.gain);const sg=c.createGain();sg.gain.value=1.1;g.connect(sg);sg.connect(audio.reverb);
+ s.start(st);s.stop(t+3.3);
+}
+function secBell(t){ // great bell toll: inharmonic partials with a long decay
+ const c=audio.ctx,out=c.createGain();out.gain.value=.045;out.connect(audio.gal.gain);const sg=c.createGain();sg.gain.value=1.2;out.connect(sg);sg.connect(audio.reverb);
+ for(const [r,a,d] of [[.5,1,7],[1,.8,6],[1.19,.5,4.5],[1.5,.35,3.5],[2,.3,3],[2.74,.18,2],[3.76,.1,1.4]]){const o=c.createOscillator(),g=c.createGain();o.frequency.value=mf(50)*r;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(a,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(out);o.start(t);o.stop(t+d+.1);}
+}
+const SEC_DRUMS={0:[],4:[[0,1],[2,.7],[3.5,.45]],1:[[0,1]],2:[[0,1],[1.5,.55],[2,.85],[3.5,.5]],3:[[0,1],[.75,.45],[1,.7],[1.5,.6],[2,.95],[2.75,.45],[3,.75],[3.5,.6],[3.75,.5]]};
+function startSecara(){
+ stopGallia();const c=audio.ctx,now=c.currentTime,g=c.createGain();g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(1.5,now+3);g.connect(audio.music); // level matched to the other soundtracks
+ audio.gal={gain:g,bpm:SEC_BPM,score:secScore(),bar:0,next:now+.4,kind:'secara'};secSchedule();
+}
+function secSchedule(){
+ const gl=audio.gal;if(!gl||gl.kind!=='secara')return;const c=audio.ctx,ahead=60/SEC_BPM*6;
+ while(gl.next<c.currentTime+ahead){
+  const t0=Math.max(gl.next,c.currentTime+.05),b=gl.score[gl.bar%gl.score.length];gl.bar++;const beat=60/(b.bpm||SEC_BPM),bar=beat*4; // fast bars carry their own tempo
+  secPedal(t0,bar,b.c);if(b.ch)secChoir(t0,bar,b.c,b.ch);
+  if(b.bell)secBell(t0);
+  for(const [x,v] of SEC_DRUMS[b.d||0])secDrum(t0+x*beat,v,x%1?(x%2>1?.25:-.25):0);
+  if(b.d>=2)timpani(t0,SEC_CH[b.c][0]+12,.8);
+  if(b.roll)for(let i=0;i<16;i++)timpani(t0+beat*2+i*beat/8,SEC_CH[b.c][0]+12,.15+.6*i/15);
+  if(b.m){let t=t0;b.m.forEach(([n,d],i)=>{if(n){hornNote(t,n,d*beat*.97,i===0?1:.9,-.1);hornNote(t+.01,n-12,d*beat*.97,.85,.1);}t+=d*beat;});} // low brass in octaves
+  if(b.h)hornNote(t0+.02,b.h,bar*.96,.6,.3);
+  if(b.o){const r=SEC_CH[b.c][0]+12;for(let q=0;q<4;q++)for(const [x,v] of [[0,1],[.5,.55],[.75,.65]]){const tt=t0+(q+x)*beat,vv=q%2===0&&x===0?1:v,dd=beat*(x?.22:.42);secString(tt,r,vv,dd);secString(tt+.006,r+12,vv*.7,dd);}} // galloping cellos and violas in octaves
+  if(b.tr)secTremolo(t0,bar,b.c,b.tr);
+  if(b.d===4)timpani(t0+2*beat,SEC_CH[b.c][0]+12,.5);
+  if(b.sn)secSnareRoll(t0+bar-beat*(b.sn===2?2:1),beat*(b.sn===2?2:1));
+  if(b.cy===1)secCymbal(t0+bar,beat*2);else if(b.cy===2)secCymbal(t0);
+  if(b.st)for(const x of [0,2.5])SEC_CH[b.c][1].slice(0,3).forEach((n,i)=>{hornNote(t0+x*beat+i*.004,n,beat*.9,.7,i-1);hornNote(t0+x*beat+.008,n-12,beat*.9,.5,0);}); // brass chord accents
+  gl.next=t0+bar;
+ }
+ musicLater(secSchedule,60/SEC_BPM*1500);
+}
+function startGallia(score,bpm){
  stopGallia();const c=audio.ctx,now=c.currentTime,g=c.createGain();g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(2.6,now+2.5);g.connect(audio.music); // level matched to the other soundtracks
- audio.gal={gain:g,score:galScore(),bar:0,next:now+.4};galSchedule();
+ audio.gal={gain:g,bpm:bpm||GAL_BPM,score:score||galScore(),bar:0,next:now+.4};galSchedule();
 }
 function stopGallia(){
  const gl=audio.gal;if(!gl)return;audio.gal=null;const now=audio.ctx.currentTime;
  gl.gain.gain.cancelScheduledValues(now);gl.gain.gain.setValueAtTime(gl.gain.gain.value,now);gl.gain.gain.linearRampToValueAtTime(0,now+1.2);setTimeout(()=>gl.gain.disconnect(),1500);
 }
 function galSchedule(){
- const gl=audio.gal;if(!gl)return;const c=audio.ctx,beat=60/GAL_BPM;
+ const gl=audio.gal;if(!gl||gl.kind==='secara')return;const c=audio.ctx,beat=60/(gl.bpm||GAL_BPM);
  while(gl.next<c.currentTime+beat*6){
   const t0=Math.max(gl.next,c.currentTime+.05),b=gl.score[gl.bar%gl.score.length];gl.bar++;
   galStrings(t0,beat*4,b.c);
@@ -1445,15 +1647,16 @@ const CMD_ALPHA_KEY='reliquary-command-alpha',CMD_SESSION_KEY='reliquary-command
 const CMD_FACTIONS={
  eisdon:{name:'Eisdon',online:true,pinHash:'50a7fea0f74543785cd5fab7839d0d0369dd5bc98eee30170c08238373cc0cd5',icon:'<path d="M32 6 54 14v16c0 14-9 23-22 28C19 53 10 44 10 30V14z"/><path d="M18 40 28 24l6 9 5-6 8 13z" fill="currentColor" opacity=".55"/>'},
  gallia:{name:'Gallia',online:true,pinHash:'1a330864bdbb1a44861f71431be7c87ce4166f8bebd912e57c4d17b7e8c9f8d4',icon:'<rect x="11" y="11" width="42" height="42" rx="7"/><path d="M32 18 45 32 32 46 19 32z" fill="currentColor" opacity=".55"/><path d="M11 32h8M45 32h8"/>'},
+ secara:{name:'Secaran Republic',online:true,pinHash:'225abbd6a8aa30255ee39feeabb4ea09881619bad9fe9443b9c59bd67ef096ed',icon:'<circle cx="32" cy="32" r="22"/><circle cx="32" cy="32" r="8" fill="currentColor" opacity=".55"/><path d="M32 6v14M32 44v14M6 32h14M44 32h14M13.6 13.6l9.9 9.9M40.5 40.5l9.9 9.9M50.4 13.6l-9.9 9.9M23.5 40.5l-9.9 9.9"/>'},
  histannia:{name:'Histannia',online:false,icon:'<circle cx="32" cy="32" r="22"/><path d="M32 14 36 28 50 32 36 36 32 50 28 36 14 32 28 28z" fill="currentColor" opacity=".55"/>'},
  harron:{name:'Harron',online:false,icon:'<path d="M32 8 52 20v24L32 56 12 44V20z"/><path d="M22 26h20v6H35v14h-6V32h-7z" fill="currentColor" opacity=".55"/>'}
 };
-const CMD_STATE={eisdon:{credits:0},gallia:{credits:0},histannia:{credits:0},harron:{credits:0}};
+const CMD_STATE={eisdon:{credits:0},gallia:{credits:0},secara:{credits:0},histannia:{credits:0},harron:{credits:0}};
 // Credit income. Each command earns a fixed number of credits per hour, counted from one shared start time, so the
 // treasury keeps growing whether or not anyone is logged in or has the site open, and every visitor sees the same
 // total. Rates live in CMD_INCOME (keep in step with index.html). Payments land on the hour mark after ECON_START.
 const ECON_START=Date.UTC(2026,10,25,18,0,0),HOUR_MS=3600000; // 25 Nov 2026, 1:00 pm Eastern
-const CMD_INCOME={eisdon:1,gallia:2,histannia:0,harron:0};
+const CMD_INCOME={eisdon:1,gallia:2,secara:2,histannia:0,harron:0};
 function treasury(c,now=Date.now()){return (CMD_STATE[c]?.credits||0)+(CMD_INCOME[c]||0)*Math.max(0,Math.floor((now-ECON_START)/HOUR_MS));}
 function nextPayMin(now=Date.now()){const e=now-ECON_START;return e<0?Math.ceil(-e/60000):Math.ceil((HOUR_MS-e%HOUR_MS)/60000);}
 function incomeText(c){const r=CMD_INCOME[c]||0;if(!r)return 'No income';const m=nextPayMin();return `+${r} CR/hr · next payment in ${m>=60?'1 hr':m+' min'}`;}
@@ -1560,7 +1763,8 @@ const FLEET_REPORT_MS=10000; // wait after the last gate before the fleet report
 // crisp blue craft with long fine trails in a wider group. gap = seconds between ships entering a gate.
 const FLEET_STYLE={
  eisdon:{col:'255,170,70',core:'255,236,200',size:1.25,trail:6,trailW:1.6,spread:7,gap:1.4},
- gallia:{col:'90,180,255',core:'225,245,255',size:1,trail:10,trailW:.9,spread:10,gap:1.1}};
+ gallia:{col:'90,180,255',core:'225,245,255',size:1,trail:10,trailW:.9,spread:10,gap:1.1},
+ secara:{col:'120,160,255',core:'236,242,255',size:1.1,trail:8,trailW:1.2,spread:8.5,gap:1.2}};
 // Fleets per command (ids like 'gallia-2'). Each fleet's formation differs, worked out from its id.
 const FLEET_COUNT=3,FLEET_ORD=[['1st','First'],['2nd','Second'],['3rd','Third'],['4th','Fourth'],['5th','Fifth']];
 const FLEET_INFO={};
@@ -1675,7 +1879,10 @@ const VOICE_CAST={
  'eisdon-3':[{re:/\b(conrad|killian|klaus|bernd|christoph|kasper|ralf|jonas|jan|stefan|markus|yannick)\b.*natural/i,lang:/^de/i,accent:'strong'},{re:/florian.*multilingual/i,accent:'strong'},{re:/\b(conrad|killian|klaus|bernd|christoph|kasper|ralf|jonas|jan|stefan|markus|yannick)\b/i,lang:/^de/i,accent:'strong'},{lang:/^de/i,accent:'strong'},{lang:/^en/i}], // male, stronger
  'gallia-1':[{re:/remy.*multilingual/i,accent:'subtle'},{re:/\b(henri|alain|claude|jerome|yves|maurice|gerard)\b.*natural/i,lang:/^fr/i,accent:'strong'},{re:/\bthomas\b/i,lang:/^fr/i,accent:'strong'},{lang:/^fr/i,accent:'strong'},{lang:/^en-gb/i}], // male, subtle
  'gallia-2':[{re:/\b(denise|eloise|celeste|coralie|jacqueline|josephine|yvette|brigitte)\b.*natural/i,lang:/^fr/i,accent:'strong'},{re:/vivienne.*multilingual/i,accent:'strong'},{re:/\b(audrey|amelie|aurelie|julie|hortense)\b|google fran/i,lang:/^fr/i,accent:'strong'},{lang:/^fr/i,accent:'strong'},{lang:/^en-gb/i}], // female, stronger
- 'gallia-3':[{re:/vivienne.*multilingual/i,accent:'subtle'},{re:/\b(henri|alain|claude|jerome|yves|maurice|gerard)\b.*natural/i,lang:/^fr/i,accent:'strong'},{re:/remy.*multilingual/i,accent:'strong'},{lang:/^fr/i,accent:'strong'},{lang:/^en-gb/i}]}; // female subtle, else a stronger male
+ 'gallia-3':[{re:/vivienne.*multilingual/i,accent:'subtle'},{re:/\b(henri|alain|claude|jerome|yves|maurice|gerard)\b.*natural/i,lang:/^fr/i,accent:'strong'},{re:/remy.*multilingual/i,accent:'strong'},{lang:/^fr/i,accent:'strong'},{lang:/^en-gb/i}], // female subtle, else a stronger male
+ 'secara-1':[{re:/\b(andrew|christopher|eric|brian)\b.*natural/i,lang:/^en-us/i},{re:/\b(david|mark)\b|google us english/i,lang:/^en-us/i},{lang:/^en-us/i},{lang:/^en/i}], // male, clear US English
+ 'secara-2':[{re:/\b(jenny|aria|ava|emma|michelle|nancy|sara)\b.*natural/i,lang:/^en-us/i},{re:/\b(zira|samantha)\b/i,lang:/^en-us/i},{lang:/^en-us/i},{lang:/^en/i}], // female, clear US English
+ 'secara-3':[{re:/\b(guy|davis|tony|jason|roger|steffan)\b.*natural/i,lang:/^en-us/i},{re:/\b(andrew|christopher|eric|brian)\b.*natural/i,lang:/^en-us/i},{lang:/^en-us/i},{lang:/^en/i}]}; // male, clear US English
 const VOICE_TUNE={1:{rate:1.03,pitch:1},2:{rate:1,pitch:1.04},3:{rate:.97,pitch:.95}}; // small differences per fleet number
 let fleetVoices=[];
 function loadVoices(){try{fleetVoices=window.speechSynthesis?.getVoices()||[];}catch(e){}}
@@ -1825,9 +2032,9 @@ function fleetShortStatus(k){const st=fleetState(k);return st.kind==='preparing'
 function voiceOptions(k){
  let cur='';try{cur=localStorage.getItem(FLEET_VOICE_KEY+k)||'';}catch(e){}
  const opt=(val,label)=>`<option value="${esc(val)}"${val===cur?' selected':''}>${esc(label)}</option>`,by=re=>fleetVoices.filter(v=>re.test(v.lang)).sort((a,b)=>a.name.localeCompare(b.name));
- const al=CMD_ACCENT[fleetCmd(k)]||'fr',fr=by(new RegExp('^'+al,'i')).map(v=>/multilingual/i.test(v.name)?opt(v.name+'|subtle',shortVoice(v.name)+' · subtle accent')+opt(v.name+'|strong',shortVoice(v.name)+' · stronger accent'):opt(v.name+'|strong',shortVoice(v.name)+' · strong accent')).join('');
+ const al=CMD_ACCENT[fleetCmd(k)]||'',fr=!al?'':by(new RegExp('^'+al,'i')).map(v=>/multilingual/i.test(v.name)?opt(v.name+'|subtle',shortVoice(v.name)+' · subtle accent')+opt(v.name+'|strong',shortVoice(v.name)+' · stronger accent'):opt(v.name+'|strong',shortVoice(v.name)+' · strong accent')).join('');
  const auto=(()=>{const p=fleetVoice(k);return p.v&&!cur?` (${shortVoice(p.v.name).split(' - ')[0]})`:'';})();
- return opt('','Automatic'+auto)+`<optgroup label="${ACCENT_NAME[al]} voices">${fr}</optgroup><optgroup label="English voices (no accent)">${by(/^en/i).map(v=>opt(v.name,shortVoice(v.name))).join('')}</optgroup>`;
+ return opt('','Automatic'+auto)+(al?`<optgroup label="${ACCENT_NAME[al]} voices">${fr}</optgroup>`:'')+`<optgroup label="English voices (no accent)">${by(/^en/i).map(v=>opt(v.name,shortVoice(v.name))).join('')}</optgroup>`;
 }
 function renderFleetPanel(force){
  const el=$('fleet-body');if(!el||$('dock-fleet').hidden)return;

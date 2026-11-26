@@ -23,7 +23,66 @@ service cloud.firestore {
       allow read: if true;
       allow create, update: if browser.size() <= 20
         && request.resource.data.keys().hasOnly(['command', 'at'])
-        && request.resource.data.command in ['', 'eisdon', 'gallia', 'histannia', 'harron']
+        && request.resource.data.command in ['', 'eisdon', 'gallia', 'secara', 'histannia', 'harron']
+        && request.resource.data.at == request.time;
+    }
+    // Member accounts: username + PIN sign-up. Usernames and profiles are public; only the administrator deletes them.
+    function isMember() {
+      return request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    match /usernames/{name} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && name.matches('^[a-z0-9_-]{3,20}$')
+        && request.resource.data.keys().hasOnly(['uid'])
+        && request.resource.data.uid == request.auth.uid
+        && !exists(/databases/$(database)/documents/banned/$(request.auth.uid))
+        && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.name.lower() == name;
+      allow delete: if isAdmin();
+    }
+    function validDisplay(d) {
+      return d is string && d.matches("^[A-Za-z0-9 _.'-]{2,30}$");
+    }
+    match /users/{uid} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 'display', 'created'])
+        && request.resource.data.name is string && request.resource.data.name.matches('^[A-Za-z0-9_-]{3,20}$')
+        && validDisplay(request.resource.data.display)
+        && request.resource.data.created == request.time
+        && !exists(/databases/$(database)/documents/banned/$(uid))
+        && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.name.lower())).data.uid == uid;
+      allow update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['display'])
+        && validDisplay(request.resource.data.display);
+      allow delete: if isAdmin();
+    }
+    // Members online: each signed-in member writes their own heartbeat under their display name.
+    match /online/{uid} {
+      allow read: if true;
+      allow create, update: if isMember() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 'at'])
+        && request.resource.data.name == get(/databases/$(database)/documents/users/$(uid)).data.display
+        && request.resource.data.at == request.time;
+      allow delete: if isAdmin() || (request.auth != null && request.auth.uid == uid);
+    }
+    match /banned/{uid} {
+      allow read: if isAdmin() || (request.auth != null && request.auth.uid == uid);
+      allow create, update: if isAdmin();
+    }
+    // Message board: everyone can read; members post under their display name, the administrator as Administrator.
+    // Members can delete their own posts; the administrator can delete any.
+    match /board/{post} {
+      allow read: if true;
+      allow delete: if isAdmin() || (request.auth != null && resource.data.uid == request.auth.uid);
+      allow create: if request.resource.data.keys().hasOnly(['uid', 'topic', 'title', 'text', 'from', 'faction', 'at'])
+        && request.auth != null && request.resource.data.uid == request.auth.uid
+        && (isAdmin() || (isMember() && request.resource.data.from == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.display))
+        && request.resource.data.topic is string && request.resource.data.topic.size() <= 40
+        && request.resource.data.title is string && request.resource.data.title.size() <= 120
+        && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 2000
+        && request.resource.data.from is string && request.resource.data.from.size() <= 60
+        && request.resource.data.faction is string && request.resource.data.faction.size() <= 20
         && request.resource.data.at == request.time;
     }
     // Fleets (ids like gallia-2): anyone logged into a command can place and move its fleets; only the administrator changes the ship count (3 to 10).
@@ -34,7 +93,7 @@ service cloud.firestore {
     }
     function validFleet(fleet) {
       let d = request.resource.data;
-      return fleet.matches('^(eisdon|gallia|histannia|harron)-[1-9]$')
+      return fleet.matches('^(eisdon|gallia|secara|histannia|harron)-[1-9]$')
         && d.keys().hasOnly(['ships', 'at', 'to', 'depart', 'arrive', 'route'])
         && d.ships is int && d.ships >= 3 && d.ships <= 10
         && d.at is string && d.at.size() <= 40 && d.to is string && d.to.size() <= 40

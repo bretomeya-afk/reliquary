@@ -6,6 +6,8 @@
 //   chat/{auto id}     public read, admin write (live for every visitor).
 //   sessions/{browser} public read; each browser logged into a command writes a heartbeat {command, at}
 //                      (at = server time) about once a minute. A command's online count is its number of fresh records.
+//   board/{post}       public read; message board topics and replies (posted by members and the administrator).
+//   users/{uid}, usernames/{name}, banned/{uid}: member accounts (username + PIN sign-up).
 //   fleets/{fleet}     public read (ids like gallia-2); any browser can place or move a fleet, only the administrator changes its ship count.
 (function(){
 'use strict';
@@ -27,6 +29,7 @@ function ready(){
   auth=F.auth();db=F.firestore();
   try{await auth.setPersistence(F.auth.Auth.Persistence.SESSION);}catch(e){} // signed in for this tab, like the old admin login
   auth.onAuthStateChanged(u=>{user=u;authKnown=true;const a=isAdmin();authCbs.forEach(cb=>{try{cb(a);}catch(e){console.error(e);}});});
+  watchMemberProfile();
  })();
  readyP.catch(()=>{readyP=null;}); // a later sign-in or save tries again
  return readyP;
@@ -44,11 +47,12 @@ function friendly(e){
 }
 async function signIn(password){
  await ready();
+ try{await auth.setPersistence(window.firebase.auth.Auth.Persistence.SESSION);}catch(e){}
  try{await auth.signInWithEmailAndPassword(adminEmail,password);}catch(e){throw Error(friendly(e));}
  if(!isAdmin()){await auth.signOut();throw Error('That account is not the administrator.');}
  return true;
 }
-async function signOut(){if(auth)await auth.signOut();}
+async function signOut(){if(auth){dropOnline();await auth.signOut();}}
 const doc=n=>db.collection('site').doc(n);
 // Watch a shared value. cb(value) gets the parsed value, or null when nothing has been shared yet.
 // Echoes of this browser's own saves are skipped.
@@ -105,9 +109,105 @@ function watchFleets(cb,onError){
  return()=>{closed=true;stop();};
 }
 async function saveFleet(cmd,f){
- if(!/^(eisdon|gallia|histannia|harron)-[1-9]$/.test(cmd))throw Error('Unknown fleet.');await ready();
+ if(!/^(eisdon|gallia|secara|histannia|harron)-[1-9]$/.test(cmd))throw Error('Unknown fleet.');await ready();
  try{await db.collection('fleets').doc(cmd).set({ships:Math.round(f.ships),at:String(f.at||'').slice(0,40),to:String(f.to||'').slice(0,40),depart:Math.round(+f.depart||0),arrive:Math.round(+f.arrive||0),route:Array.isArray(f.route)?f.route.slice(0,40).map(x=>String(x).slice(0,40)):[]});}
  catch(e){throw Error(/permission-denied/.test(e&&e.code||'')?'The shared database refused the fleet order. Publish the latest firestore.rules in Firebase.':friendly(e));}
+}
+// Member accounts (site sign-up with a username and PIN). Each member is a Firebase Authentication user with a made-up
+// address (u.<name>@reliquary.example.com) and the PIN as password, plus users/{uid} = {name, display, created} and
+// usernames/{lower name} = {uid}. The display name (shown on posts and in Online now) can be changed by the member. Members stay signed in on that browser until they sign out. The administrator can
+// delete an account: the profile and name record are removed and banned/{uid} stops that login being used again.
+const NAME_RE=/^[A-Za-z0-9_-]{3,20}$/,PIN_RE=/^\d{6,12}$/,DISPLAY_RE=/^[A-Za-z0-9 _.'-]{2,30}$/;
+const memberEmail=n=>`u.${n.toLowerCase()}@reliquary.example.com`;
+const mem={cbs:[],cur:undefined,stop:null};
+function fireMember(){mem.cbs.forEach(cb=>{try{cb(mem.cur||null);}catch(e){console.error(e);}});}
+function onMember(cb){mem.cbs.push(cb);if(mem.cur!==undefined)cb(mem.cur||null);}
+function memberFriendly(e){const c=e&&e.code||'';if(/wrong-password|invalid-credential|invalid-login-credentials|user-not-found/.test(c))return 'Incorrect username or PIN.';if(/email-already-in-use/.test(c))return 'That username is taken.';if(/weak-password/.test(c))return 'The PIN must be 6 to 12 digits.';return friendly(e);}
+function watchMemberProfile(){
+ auth.onAuthStateChanged(async u=>{
+  if(mem.stop){mem.stop();mem.stop=null;}
+  if(on.uid&&(!u||u.uid!==on.uid))dropOnline();
+  if(!u||isAdmin()||!/@reliquary\.example\.com$/.test(u.email||'')){mem.cur=null;fireMember();return;}
+  mem.stop=db.collection('users').doc(u.uid).onSnapshot(async s=>{
+   if(s.exists){const d=s.data();mem.cur={uid:u.uid,name:String(d.name||''),display:String(d.display||d.name||'')};fireMember();syncOnline();return;}
+   if(mem.cur){mem.cur=null;fireMember();await auth.signOut();return;} // the account was deleted while signed in
+  },()=>{});
+ });
+}
+async function memberSignUp(name,pin){
+ name=String(name||'').trim();pin=String(pin||'').trim();
+ if(!NAME_RE.test(name))throw Error('Usernames are 3 to 20 letters, numbers, - or _.');
+ if(!PIN_RE.test(pin))throw Error('The PIN must be 6 to 12 digits.');
+ await ready();const key=name.toLowerCase();
+ if((await db.collection('usernames').doc(key).get()).exists)throw Error('That username is taken.');
+ try{await auth.setPersistence(window.firebase.auth.Auth.Persistence.LOCAL);}catch(e){}
+ let cred;try{cred=await auth.createUserWithEmailAndPassword(memberEmail(name),pin);}catch(e){throw Error(memberFriendly(e));}
+ const uid=cred.user.uid,b=db.batch(),at=window.firebase.firestore.FieldValue.serverTimestamp();
+ b.set(db.collection('usernames').doc(key),{uid});b.set(db.collection('users').doc(uid),{name,display:name,created:at});
+ try{await b.commit();}catch(e){try{await cred.user.delete();}catch(x){await auth.signOut();}throw Error(/permission-denied/.test(e&&e.code||'')?'That username is taken, or the database rules need publishing.':friendly(e));}
+ return {uid,name,display:name};
+}
+async function memberSignIn(name,pin){
+ name=String(name||'').trim();pin=String(pin||'').trim();
+ if(!NAME_RE.test(name)||!PIN_RE.test(pin))throw Error('Incorrect username or PIN.');
+ await ready();
+ try{await auth.setPersistence(window.firebase.auth.Auth.Persistence.LOCAL);}catch(e){}
+ let cred;try{cred=await auth.signInWithEmailAndPassword(memberEmail(name),pin);}catch(e){throw Error(memberFriendly(e));}
+ const uid=cred.user.uid,prof=await db.collection('users').doc(uid).get();
+ if(!prof.exists){
+  const ban=await db.collection('banned').doc(uid).get().catch(()=>null);await auth.signOut();
+  throw Error(ban&&ban.exists?'This account has been removed by an administrator.':'This account is not set up. Create it again or ask an administrator.');
+ }
+ const d=prof.data();return {uid,name:String(d.name||name),display:String(d.display||d.name||name)};
+}
+async function setDisplayName(display){
+ display=String(display||'').trim().replace(/\s+/g,' ');
+ if(!DISPLAY_RE.test(display))throw Error('Display names are 2 to 30 letters, numbers, spaces, or . _ \' -');
+ await ready();const u=auth.currentUser;if(!u||!mem.cur)throw Error('Sign in first.');
+ try{await db.collection('users').doc(u.uid).update({display});}catch(e){throw Error(friendly(e));}
+ return display;
+}
+// Online members: online/{uid} = {name: display name, at}. A signed-in member's open page sends a heartbeat about
+// once a minute; a member counts as online while it is fresh. Signing out or closing the page removes it.
+const ONLINE_FRESH=150000,on={uid:null,timer:0,data:[],skew:0};
+function writeOnline(){if(!mem.cur||!auth.currentUser)return;on.uid=mem.cur.uid;db.collection('online').doc(on.uid).set({name:mem.cur.display,at:window.firebase.firestore.FieldValue.serverTimestamp()}).catch(()=>{});}
+function syncOnline(){if(!mem.cur)return;writeOnline();if(!on.timer){on.timer=setInterval(writeOnline,60000);addEventListener('pagehide',()=>{if(on.uid)db.collection('online').doc(on.uid).delete().catch(()=>{});});addEventListener('pageshow',e=>{if(e.persisted)writeOnline();});}}
+function dropOnline(){const id=on.uid;on.uid=null;clearInterval(on.timer);on.timer=0;if(id&&db)db.collection('online').doc(id).delete().catch(()=>{});}
+function watchOnline(cb,onError){
+ let stop=()=>{},closed=false,iv=0;const emit=()=>{const now=Date.now()+on.skew;cb(on.data.filter(x=>now-x.at<ONLINE_FRESH).sort((a,b)=>a.name.localeCompare(b.name)));};
+ ready().then(()=>{if(closed)return;stop=db.collection('online').onSnapshot(s=>{const o=[];s.forEach(d=>{const v=d.data({serverTimestamps:'estimate'}),at=v.at&&v.at.toMillis?v.at.toMillis():0;o.push({uid:d.id,name:String(v.name||''),at});if(d.id===on.uid&&!d.metadata.hasPendingWrites&&at)on.skew=Math.max(-864e5,Math.min(864e5,at-Date.now()));});on.data=o;emit();},e=>onError&&onError(friendly(e)));iv=setInterval(emit,30000);}).catch(e=>onError&&onError(friendly(e)));
+ return()=>{closed=true;stop();clearInterval(iv);};
+}
+// Administrator: list members, and delete one (optionally with their message board posts).
+function watchMembers(cb,onError){
+ let stop=()=>{},closed=false;
+ ready().then(()=>{if(closed)return;stop=db.collection('users').onSnapshot(s=>{const o=[];s.forEach(d=>{const v=d.data({serverTimestamps:'estimate'});o.push({uid:d.id,name:String(v.name||''),display:String(v.display||v.name||''),created:v.created&&v.created.toMillis?v.created.toMillis():0});});cb(o.sort((a,b)=>a.name.localeCompare(b.name)));},e=>onError&&onError(friendly(e)));}).catch(e=>onError&&onError(friendly(e)));
+ return()=>{closed=true;stop();};
+}
+async function deleteMember(uid,name,withPosts){
+ await ready();if(!isAdmin())throw Error('Sign in as administrator.');
+ try{
+  const b=db.batch(),at=window.firebase.firestore.FieldValue.serverTimestamp();
+  b.delete(db.collection('users').doc(uid));b.delete(db.collection('online').doc(uid));b.delete(db.collection('usernames').doc(String(name).toLowerCase()));b.set(db.collection('banned').doc(uid),{name:String(name).slice(0,20),at});await b.commit();
+  if(withPosts){const s=await db.collection('board').where('uid','==',uid).get(),ids=[];s.forEach(d=>ids.push(d.id));await deleteBoardPosts(ids);}
+ }catch(e){throw Error(friendly(e));}
+}
+// Message board: board/{id} = {uid, topic, title, text, from, faction, at}. A topic has topic '' and a title; a reply
+// has topic = the topic's id. Everyone can read; signed-in members (as their username) and the administrator can post;
+// the database checks the author. Members can delete their own posts; the administrator can delete any.
+function watchBoard(cb,onError){
+ let stop=()=>{},closed=false;
+ ready().then(()=>{if(closed)return;stop=db.collection('board').orderBy('at').limitToLast(1000).onSnapshot(s=>{const out=[];s.forEach(d=>{const m=d.data({serverTimestamps:'estimate'});if(m&&typeof m.text==='string')out.push({id:d.id,uid:String(m.uid||''),topic:String(m.topic||''),title:String(m.title||''),text:m.text,from:String(m.from||''),faction:String(m.faction||''),at:m.at&&m.at.toMillis?m.at.toMillis():0});});cb(out);},e=>onError&&onError(friendly(e)));}).catch(e=>onError&&onError(friendly(e)));
+ return()=>{closed=true;stop();};
+}
+async function addBoardPost(m){
+ await ready();
+ try{const r=await db.collection('board').add({uid:auth.currentUser?auth.currentUser.uid:'',topic:String(m.topic||'').slice(0,40),title:String(m.title||'').slice(0,120),text:String(m.text).slice(0,2000),from:String(m.from).slice(0,60),faction:String(m.faction||'').slice(0,20),at:window.firebase.firestore.FieldValue.serverTimestamp()});return r.id;}
+ catch(e){throw Error(/permission-denied/.test(e&&e.code||'')?'The shared database refused the post. Publish the latest firestore.rules in Firebase.':friendly(e));}
+}
+async function deleteBoardPosts(ids){
+ await ready();
+ try{for(let i=0;i<ids.length;i+=400){const b=db.batch();ids.slice(i,i+400).forEach(id=>b.delete(db.collection('board').doc(id)));await b.commit();}}catch(e){throw Error(friendly(e));}
 }
 // Commander presence. Several people on different computers can be logged into the same command at once, so each
 // browser has its own presence record: sessions/{browser id} = {command, at} (command '' when logged out; at = server
@@ -115,7 +215,7 @@ async function saveFleet(cmd,f){
 // one person. trackPresence(getCommand, onChange) starts the heartbeat for whichever command this browser is logged
 // into (getCommand() returns its key or null), watches everyone's records and calls onChange on updates.
 // presenceStatus() returns {command: number of people online}. Call syncPresence() right after a login or logout.
-const PRESENCE_FRESH=150000,PRESENCE_BEAT=60000,CMD_KEYS=['eisdon','gallia','histannia','harron'];
+const PRESENCE_FRESH=150000,PRESENCE_BEAT=60000,CMD_KEYS=['eisdon','gallia','secara','histannia','harron'];
 function browserId(){const k='reliquary-presence-id';try{let v=localStorage.getItem(k);if(!/^[a-z0-9]{12}$/.test(v||'')){v=Array.from(crypto.getRandomValues(new Uint8Array(12)),x=>'abcdefghijklmnopqrstuvwxyz0123456789'[x%36]).join('');localStorage.setItem(k,v);}return v;}catch(e){return Math.random().toString(36).slice(2,14).padEnd(12,'0');}}
 const pres={id:browserId(),cur:null,get:null,data:{},skew:0,cbs:[],started:false,bc:null};
 function firePresence(){pres.cbs.forEach(cb=>{try{cb();}catch(e){console.error(e);}});}
@@ -142,6 +242,6 @@ function trackPresence(getCmd,onChange){
  addEventListener('pagehide',()=>{if(pres.cur){writePresence(null).catch(()=>{});try{pres.bc&&pres.bc.postMessage('closing');}catch(e){}}});
  addEventListener('pageshow',e=>{if(e.persisted){pres.cur=null;syncPresence();}});
 }
-window.ReliquaryCloud={enabled,adminEmail,ready,isAdmin,onAuth,signIn,signOut,watchDoc,saveDoc,watchChat,addChat,clearChat,trackPresence,syncPresence,presenceStatus,watchFleets,saveFleet};
+window.ReliquaryCloud={enabled,adminEmail,ready,isAdmin,onAuth,signIn,signOut,watchDoc,saveDoc,watchChat,addChat,clearChat,trackPresence,syncPresence,presenceStatus,watchFleets,saveFleet,watchBoard,addBoardPost,deleteBoardPosts,onMember,memberSignUp,memberSignIn,setDisplayName,watchOnline,watchMembers,deleteMember};
 if(enabled)ready().catch(()=>{});
 })();
