@@ -18,5 +18,14 @@ service cloud.firestore {
       allow create: if isAdmin()
         && request.resource.data.text is string && request.resource.data.text.size() <= 300;
     }
+    // Commander presence: everyone can see who is online; a logged-in commander's browser writes a heartbeat.
+    match /presence/{command} {
+      allow read: if true;
+      allow create, update: if command in ['eisdon', 'gallia', 'histannia', 'harron']
+        && request.resource.data.keys().hasOnly(['online', 'sid', 'at'])
+        && request.resource.data.online is bool
+        && request.resource.data.sid is string && request.resource.data.sid.size() <= 20
+        && request.resource.data.at == request.time;
+    }
   }
 }

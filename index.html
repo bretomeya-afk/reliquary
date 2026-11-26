@@ -349,7 +349,8 @@ html.faction-dropdown-open,html.faction-dropdown-open body,html.faction-dropdown
 @media(prefers-reduced-motion:reduce){.cmd-switch-knob{transition:none}}
 .cmd-login{margin:0 0 28px;padding:22px 24px;border:1px solid rgba(152,220,255,.45);border-radius:8px;background:repeating-linear-gradient(-45deg,rgba(152,220,255,.05) 0 14px,transparent 14px 28px),rgba(3,16,30,.88);box-shadow:inset 0 0 0 6px rgba(3,16,30,.85),inset 0 0 0 7px rgba(152,220,255,.22)}
 .cmd-login-head{text-align:center;margin-bottom:16px}.cmd-login-head h2{margin:4px 0 6px;font-size:26px;letter-spacing:.28em;text-transform:uppercase;color:#d6efff}.cmd-login-head p{margin:0;color:var(--muted)}
-.cmd-factions{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:720px;margin:0 auto}
+.cmd-factions{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:900px;margin:0 auto}
+@media(max-width:1000px){.cmd-factions{grid-template-columns:repeat(2,1fr)}}
 .cmd-faction{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 10px;border:1px solid rgba(152,220,255,.35);border-radius:6px;background:rgba(4,26,46,.6);color:var(--text);font:inherit;cursor:pointer}
 .cmd-faction svg{width:44px;height:44px;color:#9fdcff}
 .cmd-faction strong{font-size:15px;letter-spacing:.2em;text-transform:uppercase}
@@ -374,7 +375,7 @@ html.faction-dropdown-open,html.faction-dropdown-open body,html.faction-dropdown
  background:radial-gradient(ellipse at center,rgba(20,90,50,.55),rgba(3,22,12,.95) 75%),#02120a;box-shadow:inset 0 0 30px rgba(0,0,0,.9),inset 0 0 2px rgba(125,255,168,.5)}
 .cmd-screen::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.28) 0 1px,transparent 1px 3px)}
 .cmd-screen p{margin:0}.cmd-dim{opacity:.6}
-.cmd-readout{display:flex;align-items:baseline;gap:8px;margin:10px 0}.cmd-readout strong{font-size:20px;color:#b6ffcc}
+.cmd-readout{display:flex;align-items:baseline;gap:8px;margin:10px 0 2px}.cmd-income{margin:0 0 10px!important;font-size:12px;opacity:.75;text-align:right}.cmd-readout strong{font-size:20px;color:#b6ffcc}
 .cmd-dots{flex:1;border-bottom:2px dotted rgba(125,255,168,.45);transform:translateY(-4px)}
 .cmd-events{margin:2px 0 8px;padding:0;list-style:none}
 .cmd-cursor{animation:cmdblink 1s steps(1) infinite}@keyframes cmdblink{50%{opacity:0}}
@@ -406,6 +407,55 @@ html.faction-dropdown-open,html.faction-dropdown-open body,html.faction-dropdown
 @media(prefers-reduced-motion:reduce){.cmd-knob-cap,.cmd-flip::after,.cmd-gauge .needle{transition:none}}
 @media(max-width:760px){.cmd-factions{grid-template-columns:1fr}.cmd-body{grid-template-columns:1fr}.cmd-hazard{flex-basis:24px}.cmd-plate-head h2{font-size:18px}}
 @media(prefers-reduced-motion:reduce){.cmd-cursor{animation:none}}
+/* Command terminal and commanders roster */
+.cmd-out{max-height:170px;overflow:auto;margin-top:8px;overscroll-behavior:contain;scrollbar-width:thin}
+.cmd-out p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}.cmd-out .cmd-echo{opacity:.75}.cmd-out .cmd-warn{color:#ffd57a;text-shadow:0 0 6px rgba(217,161,58,.6)}
+.cmd-term{position:relative;z-index:1;display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px dashed currentColor}
+.cmd-term label{flex-shrink:0}
+.cmd-term input{flex:1;min-width:0;padding:2px 0;border:0;background:transparent;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;text-shadow:inherit;caret-color:currentColor;outline:none}
+.cmd-term input::placeholder{color:inherit;opacity:.45}
+.cmd-term:focus-within{border-top-style:solid}
+.cmd-roster-head{margin-bottom:4px;font-size:10px;letter-spacing:.24em;color:#f2b632}
+.cmd-roster b.on{color:#7dffa8}.cmd-roster b.off{color:#8e979f;font-weight:400}
+.cmd-led.off{background:#3a1512;box-shadow:inset 0 -2px 2px rgba(0,0,0,.4)}
+.cmd-roster-note{margin:6px 0 0;font-size:10px;letter-spacing:.06em;text-transform:none;opacity:.7}
+.cmd-gallia .cmd-roster-head{color:#5cc8ff}.cmd-gallia .cmd-roster b.on{color:#8fdcff}.cmd-gallia .cmd-led.off{background:#1b2630;box-shadow:inset 0 -2px 2px rgba(0,0,0,.4)}
+.cmd-gallia .cmd-out .cmd-warn{color:#ffd57a}
+.cmd-meter{display:none}
+/* Gallia briefing: clean dark-grey brushed steel, blue display, push buttons and digital meters */
+.cmd-briefing.cmd-gallia{color:#e6ecf0;font-family:'Segoe UI',Bahnschrift,Arial,sans-serif;border:1px solid #15181b;border-radius:10px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 1px,transparent 1px 3px,rgba(0,0,0,.06) 3px 4px),linear-gradient(180deg,#6a7279 0%,#50575e 18%,#3e444a 50%,#353b41 54%,#464d54 86%,#596168 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),inset 0 -1px 0 rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.7)}
+.cmd-gallia .cmd-wires{display:none}
+.cmd-gallia .cmd-plate-head{margin-bottom:18px;border:1px solid #15181b;border-radius:6px;background:linear-gradient(#0a1d2f,#04111d);box-shadow:inset 0 1px 4px rgba(0,0,0,.8),0 1px 0 rgba(255,255,255,.18)}
+.cmd-gallia .cmd-hazard{height:4px;border:0;border-radius:2px;background:linear-gradient(90deg,#0e5e99,#8fdcff,#0e5e99);box-shadow:0 0 8px rgba(92,200,255,.8)}
+.cmd-gallia .cmd-kicker{color:#5cc8ff}
+.cmd-gallia .cmd-plate-head h2{color:#e6f4ff;text-shadow:0 0 8px rgba(92,200,255,.5)}
+.cmd-gallia .cmd-terminal{border:1px solid #15181b;border-radius:8px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 1px,transparent 1px 3px,rgba(0,0,0,.06) 3px 4px),linear-gradient(#4c535a,#30363b);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 1px 0 rgba(255,255,255,.12)}
+.cmd-gallia .cmd-screen{color:#8fdcff;font-family:Consolas,'Lucida Console',monospace;text-shadow:0 0 6px rgba(92,200,255,.65);background:radial-gradient(ellipse at 50% 20%,#0d2a44,#04111d 75%),#020c16;box-shadow:inset 0 0 24px rgba(0,0,0,.85),inset 0 0 2px rgba(92,200,255,.6)}
+.cmd-gallia .cmd-screen::after{background:repeating-linear-gradient(0deg,rgba(92,200,255,.04) 0 1px,transparent 1px 24px),repeating-linear-gradient(90deg,rgba(92,200,255,.04) 0 1px,transparent 1px 24px)}
+.cmd-gallia .cmd-readout strong{color:#d9f2ff}.cmd-gallia .cmd-dots{border-bottom-color:rgba(92,200,255,.45)}
+.cmd-gallia .cmd-status{border:1px solid #15181b;border-radius:6px;background:linear-gradient(#0a1d2f,#04111d);color:#8fb4cf;box-shadow:inset 0 1px 4px rgba(0,0,0,.8),0 1px 0 rgba(255,255,255,.12)}
+.cmd-gallia .cmd-status b{color:#e6f4ff}
+.cmd-gallia .cmd-led,.cmd-gallia .cmd-lamp.on{background:#39b6ff;box-shadow:0 0 8px #39b6ff}
+.cmd-gallia .cmd-lamp.amber.on{background:#f2b632;box-shadow:0 0 8px #f2b632}
+.cmd-gallia .cmd-btn{border:1px solid #1c2025;border-radius:5px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 1px,transparent 1px 3px,rgba(0,0,0,.06) 3px 4px),linear-gradient(#646c74,#484f56 50%,#373d43);color:#e6ecf0;text-shadow:0 1px 0 rgba(0,0,0,.7);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 1px 0 #15181b,0 2px 4px rgba(0,0,0,.5)}
+.cmd-gallia .cmd-btn:hover{background:repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 1px,transparent 1px 3px,rgba(0,0,0,.06) 3px 4px),linear-gradient(#717a82,#535a62 50%,#3f454b);border-color:#2a8fe0;color:#fff}
+.cmd-gallia .cmd-btn.go{background:linear-gradient(#45a8f2,#1f7fcf);border-color:#0f4f86;color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.35)}
+.cmd-gallia .cmd-btn:focus-visible,.cmd-gallia .cmd-knob:focus-visible,.cmd-gallia .cmd-flip:focus-visible{outline-color:#2a8fe0}
+.cmd-gallia .cmd-ctl-group{border:1px solid #15181b;border-radius:6px;background:linear-gradient(#13212e,#0a141d);box-shadow:inset 0 1px 4px rgba(0,0,0,.7),0 1px 0 rgba(255,255,255,.12)}
+.cmd-gallia .cmd-ctl{color:#8fb4cf}
+.cmd-gallia .cmd-knob{width:60px;height:40px;border-radius:5px;cursor:pointer;counter-reset:st var(--step,3);background:linear-gradient(#071827,#030d17);box-shadow:0 0 0 1px #3c4853,inset 0 2px 6px rgba(0,0,0,.9)}
+.cmd-gallia .cmd-knob-cap{display:none}
+.cmd-gallia .cmd-knob::after{content:counter(st,decimal-leading-zero);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 19px/1 Consolas,'Lucida Console',monospace;color:#bfe9ff;text-shadow:0 0 6px rgba(92,200,255,.85)}
+.cmd-gallia .cmd-knob::before{content:"▲";position:absolute;top:2px;right:4px;font-size:7px;color:#5f9cc8}
+.cmd-gallia .cmd-flip{width:38px;height:38px;border:1px solid #15181b;border-radius:6px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 1px,transparent 1px 3px,rgba(0,0,0,.06) 3px 4px),linear-gradient(#8b939b,#5f676f 55%,#4b5259);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 2px 0 #15181b,0 3px 4px rgba(0,0,0,.5)}
+.cmd-gallia .cmd-flip::before{clip-path:none;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:4px;background:radial-gradient(circle at 50% 40%,#22394d,#0b1824 75%);box-shadow:inset 0 1px 3px rgba(0,0,0,.8),0 0 0 1px #3c4853}
+.cmd-gallia .cmd-flip::after{display:none}
+.cmd-gallia .cmd-flip[aria-pressed="true"]{transform:translateY(1px);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 1px 0 #15181b,0 1px 2px rgba(0,0,0,.5)}
+.cmd-gallia .cmd-flip[aria-pressed="true"]::before{background:radial-gradient(circle at 50% 45%,#eaf8ff 0,#7fd4ff 35%,#1f86d6 80%);box-shadow:0 0 0 1px #0f4f86,0 0 10px rgba(92,200,255,.85)}
+.cmd-gallia .cmd-gauge{display:none}
+.cmd-gallia .cmd-meter{display:block;position:relative;width:130px;height:30px;border-radius:4px;background:linear-gradient(#071827,#030d17);box-shadow:0 0 0 1px #3c4853,inset 0 2px 5px rgba(0,0,0,.9)}
+.cmd-gallia .cmd-meter i{position:absolute;left:7px;right:7px;top:10px;bottom:10px;background:repeating-linear-gradient(90deg,transparent 0 5px,#030d17 5px 7px),linear-gradient(90deg,#2a8fe0,#8fdcff var(--m,40%),#11324f var(--m,40%));transition:background .4s}
+@media(prefers-reduced-motion:reduce){.cmd-gallia .cmd-meter i{transition:none}}
 </style>
 </head>
 <body>
@@ -980,52 +1030,99 @@ $('import-file').addEventListener('change',async e=>{if(!isAdmin()){e.target.val
 // First step toward the strategy layer. An administrator turns the module on for this browser with the
 // "Command Module α" button; the Restricted access panel then becomes the Commander Login. Commanders pick a
 // command and enter its PIN (checked against a SHA-256 hash; a client-side gate, not real security).
-// Logging in as Eisdon also switches the starmap to the Eisdon industrial interface.
+// Logging in as Eisdon also switches the starmap to the Eisdon industrial interface; Gallia gets its own
+// polished-steel interface. Each command has its own login, state and look.
 const CMD_ALPHA_KEY='reliquary-command-alpha',CMD_SESSION_KEY='reliquary-commander';
 const CMD_FACTIONS={
  eisdon:{name:'Eisdon',online:true,pinHash:'50a7fea0f74543785cd5fab7839d0d0369dd5bc98eee30170c08238373cc0cd5',icon:'<path d="M32 6 54 14v16c0 14-9 23-22 28C19 53 10 44 10 30V14z"/><path d="M18 40 28 24l6 9 5-6 8 13z" fill="currentColor" opacity=".55"/>'},
+ gallia:{name:'Gallia',online:true,pinHash:'1a330864bdbb1a44861f71431be7c87ce4166f8bebd912e57c4d17b7e8c9f8d4',icon:'<rect x="11" y="11" width="42" height="42" rx="7"/><path d="M32 18 45 32 32 46 19 32z" fill="currentColor" opacity=".55"/><path d="M11 32h8M45 32h8"/>'},
  histannia:{name:'Histannia',online:false,icon:'<circle cx="32" cy="32" r="22"/><path d="M32 14 36 28 50 32 36 36 32 50 28 36 14 32 28 28z" fill="currentColor" opacity=".55"/>'},
  harron:{name:'Harron',online:false,icon:'<path d="M32 8 52 20v24L32 56 12 44V20z"/><path d="M22 26h20v6H35v14h-6V32h-7z" fill="currentColor" opacity=".55"/>'}
 };
 // Per-command game state. Placeholder for the strategy layer: treasury credits and current events.
-const CMD_STATE={eisdon:{credits:0,events:[]},histannia:{credits:0,events:[]},harron:{credits:0,events:[]}};
+const CMD_STATE={eisdon:{credits:0,events:[]},gallia:{credits:0,events:[]},histannia:{credits:0,events:[]},harron:{credits:0,events:[]}};
+// Credit income. Each command earns a fixed number of credits per hour, counted from one shared start time, so the
+// treasury keeps growing whether or not anyone is logged in or has the site open, and every visitor sees the same
+// total. Rates live in CMD_INCOME (keep in step with starmap.html). Payments land on the hour mark after ECON_START.
+const ECON_START=Date.UTC(2026,10,25,18,0,0),HOUR_MS=3600000; // 25 Nov 2026, 1:00 pm Eastern
+const CMD_INCOME={eisdon:1,gallia:2,histannia:0,harron:0};
+function treasury(c,now=Date.now()){return (CMD_STATE[c]?.credits||0)+(CMD_INCOME[c]||0)*Math.max(0,Math.floor((now-ECON_START)/HOUR_MS));}
+function nextPayMin(now=Date.now()){const e=now-ECON_START;return e<0?Math.ceil(-e/60000):Math.ceil((HOUR_MS-e%HOUR_MS)/60000);}
+function incomeText(c){const r=CMD_INCOME[c]||0;if(!r)return 'No income';const m=nextPayMin();return `+${r} CR/hr · next payment in ${m>=60?'1 hr':m+' min'}`;}
+const fmtCR=n=>new Intl.NumberFormat('en-US').format(n)+' CR';
 let cmdPick=null;
 function commandAlpha(){try{return localStorage.getItem(CMD_ALPHA_KEY)==='1';}catch(e){return false;}}
 function commander(){try{const c=localStorage.getItem(CMD_SESSION_KEY);return CMD_FACTIONS[c]?.online?c:null;}catch(e){return null;}}
 function commandSection(){
  const c=commander();
- if(c){const f=CMD_FACTIONS[c],s=CMD_STATE[c];return `<section class="cmd-briefing" id="command-module" aria-label="${f.name} commander's briefing"><div class="cmd-wires" aria-hidden="true"></div><div class="cmd-plate-head"><span class="cmd-hazard" aria-hidden="true"></span><div><span class="cmd-kicker">${f.name} Command · Module Alpha</span><h2>Commander's Briefing</h2></div><span class="cmd-hazard" aria-hidden="true"></span></div><div class="cmd-body"><div class="cmd-terminal"><div class="cmd-screen" role="region" aria-label="Command terminal"><p class="cmd-dim">${f.name} command network · secure channel</p><p>&gt; Commander authenticated</p><div class="cmd-readout"><span>Treasury</span><span class="cmd-dots" aria-hidden="true"></span><strong>${new Intl.NumberFormat('en-US').format(s.credits)} CR</strong></div><p>Current events</p><ul class="cmd-events">${s.events.length?s.events.map(ev=>`<li>&gt; ${escapeHTML(ev)}</li>`).join(''):'<li class="cmd-dim">&gt; No active events</li>'}</ul><p aria-hidden="true"><span class="cmd-cursor">█</span></p></div></div><div class="cmd-side"><div class="cmd-status"><div><span>Uplink</span><b><span class="cmd-led" aria-hidden="true"></span> Online</b></div><div><span>Command</span><b>${f.name}</b></div><div><span>Clearance</span><b>Commander</b></div></div><a class="cmd-btn go" href="starmap.html">Tactical starmap</a><button class="cmd-btn" type="button" data-cmd-logout>Log out</button></div></div>${cmdControls()}</section>`;}
+ if(c){const f=CMD_FACTIONS[c],s=CMD_STATE[c];return `<section class="cmd-briefing cmd-${c}" id="command-module" aria-label="${f.name} commander's briefing"><div class="cmd-wires" aria-hidden="true"></div><div class="cmd-plate-head"><span class="cmd-hazard" aria-hidden="true"></span><div><span class="cmd-kicker">${f.name} Command · Module Alpha</span><h2>Commander's Briefing</h2></div><span class="cmd-hazard" aria-hidden="true"></span></div><div class="cmd-body"><div class="cmd-terminal"><div class="cmd-screen" role="region" aria-label="Command terminal"><p class="cmd-dim">${f.name} command network · secure channel</p><p>&gt; Commander authenticated</p><div class="cmd-readout"><span>Treasury</span><span class="cmd-dots" aria-hidden="true"></span><strong id="cmd-credits">${fmtCR(treasury(c))}</strong></div><p class="cmd-income" id="cmd-income">${incomeText(c)}</p><p>Current events</p><ul class="cmd-events">${s.events.length?s.events.map(ev=>`<li>&gt; ${escapeHTML(ev)}</li>`).join(''):'<li class="cmd-dim">&gt; No active events</li>'}</ul><div class="cmd-out" id="cmd-out" role="log" aria-live="polite">${cmdOutHTML()}</div><form class="cmd-term" id="cmd-term" autocomplete="off"><label for="cmd-input" aria-hidden="true">&gt;</label><input id="cmd-input" maxlength="120" spellcheck="false" autocapitalize="off" placeholder="Type /help" aria-label="Command terminal. Type /help for a list of commands." value="${escapeHTML(cmdDraft)}"></form></div></div><div class="cmd-side"><div class="cmd-status"><div><span>Uplink</span><b><span class="cmd-led" aria-hidden="true"></span> Online</b></div><div><span>Command</span><b>${f.name}</b></div><div><span>Clearance</span><b>Commander</b></div></div><div class="cmd-status cmd-roster" id="cmd-roster" role="status" aria-label="Commanders online">${rosterHTML()}</div><a class="cmd-btn go" href="starmap.html">Tactical starmap</a><button class="cmd-btn" type="button" data-cmd-logout>Log out</button></div></div>${cmdControls()}</section>`;}
  return `<section class="cmd-login" id="command-module" aria-label="Commander login"><div class="cmd-login-head"><span class="eyebrow">Command Module Alpha</span><h2>Commander Login</h2><p>Select your command, then enter its access PIN.</p></div><div class="cmd-factions" role="radiogroup" aria-label="Command">${Object.entries(CMD_FACTIONS).map(([k,f])=>`<button class="cmd-faction" type="button" role="radio" data-cmd-faction="${k}" aria-checked="${cmdPick===k}"${f.online?'':' disabled'}><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true">${f.icon}</svg><strong>${f.name}</strong><small>${f.online?'Channel open':'Channel offline'}</small></button>`).join('')}</div>${cmdPick?`<form class="cmd-pin" id="cmd-login-form"><label for="cmd-pin">${CMD_FACTIONS[cmdPick].name} access PIN<input id="cmd-pin" type="password" inputmode="numeric" autocomplete="off" maxlength="12" required></label><button class="btn primary" type="submit">Authenticate</button><p class="error" id="cmd-error" role="alert"></p></form>`:''}</section>`;
 }
 // Console controls on the briefing panel. Decorative for now (not saved); they will drive real settings later.
 const CMD_KNOBS=['Gain','Freq','Band'],CMD_FLIPS=[['Uplink',true],['Scan',false],['Aux',false]];
 function cmdControls(){
- const knob=(l,i)=>`<div class="cmd-ctl"><button class="cmd-knob" type="button" data-cmd-knob="${i}" data-step="2" style="--rot:-60deg" aria-label="${l} knob, setting 3 of 8"><span class="cmd-knob-cap" aria-hidden="true"></span></button><span>${l}</span></div>`;
+ const knob=(l,i)=>`<div class="cmd-ctl"><button class="cmd-knob" type="button" data-cmd-knob="${i}" data-step="2" style="--rot:-60deg;--step:3" aria-label="${l} knob, setting 3 of 8"><span class="cmd-knob-cap" aria-hidden="true"></span></button><span>${l}</span></div>`;
  const flip=([l,on],i)=>`<div class="cmd-ctl"><span class="cmd-lamp${on?' on':''}" aria-hidden="true"></span><button class="cmd-flip" type="button" data-cmd-flip="${i}" aria-pressed="${on}" aria-label="${l} switch"></button><span>${l}</span></div>`;
- return `<div class="cmd-controls" role="group" aria-label="Console controls"><div class="cmd-ctl-group">${CMD_KNOBS.map(knob).join('')}</div><div class="cmd-ctl-group">${CMD_FLIPS.map(flip).join('')}</div><div class="cmd-ctl-group grow"><div class="cmd-ctl"><svg class="cmd-gauge" viewBox="0 0 96 56" aria-hidden="true"><path d="M8 48a40 40 0 0 1 80 0" fill="none" stroke="#2c3136" stroke-width="8"/><path d="M8 48a40 40 0 0 1 56-36.7" fill="none" stroke="#2f6a43" stroke-width="3"/><path d="M64 11.3A40 40 0 0 1 88 48" fill="none" stroke="#8a2a1c" stroke-width="3"/><line class="needle" x1="48" y1="48" x2="48" y2="14" stroke="#f2b632" stroke-width="2.5" stroke-linecap="round" style="--g:-40deg"/><circle cx="48" cy="48" r="5" fill="#2a2e33" stroke="#0b0c0d"/></svg><span>Reactor</span></div><div class="cmd-ctl"><span style="display:flex;gap:6px"><span class="cmd-lamp on"></span><span class="cmd-lamp amber on"></span><span class="cmd-lamp"></span></span><span>Status</span></div></div></div>`;
+ return `<div class="cmd-controls" role="group" aria-label="Console controls"><div class="cmd-ctl-group">${CMD_KNOBS.map(knob).join('')}</div><div class="cmd-ctl-group">${CMD_FLIPS.map(flip).join('')}</div><div class="cmd-ctl-group grow"><div class="cmd-ctl"><span class="cmd-meter" aria-hidden="true"><i style="--m:25%"></i></span><svg class="cmd-gauge" viewBox="0 0 96 56" aria-hidden="true"><path d="M8 48a40 40 0 0 1 80 0" fill="none" stroke="#2c3136" stroke-width="8"/><path d="M8 48a40 40 0 0 1 56-36.7" fill="none" stroke="#2f6a43" stroke-width="3"/><path d="M64 11.3A40 40 0 0 1 88 48" fill="none" stroke="#8a2a1c" stroke-width="3"/><line class="needle" x1="48" y1="48" x2="48" y2="14" stroke="#f2b632" stroke-width="2.5" stroke-linecap="round" style="--g:-40deg"/><circle cx="48" cy="48" r="5" fill="#2a2e33" stroke="#0b0c0d"/></svg><span>Reactor</span></div><div class="cmd-ctl"><span style="display:flex;gap:6px"><span class="cmd-lamp on"></span><span class="cmd-lamp amber on"></span><span class="cmd-lamp"></span></span><span>Status</span></div></div></div>`;
 }
 $('main').addEventListener('click',e=>{
- const k=e.target.closest('[data-cmd-knob]');if(k){const s=(+k.dataset.step+1)%8;k.dataset.step=s;k.style.setProperty('--rot',(-120+s*30)+'deg');k.setAttribute('aria-label',`${CMD_KNOBS[+k.dataset.cmdKnob]} knob, setting ${s+1} of 8`);const g=document.querySelector('.cmd-gauge .needle');if(g)g.style.setProperty('--g',(-70+Math.random()*120).toFixed(0)+'deg');return;}
+ const k=e.target.closest('[data-cmd-knob]');if(k){const s=(+k.dataset.step+1)%8;k.dataset.step=s;k.style.setProperty('--rot',(-120+s*30)+'deg');k.style.setProperty('--step',String(s+1));k.setAttribute('aria-label',`${CMD_KNOBS[+k.dataset.cmdKnob]} knob, setting ${s+1} of 8`);const g=document.querySelector('.cmd-gauge .needle'),m=document.querySelector('.cmd-meter i'),a=-70+Math.random()*120;if(g)g.style.setProperty('--g',a.toFixed(0)+'deg');if(m)m.style.setProperty('--m',((a+70)/1.4+10).toFixed(0)+'%');return;}
  const f=e.target.closest('[data-cmd-flip]');if(f){const on=f.getAttribute('aria-pressed')!=='true';f.setAttribute('aria-pressed',String(on));f.parentElement.querySelector('.cmd-lamp').classList.toggle('on',on);}
 });
+// Command terminal on the briefing screen. /help lists the commands; the rest are placeholders for now.
+const CMD_COMMANDS=[['/help','List available commands'],['/status','Command status report'],['/treasury','Treasury and income details'],['/orders','Issue and review fleet orders'],['/fleet','Fleet overview'],['/diplomacy','Relations with other commands'],['/scan','Long-range sensor sweep'],['/clear','Clear the terminal']];
+let cmdLog=[],cmdDraft='',cmdHist=[],cmdHistI=0;
+function cmdOutHTML(){return cmdLog.length?cmdLog.map(l=>`<p class="${l.k}">${escapeHTML(l.t)}</p>`).join(''):'<p class="cmd-dim">Type /help for a list of commands.</p>';}
+function runCommand(raw){
+ const t=raw.trim();if(!t)return;cmdHist.push(t);cmdHist=cmdHist.slice(-30);cmdHistI=cmdHist.length;
+ const name=t.split(/\s+/)[0].toLowerCase(),out=[{k:'cmd-echo',t:'> '+t}];
+ if(name==='/clear'){cmdLog=[];}
+ else{
+  if(name==='/help'){out.push({k:'',t:'Available commands:'});for(const [n,d] of CMD_COMMANDS)out.push({k:'cmd-help',t:n.padEnd(12)+d});out.push({k:'cmd-dim',t:'Commands are a work in progress (WIP).'});}
+  else if(CMD_COMMANDS.some(([n])=>n===name))out.push({k:'cmd-warn',t:`${name}: command is a work in progress (WIP).`});
+  else if(name.startsWith('/'))out.push({k:'cmd-warn',t:`Unknown command: ${name}. Type /help for a list of commands.`});
+  else out.push({k:'cmd-warn',t:'Commands start with a slash (/). Type /help for a list of commands.'});
+  cmdLog=cmdLog.concat(out).slice(-80);
+ }
+ const o=$('cmd-out');if(o){o.innerHTML=cmdOutHTML();o.scrollTop=o.scrollHeight;}
+}
+$('main').addEventListener('input',e=>{if(e.target.id==='cmd-input')cmdDraft=e.target.value;});
+$('main').addEventListener('keydown',e=>{
+ if(e.target.id!=='cmd-input'||!cmdHist.length||(e.key!=='ArrowUp'&&e.key!=='ArrowDown'))return;e.preventDefault();
+ cmdHistI=Math.max(0,Math.min(cmdHist.length,cmdHistI+(e.key==='ArrowUp'?-1:1)));e.target.value=cmdDraft=cmdHist[cmdHistI]||'';
+});
+// Keep the terminal's focus when the page re-renders (for example when a shared article update arrives).
+{const base=render;render=function(...a){const i=$('cmd-input'),had=!!i&&document.activeElement===i;base.apply(this,a);if(had){const n=$('cmd-input');if(n){n.focus();n.setSelectionRange(n.value.length,n.value.length);}}};}
+// Who is online: a command is online while a browser logged into it has the site open (shared heartbeat via
+// assets/cloud.js). Without shared storage only this browser's own command can be shown.
+function presence(){const c=commander(),p=Cloud.enabled&&Cloud.presenceStatus?Cloud.presenceStatus():{};if(c)p[c]=true;return p;}
+function rosterHTML(){
+ const p=presence(),me=commander();
+ return '<div class="cmd-roster-head">Commanders</div>'+Object.entries(CMD_FACTIONS).map(([k,f])=>{const on=!!p[k];return `<div><span><span class="cmd-led${on?'':' off'}" aria-hidden="true"></span> ${f.name}${k===me?' (you)':''}</span><b class="${on?'on':'off'}">${on?'Online':'Offline'}</b></div>`;}).join('')+(Cloud.enabled?'':'<p class="cmd-roster-note">Live status needs shared storage.</p>');
+}
+function updateRoster(){const el=$('cmd-roster');if(el)el.innerHTML=rosterHTML();}
+if(Cloud.trackPresence)Cloud.trackPresence(commander,updateRoster);
 function refreshCommand(focusPin){const s=$('command-module');if(!s)return;s.outerHTML=commandSection();if(focusPin)$('cmd-pin')?.focus();}
 function setCommandAlpha(on){try{on?localStorage.setItem(CMD_ALPHA_KEY,'1'):localStorage.removeItem(CMD_ALPHA_KEY);}catch(e){}const b=$('cmd-toggle');b.setAttribute('aria-checked',String(on));b.querySelector('.cmd-switch-state').textContent=on?'On':'Off';}
 $('cmd-toggle').onclick=()=>{if(!isAdmin())return;const on=!commandAlpha();setCommandAlpha(on);cmdPick=null;render();toast(on?'Command Module α on. The Restricted access panel is now the Commander Login.':'Command Module α off.');};
 setCommandAlpha(commandAlpha());
 $('main').addEventListener('click',e=>{
  const f=e.target.closest('[data-cmd-faction]');if(f&&!f.disabled){cmdPick=f.dataset.cmdFaction;refreshCommand(true);return;}
- if(e.target.closest('[data-cmd-logout]')){try{localStorage.removeItem(CMD_SESSION_KEY);}catch(x){}cmdPick=null;refreshCommand();toast('Commander logged out.');}
+ if(e.target.closest('[data-cmd-logout]')){try{localStorage.removeItem(CMD_SESSION_KEY);}catch(x){}cmdPick=null;cmdLog=[];cmdHist=[];cmdDraft='';Cloud.syncPresence?.();refreshCommand();toast('Commander logged out.');}
 });
 $('main').addEventListener('submit',async e=>{
+ if(e.target.id==='cmd-term'){e.preventDefault();const i=$('cmd-input');runCommand(i.value);i.value=cmdDraft='';return;}
  if(e.target.id!=='cmd-login-form')return;e.preventDefault();const f=CMD_FACTIONS[cmdPick],err=$('cmd-error');err.textContent='';
  if(!f?.online)return;
  try{if(!window.crypto?.subtle)throw Error('unsupported');
-  if(await sha256Hex(cmdPick+':'+$('cmd-pin').value.trim())===f.pinHash){try{localStorage.setItem(CMD_SESSION_KEY,cmdPick);}catch(x){}cmdPick=null;refreshCommand();toast(`Welcome, Commander. ${f.name} command is online.`);}
+  if(await sha256Hex(cmdPick+':'+$('cmd-pin').value.trim())===f.pinHash){try{localStorage.setItem(CMD_SESSION_KEY,cmdPick);}catch(x){}cmdPick=null;cmdLog=[];cmdHist=[];cmdDraft='';Cloud.syncPresence?.();refreshCommand();toast(`Welcome, Commander. ${f.name} command is online.`);}
   else{err.textContent='Access denied. Incorrect PIN.';$('cmd-pin').select();}
  }catch(x){err.textContent='This browser cannot verify the PIN here. Open the site over https or use a current browser.';}
 });
 render();
 startSharedArchive();
+// Keep the briefing's treasury and payment countdown current while the page is open.
+setInterval(()=>{const c=commander(),el=$('cmd-credits');if(!c||!el)return;el.textContent=fmtCR(treasury(c));$('cmd-income').textContent=incomeText(c);},15000);
 </script>
 </body>
 </html>

@@ -4,6 +4,8 @@
 //   site/{name}        public read, admin write. Each holds a JSON string; big values are split across
 //                      site/{name}~1, ~2 ... (written together in one batch) to stay under Firestore's 1 MB limit.
 //   chat/{auto id}     public read, admin write (live for every visitor).
+//   presence/{command} public read; any browser logged into that command writes a heartbeat {online, sid, at}
+//                      (at = server time) about once a minute. A command counts as online while its heartbeat is fresh.
 (function(){
 'use strict';
 const SDK='https://www.gstatic.com/firebasejs/10.12.2/';
@@ -83,17 +85,46 @@ async function saveDoc(name,value){
 function watchChat(cb,onError){
  let stop=()=>{},closed=false;
  ready().then(()=>{if(closed)return;stop=db.collection('chat').orderBy('at').limitToLast(200).onSnapshot(s=>{
-  const out=[];s.forEach(d=>{const m=d.data();if(m&&typeof m.text==='string')out.push({from:String(m.from||''),text:m.text,at:+m.at||0});});cb(out);
+  const out=[];s.forEach(d=>{const m=d.data();if(m&&typeof m.text==='string')out.push({from:String(m.from||''),text:m.text,at:+m.at||0,faction:typeof m.faction==='string'?m.faction:''});});cb(out);
  },e=>onError&&onError(friendly(e)));}).catch(e=>onError&&onError(friendly(e)));
  return()=>{closed=true;stop();};
 }
-async function addChat(m){await ready();try{await db.collection('chat').add({from:String(m.from).slice(0,80),text:String(m.text).slice(0,300),at:+m.at||Date.now()});}catch(e){throw Error(friendly(e));}}
+async function addChat(m){await ready();try{const doc={from:String(m.from).slice(0,80),text:String(m.text).slice(0,300),at:+m.at||Date.now()};if(m.faction)doc.faction=String(m.faction).slice(0,20);await db.collection('chat').add(doc);}catch(e){throw Error(friendly(e));}}
 async function clearChat(){
  await ready();
  try{const s=await db.collection('chat').get(),refs=[];s.forEach(d=>refs.push(d.ref));
   for(let i=0;i<refs.length;i+=400){const b=db.batch();refs.slice(i,i+400).forEach(r=>b.delete(r));await b.commit();}
  }catch(e){throw Error(friendly(e));}
 }
-window.ReliquaryCloud={enabled,adminEmail,ready,isAdmin,onAuth,signIn,signOut,watchDoc,saveDoc,watchChat,addChat,clearChat};
+// Commander presence. trackPresence(getCommand, onChange) starts the heartbeat for whichever command this browser is
+// logged into (getCommand() returns its key or null), watches every command's status and calls onChange on updates.
+// Call syncPresence() right after a commander logs in or out so the change shows at once.
+const PRESENCE_FRESH=150000,PRESENCE_BEAT=60000,CMD_KEYS=['eisdon','gallia','histannia','harron'];
+const pres={sid:Math.random().toString(36).slice(2,12),cur:null,get:null,data:{},cbs:[],started:false};
+function firePresence(){pres.cbs.forEach(cb=>{try{cb();}catch(e){console.error(e);}});}
+function presenceStatus(){const now=Date.now(),o={};for(const k in pres.data){const v=pres.data[k];o[k]=!!(v.online&&now-v.at<PRESENCE_FRESH);}return o;}
+async function writePresence(cmd,online){
+ if(!CMD_KEYS.includes(cmd))return;await ready();const F=window.firebase,ref=db.collection('presence').doc(cmd),at=F.firestore.FieldValue.serverTimestamp();
+ if(online){await ref.set({online:true,sid:pres.sid,at});return;}
+ await db.runTransaction(async tx=>{const s=await tx.get(ref);if(s.exists&&s.data().sid===pres.sid)tx.set(ref,{online:false,sid:pres.sid,at});}); // only clear our own heartbeat
+}
+function syncPresence(beat){
+ if(!enabled||!pres.get)return;let c=null;try{c=pres.get()||null;}catch(e){}
+ if(c!==pres.cur){if(pres.cur)writePresence(pres.cur,false).catch(()=>{});pres.cur=c;if(c)writePresence(c,true).catch(()=>{});}
+ else if(beat&&c)writePresence(c,true).catch(()=>{});
+}
+function trackPresence(getCmd,onChange){
+ if(onChange)pres.cbs.push(onChange);pres.get=getCmd;
+ if(!enabled||pres.started)return;pres.started=true;
+ ready().then(()=>{
+  db.collection('presence').onSnapshot(s=>{const d={};s.forEach(x=>{const v=x.data({serverTimestamps:'estimate'});d[x.id]={online:!!v.online,sid:v.sid,at:v.at&&v.at.toMillis?v.at.toMillis():0};});pres.data=d;firePresence();},()=>{});
+  syncPresence();
+ }).catch(()=>{});
+ setInterval(()=>{syncPresence(true);firePresence();},PRESENCE_BEAT); // heartbeat, and let stale commanders drop to offline
+ addEventListener('storage',e=>{if(e.key==='reliquary-commander'||e.key==='reliquary-command-alpha')syncPresence();});
+ addEventListener('pagehide',()=>{if(pres.cur)writePresence(pres.cur,false).catch(()=>{});});
+ addEventListener('pageshow',e=>{if(e.persisted){pres.cur=null;syncPresence();}});
+}
+window.ReliquaryCloud={enabled,adminEmail,ready,isAdmin,onAuth,signIn,signOut,watchDoc,saveDoc,watchChat,addChat,clearChat,trackPresence,syncPresence,presenceStatus};
 if(enabled)ready().catch(()=>{});
 })();

@@ -108,12 +108,18 @@ dialog h2{margin:0 0 6px;font-size:18px}
 .neb-range output{color:var(--text);font-weight:600}
 /* ---- Commander identity + Eisdon industrial interface (Command Module α; set on the main page) ---- */
 .cmd-ident{display:none}
+.cmd-id-row{display:flex;align-items:center;gap:6px}
+.cmd-treasury{display:none}
+body.is-commander .cmd-treasury{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border:1px solid #0a0b0c;border-radius:2px;background:#02100a;color:#ffd57a;font:600 10px/1.4 Consolas,'Lucida Console',monospace;letter-spacing:.08em;text-shadow:0 0 5px rgba(217,161,58,.6);box-shadow:inset 0 1px 4px rgba(0,0,0,.85)}
+body.is-commander .cmd-treasury::after{content:attr(data-rate);color:#7dffa8;text-shadow:0 0 5px rgba(125,255,168,.5)}
+body.cmd-gallia .cmd-treasury{background:linear-gradient(#0a1d2f,#04111d);border-color:#22272c;border-radius:3px;color:#d9f2ff;text-shadow:0 0 5px rgba(92,200,255,.6)}
+body.cmd-gallia .cmd-treasury::after{color:#5cc8ff;text-shadow:0 0 5px rgba(92,200,255,.6)}
 body.is-commander .cmd-ident{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-left:12px}
 body.is-commander .cmd-badge{display:inline-flex;align-items:center;gap:7px;padding:3px 9px;border:1px solid #0a0b0c;border-radius:2px;background:linear-gradient(#1c1f22,#101214);color:#7dffa8;font:600 10px/1.4 Bahnschrift,'Arial Narrow',Arial,sans-serif;letter-spacing:.24em;text-transform:uppercase;text-shadow:0 0 6px rgba(125,255,168,.6);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
 body.is-commander .cmd-badge::before{content:"";width:7px;height:7px;border-radius:50%;background:#46ff86;box-shadow:0 0 7px #46ff86}
 .cmd-change{padding:2px 8px;border:1px solid #0a0b0c;border-radius:2px;background:linear-gradient(#3c4248,#24282c);color:#f2b632;font:600 9px/1.5 Bahnschrift,'Arial Narrow',Arial,sans-serif;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 1px 0 #000}
 .cmd-change:hover{color:#ffd57a;background:linear-gradient(#4a5158,#2b3035)}.cmd-change:focus-visible{outline:2px solid #7dffa8;outline-offset:2px}
-#command-dialog .cmd-factions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+#command-dialog .cmd-factions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:12px 0}
 #command-dialog .cmd-faction{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;border:1px solid var(--line);border-radius:5px;background:rgba(4,26,46,.6);color:var(--text);cursor:pointer}
 #command-dialog .cmd-faction svg{width:34px;height:34px;color:#9fdcff}#command-dialog .cmd-faction strong{font-size:12px;letter-spacing:.16em;text-transform:uppercase}#command-dialog .cmd-faction small{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#7dffa8}
 #command-dialog .cmd-faction[aria-checked="true"]{border-color:#7dffa8;box-shadow:0 0 12px rgba(125,255,168,.3)}#command-dialog .cmd-faction:disabled{opacity:.45;cursor:not-allowed}#command-dialog .cmd-faction:disabled small{color:#ffb4a2}
@@ -235,6 +241,103 @@ body.is-commander .cmd-dock{position:fixed;left:170px;top:calc(var(--bar-h) + 18
 @media(prefers-reduced-motion:reduce){.dock-panel.flip-open,.dock-panel.flip-close,.dock-panel.flip-open>*,.dock-panel.flip-open::after{animation:none}}
 @media(max-width:900px){.cmd-dock{left:16px;top:calc(var(--bar-h) + 64px);width:calc(100vw - 32px)}body.is-commander .cmd-dock{left:16px;top:calc(var(--bar-h) + 200px);width:calc(100vw - 32px)}}
 @media(forced-colors:active){body.cmd-eisdon .bar::after,body.cmd-eisdon .bar::before{display:none}}
+/* ---- Gallia interface (Command Module α): clean dark-grey brushed steel, blue displays, push buttons and digital meters ---- */
+body.cmd-gallia{--accent:#5cc8ff;--text:#e6eef5;--muted:#9fb4c6;--line:#22272c;--panel:#121b24;font-family:'Segoe UI',Bahnschrift,Arial,sans-serif}
+body.cmd-gallia .bar{background:repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 1px,transparent 1px 3px,rgba(0,0,0,.06) 3px 4px),linear-gradient(180deg,#6a7279 0%,#50575e 18%,#3e444a 50%,#353b41 54%,#464d54 86%,#596168 100%);border-bottom:1px solid #15181b;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 4px 14px rgba(0,0,0,.6);-webkit-backdrop-filter:none;backdrop-filter:none}
+body.cmd-gallia .bar::after{content:"";position:absolute;left:0;right:0;bottom:-4px;height:3px;background:linear-gradient(90deg,transparent,#2a8fe0 12%,#8fdcff 50%,#2a8fe0 88%,transparent);box-shadow:0 0 10px rgba(92,200,255,.7);pointer-events:none}
+body.cmd-gallia .brand-name{color:#eef2f5;text-shadow:0 1px 0 #000,0 0 10px rgba(92,200,255,.15)}
+body.cmd-gallia .brand-name small{color:#6cc6ff}
+body.cmd-gallia .brand-kicker{color:#b3bcc4}
+body.cmd-gallia .cmd-badge{background:linear-gradient(#0a1d2f,#04111d);border-color:#3e4954;border-radius:3px;color:#8fdcff;font-family:Consolas,'Lucida Console',monospace;letter-spacing:.18em;text-shadow:0 0 6px rgba(92,200,255,.7);box-shadow:inset 0 1px 4px rgba(0,0,0,.8)}
+body.cmd-gallia .cmd-badge::before{background:#39b6ff;box-shadow:0 0 7px #39b6ff}
+body.cmd-gallia .cmd-change{border:1px solid #1c2025;border-radius:3px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 1px,transparent 1px 3px,rgba(0,0,0,.06) 3px 4px),linear-gradient(#646c74,#484f56 50%,#373d43);color:#8fdcff;text-shadow:0 1px 0 #000;box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 1px 0 #15181b,0 2px 4px rgba(0,0,0,.5)}
+body.cmd-gallia .cmd-change:hover{background:repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 1px,transparent 1px 3px,rgba(0,0,0,.06) 3px 4px),linear-gradient(#717a82,#535a62 50%,#3f454b);color:#d9f2ff}
+body.cmd-gallia .cmd-change:focus-visible{outline-color:#2a8fe0}
+body.cmd-gallia .btn,body.cmd-gallia .home-icon{border:1px solid #1c2025;border-radius:4px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 1px,transparent 1px 3px,rgba(0,0,0,.06) 3px 4px),linear-gradient(#646c74,#484f56 50%,#373d43);color:#e6ecf0;font-weight:600;font-size:11px;letter-spacing:.05em;text-transform:uppercase;text-shadow:0 1px 0 rgba(0,0,0,.7);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 1px 0 #15181b,0 2px 4px rgba(0,0,0,.5)}
+body.cmd-gallia .home-icon svg{filter:none}
+body.cmd-gallia .bar .btn{padding:6px 10px}
+body.cmd-gallia .btn:hover,body.cmd-gallia .home-icon:hover{background:repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 1px,transparent 1px 3px,rgba(0,0,0,.06) 3px 4px),linear-gradient(#717a82,#535a62 50%,#3f454b);border-color:#2a8fe0;color:#fff}
+body.cmd-gallia .btn:active{transform:translateY(1px);box-shadow:inset 0 1px 3px rgba(0,0,0,.35)}
+body.cmd-gallia .btn[aria-pressed="true"]{background:linear-gradient(#11416b,#0a2a47);border-color:#2a8fe0;color:#cdeeff;text-shadow:0 0 6px rgba(92,200,255,.8);box-shadow:inset 0 2px 4px rgba(0,0,0,.6),0 0 10px rgba(60,170,255,.45)}
+body.cmd-gallia .btn.primary{background:linear-gradient(#45a8f2,#1f7fcf);border-color:#0f4f86;color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.35)}
+body.cmd-gallia .btn.danger{color:#ff9c86}
+body.cmd-gallia .btn:disabled{opacity:.5}
+body.cmd-gallia .admin-tools{border-right:1px solid #22272c;box-shadow:1px 0 0 rgba(255,255,255,.12)}
+body.cmd-gallia .panel{top:calc(var(--bar-h) + 18px)}
+body.cmd-gallia .panel,body.cmd-gallia .lock-menu,body.cmd-gallia dialog,body.cmd-gallia .dock-panel{border:8px solid transparent;border-radius:9px;-webkit-backdrop-filter:none;backdrop-filter:none;color:#bfe6ff;
+ background:repeating-linear-gradient(0deg,rgba(92,200,255,.035) 0 1px,transparent 1px 24px) padding-box,repeating-linear-gradient(90deg,rgba(92,200,255,.035) 0 1px,transparent 1px 24px) padding-box,radial-gradient(ellipse at 50% 20%,#0d2a44,#04111d 75%) padding-box,repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 1px,transparent 1px 3px,rgba(0,0,0,.06) 3px 4px) border-box,linear-gradient(180deg,#6f777e,#50575e 22%,#3b4147 50%,#4a5158 78%,#626a71) border-box;
+ box-shadow:0 0 0 1px #15181b,inset 0 0 0 1px #0a1824,inset 0 0 18px rgba(40,140,230,.22),0 10px 28px rgba(0,0,0,.6)}
+body.cmd-gallia .panel{padding:14px 14px 16px;transform-origin:100% 0}
+body.cmd-gallia .panel h2,body.cmd-gallia dialog h2,body.cmd-gallia .dock-panel h2{color:#d9f2ff;letter-spacing:.08em;text-transform:uppercase;text-shadow:0 0 8px rgba(92,200,255,.5)}
+body.cmd-gallia .eyebrow,body.cmd-gallia .dock-sec{color:#5cc8ff;letter-spacing:.22em}
+body.cmd-gallia .panel .muted,body.cmd-gallia .panel .field,body.cmd-gallia .panel .notes,body.cmd-gallia dialog .muted,body.cmd-gallia dialog .field,body.cmd-gallia .dock-note{color:#8fb4cf}
+body.cmd-gallia .panel .btn,body.cmd-gallia .panel .list button,body.cmd-gallia .lock-menu .btn,body.cmd-gallia dialog .btn,body.cmd-gallia .dock-panel .btn{background:linear-gradient(rgba(40,110,170,.35),rgba(10,40,70,.35));border:1px solid #2f6fa3;border-radius:3px;color:#bfe9ff;box-shadow:inset 0 1px 0 rgba(150,215,255,.15);text-shadow:none;text-transform:uppercase;letter-spacing:.06em;font:600 11px 'Segoe UI',Bahnschrift,Arial,sans-serif}
+body.cmd-gallia .panel .list button{text-transform:none;letter-spacing:.02em;font-size:12px}
+body.cmd-gallia .panel .btn:hover,body.cmd-gallia .panel .list button:hover,body.cmd-gallia .lock-menu .btn:hover,body.cmd-gallia dialog .btn:hover,body.cmd-gallia .dock-panel .btn:hover{border-color:#5cc8ff;color:#eaf7ff;background:rgba(60,150,220,.35)}
+body.cmd-gallia .panel .btn[aria-pressed="true"],body.cmd-gallia .lock-menu .btn[aria-pressed="true"]{background:rgba(92,200,255,.28);border-color:#8fdcff;color:#fff;box-shadow:0 0 8px rgba(92,200,255,.4)}
+body.cmd-gallia .panel .btn.primary,body.cmd-gallia dialog .btn.primary,body.cmd-gallia .dock-panel .btn.primary{background:linear-gradient(#3aa0ee,#1c74c2);border-color:#8fdcff;color:#fff}
+body.cmd-gallia .panel .btn.danger,body.cmd-gallia dialog .btn.danger,body.cmd-gallia .dock-panel .btn.danger{border-color:#9c4a3e;color:#ffab9c}
+body.cmd-gallia .field input,body.cmd-gallia .field textarea,body.cmd-gallia select,body.cmd-gallia .chat-form input,body.cmd-gallia dialog input{background:#020b14;border:1px solid #2f6fa3;border-radius:3px;color:#cdeeff;font-family:Consolas,'Lucida Console',monospace;box-shadow:inset 0 2px 5px rgba(0,0,0,.8)}
+body.cmd-gallia .chat-form input:focus-visible{outline-color:#5cc8ff}
+body.cmd-gallia .hud{color:#8fdcff;font-family:Consolas,'Lucida Console',monospace;letter-spacing:.03em;text-shadow:0 0 5px rgba(92,200,255,.55);border:4px solid #4a5158;border-radius:7px;background:linear-gradient(#071a2b,#03101c);box-shadow:0 0 0 1px #15181b,inset 0 0 0 1px #0a1824,inset 0 0 14px rgba(40,140,230,.25),0 6px 18px rgba(0,0,0,.6)}
+body.cmd-gallia .hud strong{color:#d9f2ff}
+body.cmd-gallia .hud kbd{background:#06223a;border-color:#2f6fa3;color:#bfe9ff}
+body.cmd-gallia .toast{background:repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 1px,transparent 1px 3px,rgba(0,0,0,.06) 3px 4px),linear-gradient(180deg,#6a7279 0%,#50575e 18%,#3e444a 50%,#353b41 54%,#464d54 86%,#596168 100%);border:1px solid #15181b;border-left:4px solid #2a8fe0;border-radius:4px;color:#e6ecf0;text-shadow:0 1px 0 #000}
+body.cmd-gallia .audio-vol{padding:0 6px;min-height:42px;border:1px solid #1c2025;border-radius:4px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 1px,transparent 1px 3px,rgba(0,0,0,.06) 3px 4px),linear-gradient(#646c74,#484f56 50%,#373d43);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 1px 0 #15181b,0 2px 4px rgba(0,0,0,.5)}
+body.cmd-gallia .audio-vol[hidden]{display:flex} /* meters stay on the console even while music or radio is off */
+body.cmd-gallia .audio-vol input{display:none}
+body.cmd-gallia .neb-range input,body.cmd-gallia #lane-traffic{accent-color:#5cc8ff}
+body.cmd-gallia #command-dialog .cmd-faction{background:rgba(10,40,70,.45);border-color:#2f6fa3}
+body.cmd-gallia #command-dialog .cmd-faction[aria-checked="true"],body.cmd-gallia #command-dialog .cmd-current strong{border-color:#5cc8ff;color:#8fdcff}
+/* Gallia push buttons: steel key with a backlit lens and a blue display label */
+body.cmd-gallia .btn.mech-btn{gap:7px;padding:3px 8px 3px 5px;min-height:42px}
+body.cmd-gallia .mech-btn svg{display:none}
+body.cmd-gallia .mech-lever{display:inline-block;position:relative;flex-shrink:0;width:28px;height:28px;border:1px solid #15181b;border-radius:5px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 1px,transparent 1px 3px,rgba(0,0,0,.06) 3px 4px),linear-gradient(#8b939b,#5f676f 55%,#4b5259);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 2px 0 #15181b,0 3px 4px rgba(0,0,0,.5);transition:transform .08s,box-shadow .08s}
+body.cmd-gallia .mech-lever::after{content:"";position:absolute;inset:6px;border-radius:3px;background:radial-gradient(circle at 50% 40%,#22394d,#0b1824 75%);box-shadow:inset 0 1px 3px rgba(0,0,0,.8),0 0 0 1px #3c4853;transition:background .12s,box-shadow .12s}
+body.cmd-gallia .mech-btn[aria-pressed="true"] .mech-lever{transform:translateY(1px);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 1px 0 #15181b,0 1px 2px rgba(0,0,0,.5)}
+body.cmd-gallia .mech-btn[aria-pressed="true"] .mech-lever::after{background:radial-gradient(circle at 50% 45%,#eaf8ff 0,#7fd4ff 35%,#1f86d6 80%);box-shadow:0 0 0 1px #0f4f86,0 0 10px rgba(92,200,255,.85)}
+body.cmd-gallia .mech-label{display:inline-block;min-width:74px;padding:3px 7px;border:1px solid #2c3640;border-radius:3px;text-align:center;font:11px/1.3 Consolas,'Lucida Console',monospace;letter-spacing:.06em;text-transform:uppercase;color:#2f6a94;text-shadow:none;background:linear-gradient(#071827,#030d17);box-shadow:inset 0 1px 4px rgba(0,0,0,.9)}
+body.cmd-gallia .mech-btn[aria-pressed="true"] .mech-label{color:#bfe9ff;text-shadow:0 0 6px rgba(92,200,255,.85);background:radial-gradient(ellipse at center,#0d3556,#041320 85%)}
+body.cmd-gallia .btn.mech-btn,body.cmd-gallia .btn.mech-btn[aria-pressed="true"]{background:repeating-linear-gradient(90deg,rgba(255,255,255,.04) 0 1px,transparent 1px 3px,rgba(0,0,0,.06) 3px 4px),linear-gradient(#646c74,#484f56 50%,#373d43);color:#e6ecf0;border-color:#1c2025;box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 1px 0 #15181b,0 2px 4px rgba(0,0,0,.5);text-shadow:none;transform:none}
+/* Gallia digital volume meters: drag, mouse wheel or arrow keys, like the Eisdon knobs */
+body.cmd-gallia .vol-knob{display:inline-block;position:relative;width:96px;height:28px;padding:0;border-radius:4px;cursor:ew-resize;touch-action:none;counter-reset:vol var(--lvl,0);background:linear-gradient(#071827,#030d17);box-shadow:0 0 0 1px #3c4853,inset 0 2px 5px rgba(0,0,0,.9)}
+body.cmd-gallia .vol-knob-cap{position:absolute;left:6px;right:34px;top:9px;bottom:9px;transform:none;border-radius:1px;background:repeating-linear-gradient(90deg,transparent 0 4px,#030d17 4px 6px),linear-gradient(90deg,#2a8fe0,#8fdcff var(--lvlp,0%),#11324f var(--lvlp,0%));box-shadow:0 0 6px rgba(92,200,255,.25)}
+body.cmd-gallia .vol-knob::after{content:counter(vol);position:absolute;right:5px;top:50%;transform:translateY(-50%);width:26px;text-align:right;font:700 11px/1 Consolas,'Lucida Console',monospace;color:#bfe9ff;text-shadow:0 0 5px rgba(92,200,255,.8)}
+body.cmd-gallia .vol-knob:focus-visible{outline:2px solid #2a8fe0;outline-offset:3px}
+/* Gallia Details panel: slides out and the display powers on with a scan */
+body.cmd-gallia .panel.flip-open{animation:galSlideOpen .42s cubic-bezier(.2,.8,.3,1) both}
+body.cmd-gallia .panel.flip-close{animation:galSlideClose .3s ease-in both}
+body.cmd-gallia .panel.flip-open>*,body.cmd-gallia .dock-panel.flip-open>*{animation:galDisplayOn .5s .3s both}
+body.cmd-gallia .panel.flip-open::after,body.cmd-gallia .dock-panel.flip-open::after{content:"";position:absolute;left:0;right:0;top:0;height:3px;pointer-events:none;background:linear-gradient(90deg,transparent,#bfe9ff,transparent);box-shadow:0 0 12px #5cc8ff;animation:galScan .55s .28s both}
+body.cmd-gallia .dock-panel{padding:12px 14px 14px;transform-origin:0 50%}
+body.cmd-gallia .dock-panel.flip-open{animation:galDockOpen .42s cubic-bezier(.2,.8,.3,1) both}
+body.cmd-gallia .dock-panel.flip-close{animation:galDockClose .3s ease-in both}
+@keyframes galSlideOpen{0%{transform:translateX(48px);opacity:0}100%{transform:none;opacity:1}}
+@keyframes galSlideClose{0%{transform:none;opacity:1}100%{transform:translateX(48px);opacity:0}}
+@keyframes galDockOpen{0%{transform:translateX(-48px);opacity:0}100%{transform:none;opacity:1}}
+@keyframes galDockClose{0%{transform:none;opacity:1}100%{transform:translateX(-48px);opacity:0}}
+@keyframes galDisplayOn{0%{opacity:0;clip-path:inset(0 0 100% 0)}100%{opacity:1;clip-path:inset(0 0 0 0)}}
+@keyframes galScan{0%{opacity:0;transform:translateY(0)}15%{opacity:1}100%{opacity:0;transform:translateY(var(--scan-h,420px))}}
+body.cmd-gallia .dock-led{background:#39b6ff;box-shadow:0 0 8px #39b6ff}body.cmd-gallia .dock-led.amber{background:#f2b632;box-shadow:0 0 8px #f2b632}
+body.cmd-gallia .dock-log{color:#bfe6ff;font-family:Consolas,'Lucida Console',monospace;text-shadow:0 0 5px rgba(92,200,255,.4)}
+body.cmd-gallia .dock-log li{border-bottom-color:rgba(92,200,255,.14)}
+body.cmd-gallia .dock-log time{color:#5f9cc8}body.cmd-gallia .dock-log b{color:#e6f5ff}
+body.cmd-gallia [data-dock="chat"].unread .mech-label::after{background:#5cc8ff;box-shadow:0 0 6px #5cc8ff}
+@media(prefers-reduced-motion:reduce){body.cmd-gallia .panel.flip-open,body.cmd-gallia .panel.flip-close,body.cmd-gallia .dock-panel.flip-open,body.cmd-gallia .dock-panel.flip-close,body.cmd-gallia .panel.flip-open>*,body.cmd-gallia .dock-panel.flip-open>*,body.cmd-gallia .panel.flip-open::after,body.cmd-gallia .dock-panel.flip-open::after{animation:none}body.cmd-gallia .mech-lever,body.cmd-gallia .mech-lever::after{transition:none}}
+@media(forced-colors:active){body.cmd-gallia .bar::after{display:none}}
+/* Chat: scrollable message log with a visible scrollbar; sender names coloured by command */
+.chat-log{overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(125,255,168,.45) rgba(0,0,0,.35);padding-right:4px}
+.chat-log::-webkit-scrollbar{width:8px}.chat-log::-webkit-scrollbar-track{background:rgba(0,0,0,.35);border-radius:4px}.chat-log::-webkit-scrollbar-thumb{background:rgba(125,255,168,.45);border-radius:4px}
+body.cmd-gallia .chat-log{scrollbar-color:rgba(92,200,255,.55) rgba(0,0,0,.4)}body.cmd-gallia .chat-log::-webkit-scrollbar-thumb{background:rgba(92,200,255,.55)}
+.chat-log:focus-visible{outline:1px solid currentColor;outline-offset:2px}
+.chat-wrap{position:relative;display:flex;flex-direction:column;flex:1 1 auto;min-height:60px}
+.chat-wrap .chat-log{flex:1 1 0;min-height:0;padding-right:36px}
+.chat-scroll{position:absolute;right:14px;display:flex;flex-direction:column;gap:4px}
+.chat-scroll{top:4px}
+.dock-panel .btn.chat-step{min-height:22px;width:26px;padding:0;font-size:10px;opacity:.85}
+.dock-panel .btn.chat-latest{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);min-height:24px;padding:2px 10px;font-size:10px}
+.chat-latest[hidden]{display:none!important}
+#chat-log b.f-eisdon{color:#9dffbf}#chat-log b.f-gallia{color:#8fdcff}#chat-log b.f-histannia{color:#e3c6ff}#chat-log b.f-harron{color:#ffc28f}
 body.mode-nebula #map{cursor:crosshair}
 .lock-ctl{position:relative}
 #lock-toggle.any-locked{border-color:#ffd27a;color:#ffe2a6;box-shadow:0 0 10px rgba(255,210,122,.25)}
@@ -270,10 +373,10 @@ body.mode-nebula #map{cursor:crosshair}
 </style>
 </head>
 <body>
-<script>/* Command Module α: Eisdon commanders get the industrial interface (set on the main page). */try{const c=localStorage.getItem('reliquary-commander');if(localStorage.getItem('reliquary-command-alpha')==='1'&&c==='eisdon')document.body.classList.add('is-commander','cmd-'+c);}catch(e){}</script>
+<script>/* Command Module α: Eisdon commanders get the industrial interface, Gallia commanders the polished-steel interface (set on the main page). */try{const c=localStorage.getItem('reliquary-commander');if(localStorage.getItem('reliquary-command-alpha')==='1'&&(c==='eisdon'||c==='gallia'))document.body.classList.add('is-commander','cmd-'+c);}catch(e){}</script>
 <header class="bar" id="bar">
 <a class="home-icon" href="index.html" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h4.5v-6h4v6h4.5V9.5"/></svg></a>
-<div class="brand"><span class="brand-kicker">Project</span><span class="brand-name">RELIQUARY<small>STARMAP</small></span></div><div class="cmd-ident"><span class="cmd-badge" id="cmd-badge">Eisdon Command</span><button class="cmd-change" id="cmd-change" type="button" aria-haspopup="dialog">Change Command</button></div>
+<div class="brand"><span class="brand-kicker">Project</span><span class="brand-name">RELIQUARY<small>STARMAP</small></span></div><div class="cmd-ident"><div class="cmd-id-row"><span class="cmd-badge" id="cmd-badge">Eisdon Command</span><span class="cmd-treasury" id="cmd-treasury" role="status" title="Treasury and hourly income"></span></div><button class="cmd-change" id="cmd-change" type="button" aria-haspopup="dialog">Change Command</button></div>
 <div class="bar-tools">
 <div class="admin-tools" role="group" aria-label="Map editing tools">
 <button class="btn" type="button" data-mode="select" aria-pressed="true">Select / move</button>
@@ -291,7 +394,7 @@ body.mode-nebula #map{cursor:crosshair}
 </div>
 </header>
 <div class="cmd-rail" id="cmd-rail" role="group" aria-label="Command panels"><button class="btn mech-btn" type="button" data-dock="comms" aria-pressed="false" aria-controls="dock-comms"><span class="mech-lever" aria-hidden="true"></span><span class="mech-label">Comms</span></button><button class="btn mech-btn" type="button" data-dock="orders" aria-pressed="false" aria-controls="dock-orders"><span class="mech-lever" aria-hidden="true"></span><span class="mech-label">Orders</span></button><button class="btn mech-btn" type="button" data-dock="chat" aria-pressed="false" aria-controls="dock-chat"><span class="mech-lever" aria-hidden="true"></span><span class="mech-label">Chat</span></button></div>
-<div class="cmd-dock" id="cmd-dock"><section class="dock-panel" id="dock-comms" aria-label="Communications" hidden><div class="dock-head"><div><div class="eyebrow">Eisdon command net</div><h2>Communications</h2></div><span class="dock-led" aria-hidden="true"></span></div><div class="dock-sec">Priority messages</div><ul class="dock-log" id="comms-priority"><li class="dim">&gt; No priority messages</li></ul><div class="dock-sec">Gate traffic intercepts</div><ul class="dock-log" id="comms-intercepts" aria-live="polite"><li class="dim">&gt; Switch Radio on to monitor gate traffic</li></ul></section><section class="dock-panel" id="dock-orders" aria-label="Orders" hidden><div class="dock-head"><div><div class="eyebrow">Fleet command</div><h2>Orders</h2></div><span class="dock-led amber" aria-hidden="true"></span></div><div class="dock-sec">Standing orders</div><ul class="dock-log"><li class="dim">&gt; No standing orders</li></ul><div class="dock-sec">Order queue</div><ul class="dock-log"><li class="dim">&gt; Queue empty</li></ul><p class="dock-note">Fleet command comes online in a later update.</p></section><section class="dock-panel" id="dock-chat" aria-label="Command chat" hidden><div class="dock-head"><div><div class="eyebrow">Open channel</div><h2>Chat</h2></div><span class="dock-led" aria-hidden="true"></span></div><ul class="dock-log chat-log" id="chat-log" aria-live="polite"></ul><p class="chat-ro">Read only. Sign in as administrator to post.</p><form id="chat-form" class="chat-form" autocomplete="off"><label class="screen-reader" for="chat-input">Message</label><input id="chat-input" maxlength="300" placeholder="Type a message…" required><button class="btn primary" type="submit">Send</button></form><div class="chat-foot"><p class="dock-note" id="chat-note">Local channel: messages stay in this browser and its open tabs until shared storage is set up.</p><button class="btn danger" type="button" id="chat-clear">Clear</button></div></section></div>
+<div class="cmd-dock" id="cmd-dock"><section class="dock-panel" id="dock-comms" aria-label="Communications" hidden><div class="dock-head"><div><div class="eyebrow" id="comms-net">Command net</div><h2>Communications</h2></div><span class="dock-led" aria-hidden="true"></span></div><div class="dock-sec">Priority messages</div><ul class="dock-log" id="comms-priority"><li class="dim">&gt; No priority messages</li></ul><div class="dock-sec">Gate traffic intercepts</div><ul class="dock-log" id="comms-intercepts" aria-live="polite"><li class="dim">&gt; Switch Radio on to monitor gate traffic</li></ul></section><section class="dock-panel" id="dock-orders" aria-label="Orders" hidden><div class="dock-head"><div><div class="eyebrow">Fleet command</div><h2>Orders</h2></div><span class="dock-led amber" aria-hidden="true"></span></div><div class="dock-sec">Standing orders</div><ul class="dock-log"><li class="dim">&gt; No standing orders</li></ul><div class="dock-sec">Order queue</div><ul class="dock-log"><li class="dim">&gt; Queue empty</li></ul><p class="dock-note">Fleet command comes online in a later update.</p></section><section class="dock-panel" id="dock-chat" aria-label="Command chat" hidden><div class="dock-head"><div><div class="eyebrow">Open channel</div><h2>Chat</h2></div><span class="dock-led" aria-hidden="true"></span></div><div class="chat-wrap"><ul class="dock-log chat-log" id="chat-log" aria-live="polite" tabindex="0" aria-label="Chat messages (scroll with the mouse wheel, arrow keys or the arrow buttons)"></ul><div class="chat-scroll"><button class="btn chat-step" type="button" id="chat-up" aria-label="Scroll chat up" title="Scroll up">▲</button><button class="btn chat-step" type="button" id="chat-down" aria-label="Scroll chat down" title="Scroll down">▼</button></div><button class="btn chat-latest" type="button" id="chat-latest" hidden>▼ Latest</button></div><p class="chat-ro">Read only. Sign in as administrator to post.</p><form id="chat-form" class="chat-form" autocomplete="off"><label class="screen-reader" for="chat-input">Message</label><input id="chat-input" maxlength="300" placeholder="Type a message…" required><button class="btn primary" type="submit">Send</button></form><div class="chat-foot"><p class="dock-note" id="chat-note">Local channel: messages stay in this browser and its open tabs until shared storage is set up.</p><button class="btn danger" type="button" id="chat-clear">Clear</button></div></section></div>
 <canvas id="map" tabindex="0" role="img" aria-label="Starmap. Use W, A, S and D to move, Q and E or the mouse wheel to zoom. The Details panel lists every star system."></canvas>
 <aside class="panel" id="panel" aria-live="polite"></aside>
 <div class="hud" id="hud"><span id="hud-pos"></span><span class="keys"> &nbsp;·&nbsp; <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move &nbsp;<kbd>Shift</kbd> faster &nbsp;<kbd>Q</kbd><kbd>E</kbd>/wheel zoom &nbsp;drag to pan</span><span id="mode-hint"></span></div>
@@ -404,11 +507,12 @@ const keys=new Set();
 
 function toast(msg){$('toast').textContent=msg;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,3200);}
 function isAdmin(){return document.body.classList.contains('is-admin');}
-// Editing locks (admin): a locked kind cannot be placed, moved, edited or deleted. Saved in this browser.
+// Editing locks (admin): a locked kind cannot be placed, moved, edited or deleted. Everything starts locked on every
+// page load and every administrator sign-in; unlocks last only until the page is reloaded or the admin signs in again.
 // System state and lane condition are deliberately left out and stay editable while locked.
-const LOCK_KEY='reliquary-starmap-locks',LOCK_KINDS={systems:'Systems',lanes:'Gate lanes',nebulae:'Nebulae'};
-const locks={systems:false,lanes:false,nebulae:false};
-try{const v=JSON.parse(localStorage.getItem(LOCK_KEY)||'{}');for(const k in locks)locks[k]=v[k]===true;}catch(e){}
+const LOCK_KINDS={systems:'Systems',lanes:'Gate lanes',nebulae:'Nebulae'};
+const locks={systems:true,lanes:true,nebulae:true};
+try{localStorage.removeItem('reliquary-starmap-locks');}catch(e){} // locks are no longer remembered
 function canEdit(kind){return isAdmin()&&!locks[kind];}
 const KIND_OF={system:'systems',lane:'lanes',nebula:'nebulae'};
 function sys(id){return data.systems.find(s=>s.id===id);}
@@ -892,11 +996,12 @@ function frame(t){
 $('zoom-in').onclick=()=>zoomAt(1.3);
 $('zoom-out').onclick=()=>zoomAt(1/1.3);
 $('zoom-reset').onclick=()=>{cam.x=0;cam.y=0;cam.zoom=1;dirty=true;};
-// Details panel: in the Eisdon interface it flips open on a hinge and its screen powers on.
+// Details panel: in the Eisdon interface it flips open on a hinge and its screen powers on; in the Gallia interface it
+// slides out and its display powers on with a scan line.
 function setPanelOpen(open){
- const p=$('panel'),fx=document.body.classList.contains('cmd-eisdon')&&!reducedMotion.matches;
+ const p=$('panel'),fx=document.body.classList.contains('is-commander')&&!reducedMotion.matches;
  $('panel-toggle').setAttribute('aria-pressed',String(open));p.classList.remove('flip-open','flip-close');clearTimeout(p._flipT);
- if(open){p.hidden=false;if(fx){void p.offsetWidth;p.classList.add('flip-open');p._flipT=setTimeout(()=>p.classList.remove('flip-open'),1000);}}
+ if(open){p.hidden=false;if(fx){p.style.setProperty('--scan-h',p.offsetHeight+'px');void p.offsetWidth;p.classList.add('flip-open');p._flipT=setTimeout(()=>p.classList.remove('flip-open'),1000);}}
  else if(fx&&!p.hidden){p.classList.add('flip-close');p._flipT=setTimeout(()=>{p.hidden=true;p.classList.remove('flip-close');},330);}
  else p.hidden=true;
 }
@@ -936,7 +1041,6 @@ function applyLocks(){
 }
 function setLock(kind,on){
  if(kind==='all')for(const k in locks)locks[k]=on;else locks[kind]=on;
- try{localStorage.setItem(LOCK_KEY,JSON.stringify(locks));}catch(e){}
  applyLocks();toast(kind==='all'?(on?'Everything is locked.':'Everything is unlocked.'):`${LOCK_KINDS[kind]} ${on?'locked':'unlocked'}.`);
 }
 $('lock-toggle').onclick=()=>{const m=$('lock-menu'),open=m.hidden;m.hidden=!open;$('lock-toggle').setAttribute('aria-expanded',String(open));};
@@ -948,6 +1052,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('lock-menu').hid
 // Client-side gate for a static site: it deters casual edits but is not server-side security.
 async function sha256Hex(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
 function setAdmin(on){
+ if(on&&!isAdmin())for(const k in locks)locks[k]=true; // every admin session starts fully locked
  document.body.classList.toggle('is-admin',on);
  $('admin-toggle').textContent=on?'Admin · Log out':'Admin login';
  try{on?sessionStorage.setItem(ADMIN_KEY,ADMIN_HASH):sessionStorage.removeItem(ADMIN_KEY);}catch(e){}
@@ -995,7 +1100,7 @@ function buildAudio(){
  audio.music=ctx.createGain();audio.music.gain.value=0;audio.music.connect(audio.master);
  audio.reverb=ctx.createConvolver();audio.reverb.buffer=impulse(ctx,6);const wet=ctx.createGain();wet.gain.value=.9;audio.reverb.connect(wet);wet.connect(audio.music);
  // Sub drone.
- const sub=ctx.createOscillator(),subG=ctx.createGain();sub.frequency.value=36.7;subG.gain.value=.16;sub.connect(subG);subG.connect(audio.music);sub.start();
+ const sub=ctx.createOscillator(),subG=ctx.createGain();sub.frequency.value=36.7;subG.gain.value=.16;sub.connect(subG);subG.connect(audio.music);sub.start();audio.subG=subG;
  // Radio bus (the recordings already carry the radio filter).
  audio.radioIn=ctx.createGain();audio.radio=ctx.createGain();audio.radio.gain.value=0;audio.radioIn.connect(audio.radio);audio.radio.connect(audio.master);
  audio.ready=true;
@@ -1091,10 +1196,73 @@ function ensureAudio(){
 function idleAudio(){ // both off: let the fades finish, then sleep the audio engine
  setTimeout(()=>{if(!audio.musicOn&&!audio.radioOn&&audio.ready)audio.ctx.suspend();},1200);
 }
+// Soundtrack follows the command view: Eisdon industrial beat, Gallia French horn theme, otherwise space ambience.
+function soundtrack(){const b=document.body.classList;return b.contains('cmd-eisdon')?'eisdon':b.contains('cmd-gallia')?'gallia':'space';}
 function startMusic(){
- audio.mtimers.forEach(clearTimeout);audio.mtimers=[];
- if(isIndustrial()){stopPads();startIndustrial();}
- else{stopIndustrial();padChord();musicLater(sparkle,2500);}
+ audio.mtimers.forEach(clearTimeout);audio.mtimers=[];const t=soundtrack();audio.track=t;
+ rampGain(audio.subG,t==='gallia'?0:.16,1.5); // the space sub drone would clash with the horn key
+ if(t==='eisdon'){stopPads();stopGallia();startIndustrial();}
+ else if(t==='gallia'){stopPads();stopIndustrial();startGallia();}
+ else{stopIndustrial();stopGallia();padChord();musicLater(sparkle,2500);}
+}
+// ---- Gallia theme: a noble French horn melody (plays instead of the space ambience in the Gallia command view) ----
+// Slow 60 BPM in E-flat major: a solo horn states the theme over warm low strings, a second horn joins in harmony
+// on the repeat, and timpani mark the phrases with an occasional swelling roll. All synthesised; no audio files.
+const GAL_BPM=60,mf=m=>440*Math.pow(2,(m-69)/12);
+const GAL_CHORDS={Eb:[39,[51,55,58,63]],Ab:[44,[51,56,60,63]],Bb:[46,[50,53,58,62]],Bb7:[46,[50,53,56,58]],Cm:[36,[48,55,60,63]],Fm:[41,[53,56,60,65]],Gm:[43,[50,55,58,62]]};
+// Each bar: chord, horn melody [midi note, beats] (0 = rest), optional second-horn note, timpani on the downbeat, roll.
+const GAL_A=[{c:'Eb',m:[[58,1],[63,1.5],[65,.5],[67,1]],h:55,t:1},{c:'Ab',m:[[70,2],[68,1],[67,1]],h:60},{c:'Bb',m:[[65,1.5],[67,.5],[68,1],[65,1]],h:62},{c:'Eb',m:[[63,4]],h:55,t:1}];
+const GAL_B=[{c:'Cm',m:[[67,1],[72,1.5],[70,.5],[68,1]],h:63,t:1},{c:'Ab',m:[[67,1],[65,1],[63,1],[68,1]],h:60},{c:'Bb7',m:[[67,1.5],[65,.5],[65,2]],h:62},{c:'Eb',m:[[63,4]],h:58,t:1}];
+const GAL_C=[{c:'Ab',m:[[68,1],[70,1],[72,2]],h:63,t:1},{c:'Eb',m:[[70,1],[67,1],[63,2]],h:58},{c:'Fm',m:[[65,1.5],[67,.5],[68,1],[72,1]],h:60},{c:'Bb',m:[[70,3],[0,1]],h:62,t:1}];
+const GAL_REST=[{c:'Eb'},{c:'Gm'},{c:'Ab'},{c:'Bb',roll:1}];
+function galScore(){const two=a=>a.map(b=>({...b,two:1}));return [...GAL_A,...GAL_B,...GAL_REST,...GAL_C,...two(GAL_A),...GAL_REST.slice(0,2),...two(GAL_B),{c:'Eb',t:1},{c:'Ab'},{c:'Bb7',roll:1},{c:'Eb',t:1}];}
+function hornNote(t,m,dur,v,pan){
+ const c=audio.ctx,f=mf(m),out=c.createGain(),lp=c.createBiquadFilter(),p=panNode(pan);
+ lp.type='lowpass';lp.Q.value=.9;const bright=700+v*1500;
+ lp.frequency.setValueAtTime(300,t);lp.frequency.linearRampToValueAtTime(bright,t+.14);lp.frequency.setTargetAtTime(bright*.75,t+.25,.5);lp.frequency.setTargetAtTime(300,t+dur,.12);
+ const a=.075*v;out.gain.setValueAtTime(0,t);out.gain.linearRampToValueAtTime(a,t+.11);out.gain.setTargetAtTime(a*.82,t+.18,.3);
+ out.gain.setValueAtTime(a*.82,t+Math.max(dur-.05,.2));out.gain.setTargetAtTime(0,t+Math.max(dur-.05,.2),.12);
+ lp.connect(out);out.connect(p);p.connect(audio.gal.gain);const sg=c.createGain();sg.gain.value=.55;p.connect(sg);sg.connect(audio.reverb);
+ const vib=c.createOscillator(),vg=c.createGain();vib.frequency.value=4.8;vg.gain.setValueAtTime(0,t);vg.gain.linearRampToValueAtTime(f*.0035,t+Math.min(dur,1.2));vib.connect(vg);
+ const end=t+dur+.8;
+ for(const [type,mul,det,g] of [['sawtooth',1,-4,.55],['sawtooth',1,5,.45],['triangle',.5,0,.5],['sine',2,0,.08]]){
+  const o=c.createOscillator(),og=c.createGain();o.type=type;o.frequency.setValueAtTime(f*mul*.985,t);o.frequency.exponentialRampToValueAtTime(f*mul,t+.06);o.detune.value=det;vg.connect(o.frequency);
+  og.gain.value=g;o.connect(og);og.connect(lp);o.start(t);o.stop(end);}
+ vib.start(t);vib.stop(end);
+ noiseHit(t,{dur:.09,type:'bandpass',freq:Math.min(f*3,2400),q:2,gain:.006*v,to:audio.gal.gain,pan}); // breath at the attack
+}
+function galStrings(t,dur,chord){
+ const c=audio.ctx,[root,notes]=GAL_CHORDS[chord],g=c.createGain(),lp=c.createBiquadFilter();lp.type='lowpass';lp.frequency.value=950;lp.Q.value=.5;
+ g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.011,t+.9);g.gain.setValueAtTime(.011,t+dur-.2);g.gain.linearRampToValueAtTime(0,t+dur+.9);
+ lp.connect(g);g.connect(audio.gal.gain);const sg=c.createGain();sg.gain.value=.7;g.connect(sg);sg.connect(audio.reverb);
+ for(const m of [root,root+12,...notes])for(const d of [-7,7]){const o=c.createOscillator();o.type='sawtooth';o.frequency.value=mf(m);o.detune.value=d;o.connect(lp);o.start(t);o.stop(t+dur+1);}
+}
+function timpani(t,m,v){
+ const c=audio.ctx,o=c.createOscillator(),g=c.createGain(),f=mf(m);o.frequency.setValueAtTime(f*1.25,t);o.frequency.exponentialRampToValueAtTime(f,t+.08);
+ g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.12*v,t+.008);g.gain.exponentialRampToValueAtTime(.0005,t+1.6);
+ o.connect(g);g.connect(audio.gal.gain);const sg=c.createGain();sg.gain.value=.5;g.connect(sg);sg.connect(audio.reverb);o.start(t);o.stop(t+1.7);
+ noiseHit(t,{dur:.07,type:'lowpass',freq:900,gain:.03*v,to:audio.gal.gain});
+}
+function startGallia(){
+ stopGallia();const c=audio.ctx,now=c.currentTime,g=c.createGain();g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(2.6,now+2.5);g.connect(audio.music); // level matched to the other soundtracks
+ audio.gal={gain:g,score:galScore(),bar:0,next:now+.4};galSchedule();
+}
+function stopGallia(){
+ const gl=audio.gal;if(!gl)return;audio.gal=null;const now=audio.ctx.currentTime;
+ gl.gain.gain.cancelScheduledValues(now);gl.gain.gain.setValueAtTime(gl.gain.gain.value,now);gl.gain.gain.linearRampToValueAtTime(0,now+1.2);setTimeout(()=>gl.gain.disconnect(),1500);
+}
+function galSchedule(){
+ const gl=audio.gal;if(!gl)return;const c=audio.ctx,beat=60/GAL_BPM;
+ while(gl.next<c.currentTime+beat*6){
+  const t0=Math.max(gl.next,c.currentTime+.05),b=gl.score[gl.bar%gl.score.length];gl.bar++;
+  galStrings(t0,beat*4,b.c);
+  if(b.t)timpani(t0,GAL_CHORDS[b.c][0],.9);
+  if(b.roll)for(let i=0;i<16;i++)timpani(t0+beat*2+i*beat/8,46,.15+.55*i/15);
+  if(b.m){let t=t0;b.m.forEach(([n,d],i)=>{if(n)hornNote(t,n,d*beat*.97,i===0?.95:.8,-.15);t+=d*beat;});}
+  if(b.two&&b.h)hornNote(t0+.02,b.h,beat*4*.96,.55,.25); // second horn sustains a harmony note under the melody
+  gl.next=t0+beat*4;
+ }
+ musicLater(galSchedule,beat*1500);
 }
 // ---- Eisdon industrial soundtrack (plays instead of the space ambience in the Eisdon command view) ----
 // Slow 68 BPM beat (deep kick, metallic clank on the off-beats, ticking hats) over a low machine drone,
@@ -1189,7 +1357,7 @@ function setToggle(id,on,label){const b=$(id);b.setAttribute('aria-pressed',Stri
 function setMusicOn(on){
  audio.musicOn=on;setToggle('music-toggle',on,'Music');$('music-vol-wrap').hidden=!on;
  if(on){ensureAudio();rampGain(audio.music,level('music'),2.5);startMusic();}
- else if(audio.ready){audio.mtimers.forEach(clearTimeout);audio.mtimers=[];rampGain(audio.music,0,.8);setTimeout(()=>{if(!audio.musicOn){stopPads();stopIndustrial();}},900);idleAudio();}
+ else if(audio.ready){audio.mtimers.forEach(clearTimeout);audio.mtimers=[];rampGain(audio.music,0,.8);setTimeout(()=>{if(!audio.musicOn){stopPads();stopIndustrial();stopGallia();}},900);idleAudio();}
 }
 function setRadioOn(on){
  audio.radioOn=on;setToggle('radio-toggle',on,'Radio');$('radio-vol-wrap').hidden=!on;$('radio-toggle').classList.remove('rx');
@@ -1203,8 +1371,8 @@ for(const k of ['music','radio']){
  el.addEventListener('input',()=>{audio.vol[k]=+el.value/100;try{localStorage.setItem(AUDIO_VOL_KEY,JSON.stringify(audio.vol));}catch(err){}
   if(audio.ready&&audio[k+'On'])audio[k].gain.setTargetAtTime(level(k),audio.ctx.currentTime,.08);});
 }
-// Volume knobs (Eisdon interface): turn by dragging, the mouse wheel or the arrow keys; they drive the hidden sliders.
-function syncKnob(k){const el=$('vol-'+k),kn=document.querySelector(`[data-vol-knob="${k}"]`),v=+el.value;kn.setAttribute('aria-valuenow',String(v));kn.setAttribute('aria-valuetext',v+'%');kn.firstElementChild.style.setProperty('--rot',(-135+v*2.7)+'deg');}
+// Volume knobs (Eisdon interface) and digital meters (Gallia interface): turn by dragging, the mouse wheel or the arrow keys; they drive the hidden sliders.
+function syncKnob(k){const el=$('vol-'+k),kn=document.querySelector(`[data-vol-knob="${k}"]`),v=+el.value;kn.setAttribute('aria-valuenow',String(v));kn.setAttribute('aria-valuetext',v+'%');kn.firstElementChild.style.setProperty('--rot',(-135+v*2.7)+'deg');kn.style.setProperty('--lvl',String(v));kn.style.setProperty('--lvlp',v+'%');}
 function setKnob(k,v){const el=$('vol-'+k);v=Math.round(clamp(v,0,100));if(+el.value===v)return;el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));syncKnob(k);}
 for(const kn of document.querySelectorAll('[data-vol-knob]')){
  const k=kn.dataset.volKnob;syncKnob(k);let drag=null;
@@ -1226,16 +1394,29 @@ document.addEventListener('visibilitychange',()=>{
 const CMD_ALPHA_KEY='reliquary-command-alpha',CMD_SESSION_KEY='reliquary-commander';
 const CMD_FACTIONS={
  eisdon:{name:'Eisdon',online:true,pinHash:'50a7fea0f74543785cd5fab7839d0d0369dd5bc98eee30170c08238373cc0cd5',icon:'<path d="M32 6 54 14v16c0 14-9 23-22 28C19 53 10 44 10 30V14z"/><path d="M18 40 28 24l6 9 5-6 8 13z" fill="currentColor" opacity=".55"/>'},
+ gallia:{name:'Gallia',online:true,pinHash:'1a330864bdbb1a44861f71431be7c87ce4166f8bebd912e57c4d17b7e8c9f8d4',icon:'<rect x="11" y="11" width="42" height="42" rx="7"/><path d="M32 18 45 32 32 46 19 32z" fill="currentColor" opacity=".55"/><path d="M11 32h8M45 32h8"/>'},
  histannia:{name:'Histannia',online:false,icon:'<circle cx="32" cy="32" r="22"/><path d="M32 14 36 28 50 32 36 36 32 50 28 36 14 32 28 28z" fill="currentColor" opacity=".55"/>'},
  harron:{name:'Harron',online:false,icon:'<path d="M32 8 52 20v24L32 56 12 44V20z"/><path d="M22 26h20v6H35v14h-6V32h-7z" fill="currentColor" opacity=".55"/>'}
 };
+const CMD_STATE={eisdon:{credits:0},gallia:{credits:0},histannia:{credits:0},harron:{credits:0}};
+// Credit income. Each command earns a fixed number of credits per hour, counted from one shared start time, so the
+// treasury keeps growing whether or not anyone is logged in or has the site open, and every visitor sees the same
+// total. Rates live in CMD_INCOME (keep in step with index.html). Payments land on the hour mark after ECON_START.
+const ECON_START=Date.UTC(2026,10,25,18,0,0),HOUR_MS=3600000; // 25 Nov 2026, 1:00 pm Eastern
+const CMD_INCOME={eisdon:1,gallia:2,histannia:0,harron:0};
+function treasury(c,now=Date.now()){return (CMD_STATE[c]?.credits||0)+(CMD_INCOME[c]||0)*Math.max(0,Math.floor((now-ECON_START)/HOUR_MS));}
+function nextPayMin(now=Date.now()){const e=now-ECON_START;return e<0?Math.ceil(-e/60000):Math.ceil((HOUR_MS-e%HOUR_MS)/60000);}
+function incomeText(c){const r=CMD_INCOME[c]||0;if(!r)return 'No income';const m=nextPayMin();return `+${r} CR/hr · next payment in ${m>=60?'1 hr':m+' min'}`;}
+const fmtCR=n=>new Intl.NumberFormat('en-US').format(n)+' CR';
 let cmdPick=null;
 function commandAlpha(){try{return localStorage.getItem(CMD_ALPHA_KEY)==='1';}catch(e){return false;}}
 function commander(){try{const c=localStorage.getItem(CMD_SESSION_KEY);return commandAlpha()&&CMD_FACTIONS[c]?.online?c:null;}catch(e){return null;}}
 function applyCommander(){
  const c=commander();document.body.classList.remove('is-commander',...Object.keys(CMD_FACTIONS).map(k=>'cmd-'+k));
- if(c){document.body.classList.add('is-commander','cmd-'+c);$('cmd-badge').textContent=`${CMD_FACTIONS[c].name} Command`;}
- if(audio.ready&&audio.musicOn&&!document.hidden&&isIndustrial()!==!!audio.ind)startMusic(); // switch soundtrack when the command changes
+ Cloud.syncPresence?.(); // update the shared online status after a login or logout
+ if(c){document.body.classList.add('is-commander','cmd-'+c);$('cmd-badge').textContent=`${CMD_FACTIONS[c].name} Command`;updateTreasury();$('comms-net').textContent=`${CMD_FACTIONS[c].name} command net`;}
+ if(!$('dock-chat').hidden)renderChat(); // recolour and keep the log in place after a command change
+ if(audio.ready&&audio.musicOn&&!document.hidden&&soundtrack()!==audio.track)startMusic(); // switch soundtrack when the command changes
  dirty=true;
 }
 function renderCommandDialog(focusPin){
@@ -1258,14 +1439,17 @@ $('command-dialog').addEventListener('submit',async e=>{
   else{err.textContent='Access denied. Incorrect PIN.';$('cmd-pin').select();}
  }catch(x){err.textContent='This browser cannot verify the PIN here. Open the site over https or use a current browser.';}
 });
+function updateTreasury(){const c=commander(),el=$('cmd-treasury');if(!c){el.textContent='';return;}el.textContent=fmtCR(treasury(c));el.title=`${CMD_FACTIONS[c].name} treasury · ${incomeText(c)}`;el.dataset.rate=`+${CMD_INCOME[c]||0}/hr`;}
 applyCommander();
+setInterval(updateTreasury,15000);
+if(Cloud.trackPresence)Cloud.trackPresence(commander); // show this command as online while the starmap is open
 
 // ---- Command dock: Communications, Orders and (admin) Chat --------------------------------
 // Left-side switches flip each panel out; shown only in the command view (logged-in commander).
 function setDockOpen(k,open){
  const p=$('dock-'+k),b=document.querySelector(`[data-dock="${k}"]`),fx=!reducedMotion.matches;
  b.setAttribute('aria-pressed',String(open));p.classList.remove('flip-open','flip-close');clearTimeout(p._flipT);
- if(open){p.hidden=false;if(fx){void p.offsetWidth;p.classList.add('flip-open');p._flipT=setTimeout(()=>p.classList.remove('flip-open'),1000);}if(k==='chat'){b.classList.remove('unread');renderChat();}}
+ if(open){p.hidden=false;if(fx){p.style.setProperty('--scan-h',p.offsetHeight+'px');void p.offsetWidth;p.classList.add('flip-open');p._flipT=setTimeout(()=>p.classList.remove('flip-open'),1000);}if(k==='chat'){b.classList.remove('unread');renderChat(true);}}
  else if(fx&&!p.hidden){p.classList.add('flip-close');p._flipT=setTimeout(()=>{p.hidden=true;p.classList.remove('flip-close');},330);}
  else p.hidden=true;
 }
@@ -1281,18 +1465,27 @@ function logIntercept(text){
 function markUnread(){$('cmd-rail').querySelector('[data-dock="chat"]').classList.add('unread');}
 const CHAT_KEY='reliquary-chat-v1';
 function chatMessages(){if(Cloud.enabled)return shared.chat;try{const v=JSON.parse(localStorage.getItem(CHAT_KEY)||'[]');return Array.isArray(v)?v:[];}catch(e){return [];}}
-function renderChat(){
- const msgs=chatMessages(),log=$('chat-log');
- log.innerHTML=msgs.length?msgs.map(m=>`<li><time>${hhmmss(new Date(m.at))}</time><b>${esc(m.from)}:</b> ${esc(m.text)}</li>`).join(''):'<li class="dim">&gt; Channel open. No messages yet.</li>';
- log.scrollTop=log.scrollHeight;
+let chatStick=true; // keep the log pinned to the newest message unless the reader has scrolled up
+function chatAtBottom(){const l=$('chat-log');return l.scrollHeight-l.scrollTop-l.clientHeight<24;}
+function renderChat(force){
+ const msgs=chatMessages(),log=$('chat-log'),stick=force||chatStick||chatAtBottom(),keep=log.scrollTop;
+ log.innerHTML=msgs.length?msgs.map(m=>`<li><time>${hhmmss(new Date(m.at))}</time><b${CMD_FACTIONS[m.faction]?` class="f-${m.faction}"`:''}>${esc(m.from)}:</b> ${esc(m.text)}</li>`).join(''):'<li class="dim">&gt; Channel open. No messages yet.</li>';
+ if(stick){log.scrollTop=log.scrollHeight;chatStick=false;$('chat-latest').hidden=true;}
+ else{log.scrollTop=keep;$('chat-latest').hidden=false;}
 }
+$('chat-log').addEventListener('scroll',()=>{if(chatAtBottom())$('chat-latest').hidden=true;},{passive:true});
+$('chat-log').addEventListener('keydown',e=>{const l=$('chat-log'),d={ArrowUp:-40,ArrowDown:40,PageUp:-l.clientHeight*.9,PageDown:l.clientHeight*.9}[e.key];
+ if(d!==undefined){e.preventDefault();e.stopPropagation();l.scrollBy({top:d});}else if(e.key==='Home'||e.key==='End'){e.preventDefault();e.stopPropagation();l.scrollTop=e.key==='Home'?0:l.scrollHeight;}});
+$('chat-up').onclick=()=>{const l=$('chat-log');l.scrollBy({top:-l.clientHeight*.6,behavior:reducedMotion.matches?'auto':'smooth'});};
+$('chat-down').onclick=()=>{const l=$('chat-log');l.scrollBy({top:l.clientHeight*.6,behavior:reducedMotion.matches?'auto':'smooth'});};
+$('chat-latest').onclick=()=>{const l=$('chat-log');l.scrollTop=l.scrollHeight;$('chat-latest').hidden=true;};
 $('chat-form').addEventListener('submit',e=>{
  e.preventDefault();if(!isAdmin())return;const inp=$('chat-input'),text=inp.value.trim();if(!text)return;
- const msg={from:commander()?`${CMD_FACTIONS[commander()].name} Command`:'Administrator',text:text.slice(0,300),at:Date.now()};
+ const c=commander(),msg={from:c?`${CMD_FACTIONS[c].name} Commander`:'Administrator',text:text.slice(0,300),at:Date.now()};if(c)msg.faction=c;chatStick=true;
  if(Cloud.enabled){inp.value='';Cloud.addChat(msg).catch(x=>{toast('Message not sent: '+x.message);if(!inp.value)inp.value=text;});return;}
  const msgs=chatMessages();msgs.push(msg);
  try{localStorage.setItem(CHAT_KEY,JSON.stringify(msgs.slice(-200)));}catch(x){toast('Could not save the message in this browser.');}
- inp.value='';renderChat();
+ inp.value='';renderChat(true);
 });
 $('chat-clear').onclick=()=>{
  if(Cloud.enabled){if(isAdmin()&&confirm('Clear all chat messages for everyone?'))Cloud.clearChat().catch(x=>toast('Chat not cleared: '+x.message));return;}
