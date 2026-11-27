@@ -530,6 +530,22 @@ html.faction-dropdown-open,html.faction-dropdown-open body,html.faction-dropdown
 .board-note{margin:12px 0 0}.board-error{margin:0 0 8px;color:#ff9c86;font-size:12px}
 .board-link{padding:0;border:0;background:none;color:var(--accent);font:inherit;text-decoration:underline;cursor:pointer}
 a.home-icon{display:inline-flex;align-items:center;justify-content:center;color:inherit}
+/* Character lines in posts (/Name speak …): bold speech; hovering or tapping shows the portrait */
+.board-post-title{margin-top:2px;font-weight:600}
+.board-post-hl{background:rgba(152,220,255,.07);transition:background 2s}
+.rp{position:relative;display:inline;outline:none;cursor:default}
+.rp strong{font-weight:700;color:var(--text)}
+.rp-name{color:var(--accent);font-weight:600;text-decoration:none}.rp-name:hover{text-decoration:underline}
+.rp-shout strong{font-size:1.12em;letter-spacing:.02em}
+.rp-whisper strong{font-style:italic;color:var(--muted)}
+.rp-act em{color:var(--muted)}.rp-act .rp-name{font-style:normal}
+.rp:hover,.rp:focus{background:rgba(152,220,255,.08);border-radius:3px}
+.rp-card{position:absolute;left:0;bottom:calc(100% + 8px);z-index:30;display:none;flex-direction:column;align-items:center;gap:6px;width:170px;padding:8px;border:1px solid var(--line);border-radius:6px;background:rgba(3,16,26,.97);box-shadow:0 8px 24px rgba(0,0,0,.6);white-space:normal;pointer-events:none}
+.rp:hover .rp-card,.rp:focus .rp-card,.rp:focus-within .rp-card{display:flex}
+.rp-img{display:flex;align-items:center;justify-content:center;width:150px;height:150px;overflow:hidden;border-radius:4px;background:rgba(0,10,16,.9);color:var(--muted);font-size:48px;font-weight:700;font-style:normal}
+.rp-img img{width:100%;height:100%;object-fit:cover}
+.rp-card-name{font-size:12px;font-weight:600;font-style:normal;color:var(--text);text-align:center}
+.rp-help{margin:-4px 0 10px;font-size:11px}.rp-help code{padding:0 4px;border:1px solid var(--line);border-radius:3px;font-size:11px}
 #characters-btn[aria-current="page"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);color:var(--text)}
 /* Forum sections, boards, characters */
 .board-tabs-unused{display:flex;gap:4px;margin:0 0 14px;border-bottom:1px solid var(--line)}
@@ -628,19 +644,21 @@ let toastTimer;function toast(m){const t=$('toast');t.textContent=m;t.hidden=fal
 window.toast=toast;
 const isAdmin=()=>!!(Cloud.enabled&&Cloud.isAdmin&&Cloud.isAdmin());
 function commandFaction(){try{const c=localStorage.getItem('reliquary-commander');return localStorage.getItem('reliquary-command-alpha')==='1'&&['eisdon','gallia','secara'].includes(c)?c:'';}catch(e){return '';}}
-// Forum layout: sections (collapsible) holding boards. adminTopics: only the administrator starts topics there.
+// Forum layout: sections (collapsible) holding boards. flat (on a section or a board): the board has no topics; posts
+// go straight into the board as one running thread, newest at the bottom. adminTopics: only the administrator starts
+// topics there (on a flat board: only the administrator posts).
 // Posts saved before boards existed belong to DEFAULT_BOARD. New boards can be added here; ids use a-z, 0-9 and -.
 const FORUM=[
- {id:'ooc',name:'OOC',sub:'Out of character',boards:[
+ {id:'ooc',name:'OOC',sub:'Out of character',flat:true,boards:[
   {id:'rules',name:'Rules & Getting Started',desc:'Site rules, account help and how to get started.',adminTopics:true},
   {id:'general',name:'General',desc:'General discussion.'},
   {id:'memes',name:'Memes',desc:'Memes and jokes.'},
   {id:'offtopic',name:'Off-topic',desc:'Anything not related to the setting.'}]}];
-const DEFAULT_BOARD='general',BOARDS={};FORUM.forEach(s=>s.boards.forEach(b=>BOARDS[b.id]={...b,sec:s}));
+const DEFAULT_BOARD='general',BOARDS={};FORUM.forEach(s=>s.boards.forEach(b=>BOARDS[b.id]={flat:!!s.flat,...b,sec:s}));
 const CHAR_MAX=Cloud.CHAR_MAX||3;
 const CHAR_INFO=[['dob','Date of birth'],['birthplace','Place of birth'],['gender','Gender'],['height','Height'],['weight','Weight'],['nationality','Nationality'],['race','Race'],['occupation','Occupation'],['affiliation','Affiliation']];
 const NAME_LABELS=['First name','Middle name','Last name','Other name'];
-let member=Accounts.member,boardPosts=[],boardLoaded=false,boardNew=false,boardDraft={title:'',text:'',reply:''},boardBusy=false,boardError='',online=[];
+let member=Accounts.member,boardPosts=[],boardLoaded=false,boardNew=false,boardDraft={title:'',text:'',reply:'',flat:''},boardBusy=false,boardError='',online=[];
 let chars={},charsLoaded=false,charEdit=null,collapsed={};
 let postAs='';try{postAs=localStorage.getItem('reliquary-post-as')||'';collapsed=JSON.parse(localStorage.getItem('reliquary-forum-collapsed')||'{}')||{};}catch(e){}
 function route(){
@@ -686,25 +704,64 @@ function asHTML(){
  return `<label class="board-as">Post as <select id="board-as">${[`<option value="">${escapeHTML(b.from)}</option>`,...mc.map(c=>`<option value="${escapeHTML(c.id)}"${cur===c.id?' selected':''}>${escapeHTML(c.name)}</option>`)].join('')}</select></label>`;
 }
 const crumbs=parts=>`<nav class="board-crumbs" aria-label="Location">${parts.map(([l,h])=>h?`<a href="${h}">${escapeHTML(l)}</a>`:escapeHTML(l)).join(' › ')}</nav>`;
+// ---- Character actions in posts ----
+// A line that starts with /Name action … is shown as that character's line: for example "/Marek speak Hold position."
+// or, for a name with spaces, "/Marek Hollis speak …" or "/[Marek Hollis] speak …". The name can be the character's
+// full name or any one of its names, and must be one of the poster's own characters. Hovering over (or tapping) the
+// line shows the character's portrait. Lines that do not match stay as ordinary text.
+const RP_ACTIONS={speak:'speak',say:'speak',says:'speak',shout:'shout',shouts:'shout',whisper:'whisper',whispers:'whisper',act:'act',acts:'act',do:'act'};
+const RP_LINE=new RegExp('^\\/(?:\\[([^\\]]{1,130})\\]|(.{1,130}?))\\s+('+Object.keys(RP_ACTIONS).join('|')+')\\b[:,]?\\s*(.*)$','i');
+function rpChar(name,p){
+ const n=name.trim().toLowerCase(),own=Object.values(chars).filter(c=>c.owner&&c.owner===p.uid);
+ const cur=p.char&&chars[p.char],pick=list=>list.length===1?list[0]:cur&&list.includes(cur)?cur:list[0]||null;
+ return pick(own.filter(c=>c.name.toLowerCase()===n))||pick(own.filter(c=>c.names.some(x=>x.toLowerCase()===n)));
+}
+function rpLineHTML(line,p){
+ const m=RP_LINE.exec(line);if(!m||!m[4].trim())return null;
+ const c=rpChar(m[1]||m[2],p);if(!c)return null;
+ const kind=RP_ACTIONS[m[3].toLowerCase()],raw=m[4].trim(),said=escapeHTML(raw.replace(/^["“](.*)["”]$/,'$1'));
+ const who=`<a class="rp-name" href="${charHref(c)}">${escapeHTML(c.name)}</a>`;
+ const card=`<span class="rp-card" aria-hidden="true">${charImg(c,'rp-img')}<span class="rp-card-name">${escapeHTML(c.name)}</span></span>`;
+ const body=kind==='act'?`<em>${who} ${escapeHTML(raw)}</em>`:`${who}${kind==='shout'?' shouts':kind==='whisper'?' whispers':''}: <strong>“${said}”</strong>`;
+ return `<span class="rp rp-${kind}" tabindex="0">${body}${card}</span>`;
+}
+function postTextHTML(p){return String(p.text||'').split('\n').map(l=>rpLineHTML(l,p)??escapeHTML(l)).join('\n');}
+function rpHelpHTML(){
+ const mc=myChars();if(!mc.length)return '';const n=escapeHTML(mc[0].names[0]||mc[0].name);
+ return `<p class="subtext rp-help">Character lines: start a line with <code>/${n} speak …</code>, <code>/${n} shout …</code>, <code>/${n} whisper …</code> or <code>/${n} act …</code>. Use <code>/[Full Name]</code> for a name with spaces.</p>`;
+}
 // ---- Forum views ----
 function homeHTML(){
  return FORUM.map(s=>{const open=!collapsed[s.id];return `<section class="forum-sec"><button class="forum-sec-head" type="button" data-sec-toggle="${s.id}" aria-expanded="${open}" aria-controls="sec-${s.id}"><span class="forum-chev" aria-hidden="true"></span><span class="forum-sec-name">${escapeHTML(s.name)}</span><span class="forum-sec-sub">${escapeHTML(s.sub)}</span><span class="forum-sec-count">${s.boards.length} boards</span></button>`+
-  `<ul class="forum-boards" id="sec-${s.id}"${open?'':' hidden'}>${s.boards.map(b=>{const list=topics(b.id),posts=list.reduce((n,x)=>n+1+x.replies,0),last=list[0];
-   return `<li><a class="forum-board" href="#board-${b.id}"><span><span class="forum-board-name">${escapeHTML(b.name)}</span><span class="forum-board-desc">${escapeHTML(b.desc)}</span></span><span class="forum-board-stats">${list.length} ${list.length===1?'topic':'topics'} · ${posts} ${posts===1?'post':'posts'}</span><span class="forum-board-last">${last?`<b>${escapeHTML(last.t.title)}</b><br>${boardTime(last.last)}`:'No posts yet'}</span></a></li>`;}).join('')}</ul></section>`;}).join('');
+  `<ul class="forum-boards" id="sec-${s.id}"${open?'':' hidden'}>${s.boards.map(b=>{const head=`<li><a class="forum-board" href="#board-${b.id}"><span><span class="forum-board-name">${escapeHTML(b.name)}</span><span class="forum-board-desc">${escapeHTML(b.desc)}</span></span>`;
+   if(BOARDS[b.id].flat){const ps=flatPosts(b.id),last=ps[ps.length-1];return head+`<span class="forum-board-stats">${ps.length} ${ps.length===1?'post':'posts'}</span><span class="forum-board-last">${last?`<b>${escapeHTML(postName(last))}</b><br>${boardTime(last.at)}`:'No posts yet'}</span></a></li>`;}
+   const list=topics(b.id),posts=list.reduce((n,x)=>n+1+x.replies,0),last=list[0];
+   return head+`<span class="forum-board-stats">${list.length} ${list.length===1?'topic':'topics'} · ${posts} ${posts===1?'post':'posts'}</span><span class="forum-board-last">${last?`<b>${escapeHTML(last.t.title)}</b><br>${boardTime(last.last)}`:'No posts yet'}</span></a></li>`;}).join('')}</ul></section>`;}).join('');
 }
 function boardHTML(b){
  const can=canPost(),err=boardError?`<p class="board-error" role="alert">${escapeHTML(boardError)}</p>`:'',list=topics(b.id);
  const ro=can?(b.adminTopics&&!isAdmin()?'<p class="subtext board-note">Only the administrator starts topics here; you can reply to them.</p>':''):'<p class="subtext board-note">Read only. <button class="board-link" type="button" data-board-signin>Sign in or create an account</button> to post.</p>';
  return crumbs([['Forum','#forum'],[b.sec.name,'#forum'],[b.name]])+`<h2 class="board-thread-title">${escapeHTML(b.name)}</h2>`+
-  (boardNew&&canStartTopic(b)?`<form class="board-form" id="board-new-form" autocomplete="off"><label class="field">Title<input id="board-title-input" data-board-field="title" maxlength="120" required value="${escapeHTML(boardDraft.title)}"></label><label class="field">Message<textarea id="board-text" data-board-field="text" maxlength="2000" rows="6" required>${escapeHTML(boardDraft.text)}</textarea></label>${err}<div class="board-actions">${asHTML()}<button class="btn" type="button" data-board-cancel>Cancel</button><button class="btn primary" type="submit"${boardBusy?' disabled':''}>Post topic</button></div></form>`:'')+
+  (boardNew&&canStartTopic(b)?`<form class="board-form" id="board-new-form" autocomplete="off"><label class="field">Title<input id="board-title-input" data-board-field="title" maxlength="120" required value="${escapeHTML(boardDraft.title)}"></label><label class="field">Message<textarea id="board-text" data-board-field="text" maxlength="2000" rows="6" required>${escapeHTML(boardDraft.text)}</textarea></label>${rpHelpHTML()}${err}<div class="board-actions">${asHTML()}<button class="btn" type="button" data-board-cancel>Cancel</button><button class="btn primary" type="submit"${boardBusy?' disabled':''}>Post topic</button></div></form>`:'')+
   (list.length?`<ul class="board-topics">${list.map(({t,replies,last})=>`<li><a class="board-topic" href="#topic-${encodeURIComponent(t.id)}"><span class="board-topic-title">${escapeHTML(t.title)}</span><span class="board-topic-meta">${escapeHTML(postName(t))} · ${replies} ${replies===1?'reply':'replies'} · last post ${boardTime(last)}</span></a></li>`).join('')}</ul>`:'<p class="subtext">No topics yet.</p>')+ro;
+}
+const flatPosts=id=>boardPosts.filter(p=>boardOf(p)===id); // a flat board's posts, oldest first
+function postRowHTML(p,delLabel){
+ return `<li class="board-post" id="post-${escapeHTML(p.id)}">${avatarHTML(p)}<div><div class="board-meta">${nameHTML(p)}${p.char&&p.player?`<span class="board-player">played by ${escapeHTML(p.player)}</span>`:''}<span>${boardTime(p.at)}</span>${mine(p)?`<button class="board-del" type="button" data-board-del="${escapeHTML(p.id)}">${delLabel}</button>`:''}</div>${p.title&&delLabel==='Delete'&&!p.topic?`<div class="board-post-title">${escapeHTML(p.title)}</div>`:''}<div class="board-text">${postTextHTML(p)}</div></div></li>`;
+}
+function flatHTML(b){
+ const can=canPost(),ok=canStartTopic(b),err=boardError?`<p class="board-error" role="alert">${escapeHTML(boardError)}</p>`:'',ps=flatPosts(b.id);
+ return crumbs([['Forum','#forum'],[b.sec.name,'#forum'],[b.name]])+`<h2 class="board-thread-title">${escapeHTML(b.name)}</h2>`+
+  (ps.length?`<ol class="board-posts">${ps.map(p=>postRowHTML(p,'Delete')).join('')}</ol>`:'<p class="subtext">No posts yet.</p>')+
+  (ok?`<form class="board-form" id="board-flat-form" autocomplete="off"><label class="field">Message<textarea id="board-flat" data-board-field="flat" maxlength="2000" rows="4" required>${escapeHTML(boardDraft.flat)}</textarea></label>${rpHelpHTML()}${err}<div class="board-actions">${asHTML()}<button class="btn primary" type="submit"${boardBusy?' disabled':''}>Post</button></div></form>`
+   :can?'<p class="subtext board-note">Only the administrator posts here.</p>':'<p class="subtext board-note">Read only. <button class="board-link" type="button" data-board-signin>Sign in or create an account</button> to post.</p>');
 }
 function threadHTML(topic){
  const b=BOARDS[boardOf(topic)],can=canPost(),err=boardError?`<p class="board-error" role="alert">${escapeHTML(boardError)}</p>`:'';
  const posts=[topic,...boardPosts.filter(p=>p.topic===topic.id)];
  return crumbs([['Forum','#forum'],[b.name,'#board-'+b.id],[topic.title]])+`<h2 class="board-thread-title">${escapeHTML(topic.title)}</h2>`+
-  `<ol class="board-posts">${posts.map((p,i)=>`<li class="board-post">${avatarHTML(p)}<div><div class="board-meta">${nameHTML(p)}${p.char&&p.player?`<span class="board-player">played by ${escapeHTML(p.player)}</span>`:''}<span>${boardTime(p.at)}</span>${mine(p)?`<button class="board-del" type="button" data-board-del="${escapeHTML(p.id)}">${i?'Delete':'Delete topic'}</button>`:''}</div><div class="board-text">${escapeHTML(p.text)}</div></div></li>`).join('')}</ol>`+
-  (can?`<form class="board-form" id="board-reply-form" autocomplete="off"><label class="field">Reply<textarea id="board-reply" data-board-field="reply" maxlength="2000" rows="4" required>${escapeHTML(boardDraft.reply)}</textarea></label>${err}<div class="board-actions">${asHTML()}<button class="btn primary" type="submit"${boardBusy?' disabled':''}>Post reply</button></div></form>`:'<p class="subtext board-note">Read only. <button class="board-link" type="button" data-board-signin>Sign in or create an account</button> to post.</p>');
+  `<ol class="board-posts">${posts.map((p,i)=>postRowHTML(p,i?'Delete reply':'Delete topic')).join('')}</ol>`+
+  (can?`<form class="board-form" id="board-reply-form" autocomplete="off"><label class="field">Reply<textarea id="board-reply" data-board-field="reply" maxlength="2000" rows="4" required>${escapeHTML(boardDraft.reply)}</textarea></label>${rpHelpHTML()}${err}<div class="board-actions">${asHTML()}<button class="btn primary" type="submit"${boardBusy?' disabled':''}>Post reply</button></div></form>`:'<p class="subtext board-note">Read only. <button class="board-link" type="button" data-board-signin>Sign in or create an account</button> to post.</p>');
 }
 // ---- Character views ----
 function cardHTML(c,own){
@@ -762,8 +819,8 @@ function bodyHTML(){
  if(R.v==='characters')return charEdit?editorHTML():charactersHTML();
  if(R.v==='character')return profileHTML(R.id);
  if(!boardLoaded)return '<p class="subtext">Loading…</p>';
- if(R.v==='board'){const b=BOARDS[R.id];return b?boardHTML(b):crumbs([['Forum','#forum'],['Not found']])+'<p class="subtext">This board does not exist.</p>';}
- if(R.v==='topic'){const t=boardPosts.find(p=>p.id===R.id&&!p.topic);return t?threadHTML(t):crumbs([['Forum','#forum'],['Not found']])+'<p class="subtext">This topic no longer exists.</p>';}
+ if(R.v==='board'){const b=BOARDS[R.id];return b?(b.flat?flatHTML(b):boardHTML(b)):crumbs([['Forum','#forum'],['Not found']])+'<p class="subtext">This board does not exist.</p>';}
+ if(R.v==='topic'){const t=boardPosts.find(p=>p.id===R.id&&!p.topic);return t?(BOARDS[boardOf(t)].flat?flatHTML(BOARDS[boardOf(t)]):threadHTML(t)):crumbs([['Forum','#forum'],['Not found']])+'<p class="subtext">This topic no longer exists.</p>';}
  return (boardError?`<p class="board-error" role="alert">${escapeHTML(boardError)}</p>`:'')+homeHTML();
 }
 function renderOnline(){$('board-online').innerHTML=Cloud.enabled?`<span class="board-live-head">Online now (${online.length})</span> ${online.length?online.map(o=>`<span class="board-chip">${escapeHTML(o.name)}</span>`).join(' '):'<span class="subtext">No one</span>'}`:'';}
@@ -773,12 +830,16 @@ function render(){
  document.querySelectorAll('[data-tab]').forEach(t=>t.toggleAttribute('aria-current',false));
  const cur=document.querySelector(`[data-tab="${chv?'characters':'forum'}"]`);if(cur)cur.setAttribute('aria-current','page');
  const b=R.v==='board'&&BOARDS[R.id];
- $('board-new-btn').hidden=!(Cloud.enabled&&boardLoaded&&b&&canStartTopic(b)&&!boardNew);
+ $('board-new-btn').hidden=!(Cloud.enabled&&boardLoaded&&b&&!b.flat&&canStartTopic(b)&&!boardNew);
  body.setAttribute('aria-label',chv?'Characters':'Forum');
  body.innerHTML=bodyHTML();
  if(fid){const n=$(fid);if(n){n.focus({preventScroll:true});if(sel)try{n.setSelectionRange(sel[0],sel[1]);n.scrollTop=sel[2];}catch(e){}}}
 }
-function onRoute(){R=route();boardNew=false;boardError='';charEdit=null;render();window.scrollTo({top:0});}
+function onRoute(){R=route();boardNew=false;boardError='';charEdit=null;render();window.scrollTo({top:0});flatScroll();}
+function flatScroll(){ // on a flat board, show the newest posts; a link to one post (#topic-id) scrolls to that post
+ if(R.v==='topic'){const t=boardPosts.find(p=>p.id===R.id),el=$('post-'+R.id);if(t&&BOARDS[boardOf(t)].flat&&el){el.scrollIntoView({block:'center'});el.classList.add('board-post-hl');}return;}
+ if(R.v==='board'&&BOARDS[R.id]&&BOARDS[R.id].flat){const f=$('board-flat-form')||document.querySelector('.board-posts .board-post:last-child');if(f)f.scrollIntoView({block:'end'});}
+}
 window.addEventListener('hashchange',onRoute);
 async function del(ids){try{await Cloud.deleteBoardPosts(ids);}catch(e){toast('Not deleted: '+e.message);}}
 function editChar(id){
@@ -823,6 +884,7 @@ document.addEventListener('click',e=>{
  const d=e.target.closest('[data-board-del]');if(d){
   const p=boardPosts.find(x=>x.id===d.dataset.boardDel);if(!p||!mine(p))return;
   const reps=boardPosts.filter(x=>x.topic===p.id);
+  if(BOARDS[boardOf(p)].flat){if(confirm('Delete this post?'))del([p.id]);return;}
   if(p.topic){if(confirm('Delete this reply?'))del([p.id]);}
   else if(!isAdmin()&&reps.some(x=>x.uid!==member.uid))alert('This topic has replies from others, so only an administrator can delete it.');
   else if(confirm(`Delete the topic "${p.title}"${reps.length?' and its replies':''}?`)){location.hash='board-'+boardOf(p);del([p.id,...reps.map(x=>x.id)]);}
@@ -841,6 +903,15 @@ document.addEventListener('submit',async e=>{
   catch(x){ed.busy=false;ed.error='Not saved: '+x.message;render();}
   return;
  }
+ if(e.target.id==='board-flat-form'){
+  e.preventDefault();if(boardBusy)return;boardError='';
+  const b=R.v==='board'?BOARDS[R.id]:BOARDS[boardOf(boardPosts.find(p=>p.id===R.id)||{})],text=boardDraft.flat.trim(),au=boardAuthor();
+  if(!au){boardError='Sign in to post.';render();return;}
+  if(!text){boardError='Enter a message.';render();return;}
+  boardBusy=true;render();
+  try{await Cloud.addBoardPost({topic:'',title:'',text,board:b.id,...au});boardDraft.flat='';}catch(x){boardError='Not posted: '+x.message;}
+  boardBusy=false;render();$('board-flat-form')?.scrollIntoView({block:'end'});return;
+ }
  const isNew=e.target.id==='board-new-form',isReply=e.target.id==='board-reply-form';if(!isNew&&!isReply)return;e.preventDefault();
  if(boardBusy)return;boardError='';
  const title=boardDraft.title.trim(),text=(isNew?boardDraft.text:boardDraft.reply).trim(),au=boardAuthor();
@@ -858,7 +929,7 @@ document.addEventListener('submit',async e=>{
 Accounts.onChange(m=>{member=m;render();});
 if(Cloud.enabled){
  Cloud.onAuth&&Cloud.onAuth(()=>render());
- Cloud.watchBoard(posts=>{boardPosts=posts;boardLoaded=true;render();},msg=>{boardLoaded=true;boardError='Message board: '+msg;render();});
+ Cloud.watchBoard(posts=>{const first=!boardLoaded;boardPosts=posts;boardLoaded=true;render();if(first)flatScroll();},msg=>{boardLoaded=true;boardError='Message board: '+msg;render();});
  if(Cloud.watchCharacters)Cloud.watchCharacters(c=>{chars=c;charsLoaded=true;if(charEdit&&charEdit.busy)return;render();},msg=>{charsLoaded=true;toast('Characters: '+msg);render();});
  else charsLoaded=true;
  Cloud.watchOnline&&Cloud.watchOnline(o=>{online=o;renderOnline();},()=>{});
