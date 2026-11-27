@@ -567,6 +567,12 @@ a.home-icon{display:inline-flex;align-items:center;justify-content:center;color:
 .ctx-msg{max-width:85%;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere}
 .ctx-msg.me{align-self:flex-end;border-color:rgba(152,220,255,.5);background:rgba(152,220,255,.14)}
 .ctx-msg small{display:block;margin-top:2px;font-size:10px;color:var(--muted)}
+.ctx-msg{position:relative}
+.ctx-msg-acts{display:none;gap:8px;margin-top:3px}
+.ctx-msg:hover .ctx-msg-acts,.ctx-msg:focus-within .ctx-msg-acts,.ctx-edit .ctx-msg-acts{display:flex}
+.ctx-act{padding:0;border:0;background:none;color:var(--accent);font:inherit;font-size:11px;cursor:pointer}.ctx-act:hover{text-decoration:underline}
+.ctx-act[data-dm-del],.ctx-act[data-dm-clear]{color:#ff9c86}
+.ctx-edit{width:85%;box-sizing:border-box}.ctx-edit textarea{width:100%;box-sizing:border-box;min-height:60px;padding:6px 8px;border:1px solid var(--line);border-radius:4px;background:rgba(0,10,16,.9);color:var(--text);font:inherit;font-size:13px;resize:vertical}
 .ctx-send textarea{width:100%;box-sizing:border-box;min-height:70px;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:rgba(0,10,16,.9);color:var(--text);font:inherit;font-size:13px;resize:vertical}
 .ctx-send textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
 .ctx-send-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}
@@ -643,6 +649,7 @@ a.home-icon{display:inline-flex;align-items:center;justify-content:center;color:
 .forum-sec-count{margin-left:auto;font-size:11px;color:var(--muted)}
 .forum-boards{list-style:none;margin:0;padding:0}
 .forum-boards[hidden]{display:none}
+.forum-empty{margin:10px 0 10px 26px}
 .forum-boards li+li{border-top:1px solid var(--line)}
 .forum-board{display:grid;grid-template-columns:minmax(0,1.4fr) 120px minmax(0,1fr);gap:4px 18px;align-items:center;padding:12px 6px 12px 26px;color:inherit;text-decoration:none}
 .forum-board:hover .forum-board-name,.forum-board:focus-visible .forum-board-name{color:var(--accent);text-decoration:underline}
@@ -719,7 +726,7 @@ a.board-from{text-decoration:none}a.board-from:hover{text-decoration:underline}
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
 <script src="assets/cloud-config.js"></script>
-<script src="assets/cloud.js?v=20261127d"></script>
+<script src="assets/cloud.js?v=20261127f"></script>
 <script src="assets/accounts.js?v=20261127b"></script>
 <script>
 'use strict';
@@ -739,13 +746,30 @@ function commandFaction(){try{const c=localStorage.getItem('reliquary-commander'
 // go straight into the board as one running thread, newest at the bottom. adminTopics: only the administrator starts
 // topics there (on a flat board: only the administrator posts).
 // Posts saved before boards existed belong to DEFAULT_BOARD. New boards can be added here; ids use a-z, 0-9 and -.
+// The Roleplay section has one board per star system (sector) on the starmap, read live from the shared starmap, so a
+// new sector gets its board automatically. Its board id is 'sec-' + the system id (see sectorBoardId in starmap.html).
+// Boards of sectors removed from the map stay listed while they have posts.
+const RP_SECTION={id:'rp',name:'Roleplay',sub:'In character',boards:[]};
+const sectorBoardId=id=>('sec-'+String(id).toLowerCase().replace(/[^a-z0-9-]/g,'')).slice(0,30);
+const SECTOR_STATE={instability:'Instability',conflict:'Conflict',war:'At war'};
+let mapSystems=[],mapLoaded=false;
 const FORUM=[
  {id:'ooc',name:'OOC',sub:'Out of character',flat:true,boards:[
   {id:'rules',name:'Rules & Getting Started',desc:'Site rules, account help and how to get started.',adminTopics:true},
   {id:'general',name:'General',desc:'General discussion.'},
   {id:'memes',name:'Memes',desc:'Memes and jokes.'},
-  {id:'offtopic',name:'Off-topic',desc:'Anything not related to the setting.'}]}];
-const DEFAULT_BOARD='general',BOARDS={};FORUM.forEach(s=>s.boards.forEach(b=>BOARDS[b.id]={flat:!!s.flat,...b,sec:s}));
+  {id:'offtopic',name:'Off-topic',desc:'Anything not related to the setting.'}]},
+ RP_SECTION];
+const DEFAULT_BOARD='general',BOARDS={};
+function buildForum(){
+ const seen=new Set(),bs=[...mapSystems].sort((a,b)=>a.name.localeCompare(b.name)).map(sy=>{const id=sectorBoardId(sy.id);seen.add(id);
+  const note=String(sy.notes||'').split('\n')[0].trim();return {id,name:sy.name,desc:[SECTOR_STATE[sy.state],note.length>110?note.slice(0,110)+'…':note].filter(Boolean).join(' · ')||'Sector'};});
+ let posts=[];try{posts=boardPosts;}catch(e){} // not declared yet on the first call
+ for(const p of posts)if(/^sec-/.test(p.board||'')&&!seen.has(p.board)){seen.add(p.board);bs.push({id:p.board,name:mapLoaded?'Removed sector':'Sector',desc:mapLoaded?'This sector is no longer on the starmap.':''});}
+ RP_SECTION.boards=bs;
+ for(const k in BOARDS)delete BOARDS[k];FORUM.forEach(s=>s.boards.forEach(b=>BOARDS[b.id]={flat:!!s.flat,...b,sec:s}));
+}
+buildForum();
 const CHAR_MAX=Cloud.CHAR_MAX||10;
 const charSlot=c=>+String(c.id).split('_').pop(); // slot 1-10; Alt+1 … Alt+9 and Alt+0 (slot 10) quote that character
 const slotKey=n=>n===10?'0':String(n);
@@ -864,8 +888,8 @@ document.addEventListener('paste',e=>{if(e.target.closest&&e.target.closest('#bo
 function edClear(){const ed=$('board-editor');if(ed)ed.innerHTML='';edPos=null;}
 // ---- Forum views ----
 function homeHTML(){
- return FORUM.map(s=>{const open=!collapsed[s.id];return `<section class="forum-sec"><button class="forum-sec-head" type="button" data-sec-toggle="${s.id}" aria-expanded="${open}" aria-controls="sec-${s.id}"><span class="forum-chev" aria-hidden="true"></span><span class="forum-sec-name">${escapeHTML(s.name)}</span><span class="forum-sec-sub">${escapeHTML(s.sub)}</span><span class="forum-sec-count">${s.boards.length} boards</span></button>`+
-  `<ul class="forum-boards" id="sec-${s.id}"${open?'':' hidden'}>${s.boards.map(b=>{const head=`<li><a class="forum-board" href="#board-${b.id}"><span><span class="forum-board-name">${escapeHTML(b.name)}</span><span class="forum-board-desc">${escapeHTML(b.desc)}</span></span>`;
+ return FORUM.map(s=>{const open=!collapsed[s.id];return `<section class="forum-sec"><button class="forum-sec-head" type="button" data-sec-toggle="${s.id}" aria-expanded="${open}" aria-controls="sec-${s.id}"><span class="forum-chev" aria-hidden="true"></span><span class="forum-sec-name">${escapeHTML(s.name)}</span><span class="forum-sec-sub">${escapeHTML(s.sub)}</span><span class="forum-sec-count">${s.boards.length} ${s.boards.length===1?'board':'boards'}</span></button>`+
+  `<ul class="forum-boards" id="sec-${s.id}"${open?'':' hidden'}>${s.boards.length?'':`<li><p class="subtext forum-empty">${s.id==='rp'&&!mapLoaded?'Loading sectors…':'No sectors on the starmap yet.'}</p></li>`}${s.boards.map(b=>{const head=`<li><a class="forum-board" href="#board-${b.id}"><span><span class="forum-board-name">${escapeHTML(b.name)}</span><span class="forum-board-desc">${escapeHTML(b.desc)}</span></span>`;
    if(BOARDS[b.id].flat){const ps=flatPosts(b.id),last=ps[ps.length-1];return head+`<span class="forum-board-stats">${ps.length} ${ps.length===1?'post':'posts'}</span><span class="forum-board-last">${last?`<b>${escapeHTML(postName(last))}</b><br>${boardTime(last.at)}`:'No posts yet'}</span></a></li>`;}
    const list=topics(b.id),posts=list.reduce((n,x)=>n+1+x.replies,0),last=list[0];
    return head+`<span class="forum-board-stats">${list.length} ${list.length===1?'topic':'topics'} · ${posts} ${posts===1?'post':'posts'}</span><span class="forum-board-last">${last?`<b>${escapeHTML(last.t.title)}</b><br>${boardTime(last.last)}`:'No posts yet'}</span></a></li>`;}).join('')}</ul></section>`;}).join('');
@@ -949,7 +973,7 @@ async function shrinkImage(file){
 // A panel on the right (collapsible, remembered in this browser) with three tabs: Characters (search; clicking a
 // character anywhere on the page shows their bio here, × closes it), Online (members online now; click one to message
 // them) and Messages (private messages between members, with an unread count).
-let ctx={open:true,tab:'characters',q:'',char:null,convo:null,picking:false,pick:'',draft:'',busy:false,error:''},dms=[],users=[];
+let ctx={open:true,tab:'characters',q:'',char:null,convo:null,editing:null,editText:'',picking:false,pick:'',draft:'',busy:false,error:''},dms=[],users=[];
 try{const v=JSON.parse(localStorage.getItem('reliquary-ctx')||'{}');if(typeof v.open==='boolean')ctx.open=v.open;if(['characters','online','messages'].includes(v.tab))ctx.tab=v.tab;}catch(e){}
 function ctxSave(){try{localStorage.setItem('reliquary-ctx',JSON.stringify({open:ctx.open,tab:ctx.tab}));}catch(e){}}
 function ctxOpen(on){ctx.open=on;ctxSave();renderCtx();}
@@ -976,16 +1000,22 @@ function ctxOnlineHTML(){
 function userName(uid){const u=users.find(x=>x.uid===uid);if(u)return u.display;const o=online.find(x=>x.uid===uid);if(o)return o.name;const m=[...dms].reverse().find(x=>x.from===uid||x.to===uid);return m?(m.from===uid?m.fromName:m.toName):'Member';}
 function convos(){ // one entry per person, newest first
  const me=myUid(),by={};
- for(const m of dms){const other=m.from===me?m.to:m.from;const c=by[other]||(by[other]={uid:other,last:null,unread:0});c.last=m;if(m.to===me&&!m.read)c.unread++;}
+ for(const m of visibleDms()){const other=m.from===me?m.to:m.from;const c=by[other]||(by[other]={uid:other,last:null,unread:0});c.last=m;if(m.to===me&&!m.read)c.unread++;}
  return Object.values(by).sort((a,b)=>b.last.at-a.last.at);
 }
-const unreadCount=()=>{const me=myUid();return me?dms.filter(m=>m.to===me&&!m.read).length:0;};
+const unreadCount=()=>{const me=myUid();return me?dms.filter(m=>m.to===me&&!m.read&&!m.toHidden).length:0;};
+const visibleDms=()=>{const me=myUid();return dms.filter(m=>m.from===me?!m.fromHidden:!m.toHidden);}; // messages removed from your inbox are left out
 function ctxMessagesHTML(){
  const me=myUid();if(!me)return '<p class="ctx-empty"><button class="board-link" type="button" data-board-signin>Sign in or create an account</button> to send and receive messages.</p>';
+ return (ctx.dmError?`<p class="board-error" role="alert">${escapeHTML(ctx.dmError)} Retrying every 15 seconds; if this stays, publish the latest firestore.rules in Firebase.</p>`:'')+ctxMessagesBody(me);
+}
+function ctxMessagesBody(me){
  if(ctx.convo){
-  const other=ctx.convo,name=userName(other),thread=dms.filter(m=>(m.from===me&&m.to===other)||(m.from===other&&m.to===me)),canSend=!!users.find(u=>u.uid===other);
-  return `<button class="ctx-back" type="button" data-ctx-back>‹ All messages</button><h3 class="ctx-bio-title">${escapeHTML(name)}</h3>`+
-   `<div class="ctx-thread" id="ctx-thread">${thread.length?thread.map(m=>`<div class="ctx-msg${m.from===me?' me':''}">${escapeHTML(m.text)}<small>${boardTime(m.at)}</small></div>`).join(''):'<p class="ctx-empty">No messages yet.</p>'}</div>`+
+  const other=ctx.convo,name=userName(other),thread=visibleDms().filter(m=>(m.from===me&&m.to===other)||(m.from===other&&m.to===me)),canSend=!!users.find(u=>u.uid===other);
+  return `<div class="ctx-send-row"><button class="ctx-back" type="button" data-ctx-back>‹ All messages</button>${thread.length?'<button class="ctx-act" type="button" data-dm-clear>Delete conversation</button>':''}</div><h3 class="ctx-bio-title">${escapeHTML(name)}</h3>`+
+   `<div class="ctx-thread" id="ctx-thread">${thread.length?thread.map(m=>{const mine=m.from===me;
+    if(ctx.editing===m.id)return `<form class="ctx-msg me ctx-edit" data-dm-edit-form="${escapeHTML(m.id)}"><textarea id="ctx-edit" maxlength="${Cloud.DM_MAX||1000}" aria-label="Edit message">${escapeHTML(ctx.editText)}</textarea><span class="ctx-msg-acts"><button class="ctx-act" type="button" data-dm-cancel>Cancel</button><button class="ctx-act" type="submit">Save</button></span></form>`;
+    return `<div class="ctx-msg${mine?' me':''}">${escapeHTML(m.text)}<small>${boardTime(m.at)}${m.edited?' · edited':''}</small><span class="ctx-msg-acts">${mine?`<button class="ctx-act" type="button" data-dm-edit="${escapeHTML(m.id)}">Edit</button><button class="ctx-act" type="button" data-dm-del="${escapeHTML(m.id)}">Delete</button>`:`<button class="ctx-act" type="button" data-dm-del="${escapeHTML(m.id)}">Delete</button>`}</span></div>`;}).join(''):'<p class="ctx-empty">No messages yet.</p>'}</div>`+
    (canSend?`<form class="ctx-send" id="ctx-send" autocomplete="off"><textarea id="ctx-dm" maxlength="${Cloud.DM_MAX||1000}" placeholder="Write a message…" aria-label="Message to ${escapeHTML(name)}">${escapeHTML(ctx.draft)}</textarea>${ctx.error?`<p class="board-error" role="alert">${escapeHTML(ctx.error)}</p>`:''}<div class="ctx-send-row"><span class="subtext">Enter sends · Shift+Enter new line</span><button class="btn primary" type="submit"${ctx.busy?' disabled':''}>Send</button></div></form>`:'<p class="ctx-empty">This account no longer exists.</p>');
  }
  if(ctx.picking){
@@ -1023,7 +1053,29 @@ document.addEventListener('input',e=>{
  else if(e.target.id==='ctx-pick'){ctx.pick=e.target.value;renderCtx();}
  else if(e.target.id==='ctx-dm')ctx.draft=e.target.value;
 });
-document.addEventListener('keydown',e=>{if(e.target.id==='ctx-dm'&&e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('ctx-send')?.requestSubmit();}});
+document.addEventListener('keydown',e=>{
+ if(e.target.id==='ctx-dm'&&e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('ctx-send')?.requestSubmit();}
+ if(e.target.id==='ctx-edit'&&e.key==='Enter'&&!e.shiftKey){e.preventDefault();e.target.form.requestSubmit();}
+ if(e.target.id==='ctx-edit'&&e.key==='Escape'){ctx.editing=null;renderCtx();}
+});
+// Editing and deleting private messages: your own messages can be edited or deleted (deleted for both of you); a
+// message you received is removed from your inbox only. Delete conversation removes the whole conversation from your inbox.
+document.addEventListener('input',e=>{if(e.target.id==='ctx-edit')ctx.editText=e.target.value;});
+document.addEventListener('submit',async e=>{
+ const f=e.target.closest&&e.target.closest('[data-dm-edit-form]');if(!f)return;e.preventDefault();
+ const id=f.dataset.dmEditForm,t=ctx.editText.trim();if(!t){toast('Enter a message, or use Delete.');return;}
+ try{await Cloud.editMessage(id,t);ctx.editing=null;renderCtx();}catch(x){toast('Not saved: '+x.message);}
+});
+document.addEventListener('click',async e=>{
+ const ed=e.target.closest('[data-dm-edit]');if(ed){const m=dms.find(x=>x.id===ed.dataset.dmEdit);if(!m)return;ctx.editing=m.id;ctx.editText=m.text;renderCtx();const t=$('ctx-edit');if(t){t.focus();t.setSelectionRange(t.value.length,t.value.length);}return;}
+ if(e.target.closest('[data-dm-cancel]')){ctx.editing=null;renderCtx();return;}
+ const dl=e.target.closest('[data-dm-del]');if(dl){const m=dms.find(x=>x.id===dl.dataset.dmDel),me=myUid();if(!m)return;
+  try{if(m.from===me){if(!confirm('Delete this message? It is removed for both of you.'))return;await Cloud.deleteMessage(m.id);}
+   else{if(!confirm('Delete this message from your inbox?'))return;await Cloud.hideMessages([{id:m.id,mine:false}]);}}catch(x){toast('Not deleted: '+x.message);}return;}
+ if(e.target.closest('[data-dm-clear]')){const me=myUid(),other=ctx.convo,list=visibleDms().filter(m=>(m.from===me&&m.to===other)||(m.from===other&&m.to===me));
+  if(!list.length||!confirm(`Delete your conversation with ${userName(other)}? It is removed from your inbox only.`))return;
+  try{await Cloud.hideMessages(list.map(m=>({id:m.id,mine:m.from===me})));ctx.convo=null;renderCtx();}catch(x){toast('Not deleted: '+x.message);}}
+});
 document.addEventListener('submit',async e=>{
  if(e.target.id!=='ctx-send')return;e.preventDefault();if(ctx.busy)return;
  const text=ctx.draft.trim(),to=ctx.convo,u=users.find(x=>x.uid===to),b=baseAuthor();ctx.error='';
@@ -1038,7 +1090,7 @@ document.addEventListener('click',e=>{
  if(e.target.closest('[data-ctx-close]')){ctx.char=null;renderCtx();return;}
  const t=e.target.closest('[data-ctx-tab]');if(t){ctxTab(t.dataset.ctxTab);return;}
  const m=e.target.closest('[data-ctx-msg]');if(m){if(!myUid()){Accounts.open('signin');return;}ctxMessage(m.dataset.ctxMsg);return;}
- if(e.target.closest('[data-ctx-back]')){ctx.convo=null;ctx.picking=false;ctx.error='';renderCtx();return;}
+ if(e.target.closest('[data-ctx-back]')){ctx.convo=null;ctx.editing=null;ctx.picking=false;ctx.error='';renderCtx();return;}
  if(e.target.closest('[data-ctx-new]')){ctx.picking=true;ctx.pick='';renderCtx();$('ctx-pick')?.focus();return;}
 });
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')renderCtx();});
@@ -1048,7 +1100,7 @@ function bodyHTML(){
  if(R.v==='characters')return charEdit?editorHTML():charactersHTML();
  if(R.v==='character')return profileHTML(R.id);
  if(!boardLoaded)return '<p class="subtext">Loading…</p>';
- if(R.v==='board'){const b=BOARDS[R.id];return b?(b.flat?flatHTML(b):boardHTML(b)):crumbs([['Forum','#forum'],['Not found']])+'<p class="subtext">This board does not exist.</p>';}
+ if(R.v==='board'){const b=BOARDS[R.id];if(!b&&/^sec-/.test(R.id)&&!mapLoaded)return '<p class="subtext">Loading…</p>';return b?(b.flat?flatHTML(b):boardHTML(b)):crumbs([['Forum','#forum'],['Not found']])+'<p class="subtext">This board does not exist.</p>';}
  if(R.v==='topic'){const t=boardPosts.find(p=>p.id===R.id&&!p.topic);return t?(BOARDS[boardOf(t)].flat?flatHTML(BOARDS[boardOf(t)]):threadHTML(t)):crumbs([['Forum','#forum'],['Not found']])+'<p class="subtext">This topic no longer exists.</p>';}
  return (boardError?`<p class="board-error" role="alert">${escapeHTML(boardError)}</p>`:'')+homeHTML();
 }
@@ -1163,11 +1215,12 @@ document.addEventListener('submit',async e=>{
 Accounts.onChange(m=>{member=m;if(!m){ctx.convo=null;ctx.picking=false;}render();renderCtx();});
 if(Cloud.enabled){
  Cloud.onAuth&&Cloud.onAuth(()=>render());
- Cloud.watchBoard(posts=>{const first=!boardLoaded;boardPosts=posts;boardLoaded=true;render();renderCtx();if(first)flatScroll();},msg=>{boardLoaded=true;boardError='Message board: '+msg;render();});
+ Cloud.watchBoard(posts=>{const first=!boardLoaded;boardPosts=posts;boardLoaded=true;buildForum();render();renderCtx();if(first)flatScroll();},msg=>{boardLoaded=true;boardError='Message board: '+msg;render();});
  if(Cloud.watchCharacters)Cloud.watchCharacters(c=>{chars=c;charsLoaded=true;renderCtx();if(charEdit&&charEdit.busy)return;render();},msg=>{charsLoaded=true;toast('Characters: '+msg);render();});
  else charsLoaded=true;
  Cloud.watchOnline&&Cloud.watchOnline(o=>{online=o;renderOnline();renderCtx();},()=>{});
- Cloud.watchMessages&&Cloud.watchMessages(m=>{dms=m;renderCtx();},msg=>toast('Messages: '+msg));
+ Cloud.watchDoc&&Cloud.watchDoc('starmap',v=>{mapSystems=v&&Array.isArray(v.systems)?v.systems.filter(x=>x&&x.id&&x.name).map(x=>({id:String(x.id),name:String(x.name).slice(0,80),notes:typeof x.notes==='string'?x.notes:'',state:x.state})):[];mapLoaded=true;buildForum();render();},()=>{mapLoaded=true;buildForum();render();});
+ Cloud.watchMessages&&Cloud.watchMessages((m,problem)=>{dms=m;ctx.dmError=problem||'';renderCtx();},()=>{});
  Cloud.watchMembers&&Cloud.watchMembers(u=>{users=u;renderCtx();},()=>{});
 }
 renderOnline();render();renderCtx();

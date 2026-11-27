@@ -241,11 +241,15 @@ async function deleteCharacter(id){await ready();try{await db.collection('charac
 // user's sent and received messages (re-subscribing when the sign-in changes) and calls cb with them, oldest first.
 const DM_MAX=1000;
 function watchMessages(cb,onError){
- let stops=[],closed=false,me=null;const box={in:[],out:[]};
- const emit=()=>cb([...box.in,...box.out].sort((a,b)=>a.at-b.at));
- const conv=d=>{const v=d.data({serverTimestamps:'estimate'});return {id:d.id,from:String(v.from||''),fromName:String(v.fromName||''),to:String(v.to||''),toName:String(v.toName||''),text:String(v.text||''),read:!!v.read,at:v.at&&v.at.toMillis?v.at.toMillis():Date.now()};};
- const follow=()=>{const u=uid();if(u===me)return;me=u;stops.forEach(f=>f());stops=[];box.in=[];box.out=[];emit();if(!u||closed)return;
-  for(const [k,f] of [['in','to'],['out','from']])stops.push(db.collection('messages').where(f,'==',u).onSnapshot(s=>{const o=[];s.forEach(d=>o.push(conv(d)));box[k]=o;emit();},e=>onError&&onError(friendly(e))));};
+ let stops=[],closed=false,me=null;const box={in:[],out:[]},err={in:'',out:''};
+ const emit=()=>cb([...box.in,...box.out].sort((a,b)=>a.at-b.at),err.in||err.out); // second argument: a problem reading messages ('' when fine)
+ const conv=d=>{const v=d.data({serverTimestamps:'estimate'});return {id:d.id,from:String(v.from||''),fromName:String(v.fromName||''),to:String(v.to||''),toName:String(v.toName||''),text:String(v.text||''),read:!!v.read,edited:!!v.edited,fromHidden:!!v.fromHidden,toHidden:!!v.toHidden,at:v.at&&v.at.toMillis?v.at.toMillis():Date.now()};};
+ const follow=()=>{const u=uid();if(u===me)return;me=u;stops.forEach(f=>f());stops=[];box.in=[];box.out=[];err.in=err.out='';emit();if(!u||closed)return;
+  // Received (to = you) and sent (from = you) are two separate listeners. If one fails (for example before the rules
+  // were published) it retries every 15 seconds on its own instead of staying stopped.
+  const listen=(k,f)=>{if(closed||me!==u)return;let off=null;off=db.collection('messages').where(f,'==',u).onSnapshot(s=>{const o=[];s.forEach(d=>o.push(conv(d)));box[k]=o;err[k]='';emit();},
+   e=>{err[k]=(k==='in'?'Received messages could not be loaded: ':'Sent messages could not be loaded: ')+friendly(e);emit();onError&&onError(err[k]);const t=setTimeout(()=>listen(k,f),15000);stops.push(()=>clearTimeout(t));});stops.push(()=>off&&off());};
+  listen('in','to');listen('out','from');};
  ready().then(()=>{if(closed)return;auth.onAuthStateChanged(()=>follow());follow();}).catch(e=>onError&&onError(friendly(e)));
  return()=>{closed=true;stops.forEach(f=>f());};
 }
@@ -254,6 +258,16 @@ async function sendMessage(to,toName,fromName,text){
  const t=String(text||'').trim().slice(0,DM_MAX);if(!t)throw Error('Enter a message.');
  try{await db.collection('messages').add({from:u,fromName:String(fromName).slice(0,60),to:String(to),toName:String(toName).slice(0,60),text:t,at:window.firebase.firestore.FieldValue.serverTimestamp(),read:false});}
  catch(e){throw Error(/permission-denied/.test(e&&e.code||'')?'The shared database refused the message. Publish the latest firestore.rules in Firebase.':friendly(e));}
+}
+async function editMessage(id,text){ // the sender changes their message
+ await ready();const t=String(text||'').trim().slice(0,DM_MAX);if(!t)throw Error('Enter a message.');
+ try{await db.collection('messages').doc(id).update({text:t,edited:true});}catch(e){throw Error(/permission-denied/.test(e&&e.code||'')?'The shared database refused the change. Publish the latest firestore.rules in Firebase.':friendly(e));}
+}
+async function deleteMessage(id){await ready();try{await db.collection('messages').doc(id).delete();}catch(e){throw Error(friendly(e));}} // the sender removes it for both
+async function hideMessages(list){ // remove messages from your own inbox only: [{id, mine}]
+ await ready();if(!list.length)return;
+ try{for(let i=0;i<list.length;i+=400){const b=db.batch();list.slice(i,i+400).forEach(m=>b.update(db.collection('messages').doc(m.id),m.mine?{fromHidden:true}:{toHidden:true,read:true}));await b.commit();}}
+ catch(e){throw Error(/permission-denied/.test(e&&e.code||'')?'The shared database refused the change. Publish the latest firestore.rules in Firebase.':friendly(e));}
 }
 async function markMessagesRead(ids){await ready();if(!ids.length)return;try{const b=db.batch();ids.slice(0,400).forEach(id=>b.update(db.collection('messages').doc(id),{read:true}));await b.commit();}catch(e){}}
 // Commander presence. Several people on different computers can be logged into the same command at once, so each
@@ -289,6 +303,6 @@ function trackPresence(getCmd,onChange){
  addEventListener('pagehide',()=>{if(pres.cur){writePresence(null).catch(()=>{});try{pres.bc&&pres.bc.postMessage('closing');}catch(e){}}});
  addEventListener('pageshow',e=>{if(e.persisted){pres.cur=null;syncPresence();}});
 }
-window.ReliquaryCloud={enabled,adminEmail,ready,isAdmin,onAuth,signIn,signOut,watchDoc,saveDoc,watchChat,addChat,clearChat,trackPresence,syncPresence,presenceStatus,watchFleets,saveFleet,watchBoard,addBoardPost,deleteBoardPosts,CHAR_MAX,uid,watchCharacters,saveCharacter,deleteCharacter,DM_MAX,watchMessages,sendMessage,markMessagesRead,onMember,memberSignUp,memberSignIn,setDisplayName,watchOnline,watchMembers,deleteMember};
+window.ReliquaryCloud={enabled,adminEmail,ready,isAdmin,onAuth,signIn,signOut,watchDoc,saveDoc,watchChat,addChat,clearChat,trackPresence,syncPresence,presenceStatus,watchFleets,saveFleet,watchBoard,addBoardPost,deleteBoardPosts,CHAR_MAX,uid,watchCharacters,saveCharacter,deleteCharacter,DM_MAX,watchMessages,sendMessage,markMessagesRead,editMessage,deleteMessage,hideMessages,onMember,memberSignUp,memberSignIn,setDisplayName,watchOnline,watchMembers,deleteMember};
 if(enabled)ready().catch(()=>{});
 })();

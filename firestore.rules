@@ -129,7 +129,9 @@ service cloud.firestore {
     // Private messages between members (the administrator can send as Administrator). Only the sender and the recipient
     // can read a message; only the recipient can mark it read. The recipient must be a member.
     match /messages/{msg} {
-      allow read: if request.auth != null && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      // Reading: two separate rules so the inbox query (to = you) and the sent query (from = you) each pass on their own.
+      allow read: if request.auth != null && resource.data.to == request.auth.uid;
+      allow read: if request.auth != null && resource.data.from == request.auth.uid;
       allow create: if request.auth != null
         && request.resource.data.keys().hasOnly(['from', 'fromName', 'to', 'toName', 'text', 'at', 'read'])
         && request.resource.data.from == request.auth.uid
@@ -140,9 +142,17 @@ service cloud.firestore {
         && request.resource.data.toName == get(/databases/$(database)/documents/users/$(request.resource.data.to)).data.display
         && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 1000
         && request.resource.data.at == request.time && request.resource.data.read == false;
-      allow update: if request.auth != null && resource.data.to == request.auth.uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
-        && request.resource.data.read == true;
+      // The recipient marks messages read or removes them from their inbox; the sender edits their message or removes it
+      // from their own view; the sender can delete it for both.
+      allow update: if request.auth != null && (
+          (resource.data.to == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'toHidden'])
+            && request.resource.data.read == true && request.resource.data.get('toHidden', false) is bool)
+          || (resource.data.from == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'edited', 'fromHidden'])
+            && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 1000
+            && request.resource.data.get('edited', false) is bool && request.resource.data.get('fromHidden', false) is bool));
+      allow delete: if request.auth != null && resource.data.from == request.auth.uid;
     }
     // Fleets (ids like gallia-2): anyone logged into a command can place and move its fleets; only the administrator changes the ship count (3 to 10).
     match /fleets/{fleet} {
