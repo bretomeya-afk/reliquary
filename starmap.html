@@ -553,6 +553,32 @@ body.sv-open .toast{z-index:30}
 .sv-top-actions .btn[aria-pressed="true"]{border-color:#9cd8ff;background:rgba(60,150,210,.3)}
 .sv-hint{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);padding:6px 14px;border-radius:14px;background:rgba(3,12,24,.75);font-size:12px;opacity:.85;pointer-events:none;white-space:nowrap}
 .sv-zoom{position:absolute;right:12px;bottom:14px;display:flex;flex-direction:column;gap:6px}.sv-zoom .btn{width:38px;justify-content:center}
+/* System view Context Menu: collapses to a small (i) tab on the right edge; search the system's objects */
+.sv-info{right:52px}.sv.ctx-on .sv-info{right:296px}
+.sv-ctx-tab{position:absolute;top:82px;right:0;width:38px;height:40px;padding:0;border:1px solid rgba(120,180,230,.35);border-right:0;border-radius:8px 0 0 8px;background:rgba(3,12,24,.9);color:var(--accent);cursor:pointer;box-shadow:-4px 4px 14px rgba(0,0,0,.45)}
+.sv-ctx-tab svg{width:20px;height:20px;display:block;margin:auto}.sv-ctx-tab:hover{border-color:var(--accent);background:rgba(20,50,70,.95)}
+.sv.ctx-on .sv-ctx-tab{display:none}.sv.grid-on .sv-ctx-tab,.sv.grid-on .sv-ctx{top:96px}
+.sv-ctx{position:absolute;top:82px;right:12px;bottom:110px;width:272px;display:flex;flex-direction:column;border:1px solid rgba(120,180,230,.35);border-radius:6px;background:rgba(3,12,24,.9);box-shadow:0 8px 30px rgba(0,0,0,.5);font-size:13px}
+.sv-ctx[hidden]{display:none}
+.sv-ctx-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px 8px}
+.sv-ctx-head h3{margin:0;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent)}
+.sv-ctx-search{padding:0 14px 8px}
+.sv-ctx-search input{width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid rgba(120,180,230,.35);border-radius:4px;background:rgba(0,8,16,.9);color:inherit;font:inherit;font-size:13px}
+.sv-ctx-search input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.sv-ctx-filters{display:flex;flex-wrap:wrap;gap:4px;padding:0 14px 10px;border-bottom:1px solid rgba(120,180,230,.2)}
+.sv-ctx-filters button{padding:4px 8px;border:1px solid rgba(120,180,230,.35);border-radius:4px;background:none;color:var(--muted);font:inherit;font-size:11px;cursor:pointer}
+.sv-ctx-filters button[aria-pressed="true"]{border-color:var(--accent);background:rgba(152,220,255,.15);color:var(--text)}
+.sv-ctx-list{flex:1;min-height:0;overflow:auto;padding:4px 8px 8px;margin:0;list-style:none}
+.sv-ctx-item{display:flex;align-items:center;gap:8px;width:100%;padding:7px 6px;border:0;border-radius:4px;background:none;color:inherit;font:inherit;font-size:13px;text-align:left;cursor:pointer}
+.sv-ctx-item:hover,.sv-ctx-item:focus-visible{background:rgba(152,220,255,.1)}.sv-ctx-item:hover .sv-ctx-name{color:var(--accent)}
+.sv-ctx-item[aria-current="true"]{background:rgba(152,220,255,.16)}
+.sv-ctx-item i{width:9px;height:9px;flex:none;border-radius:50%}
+.sv-ctx-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sv-ctx-name small{display:block;font-size:11px;color:var(--muted)}
+.sv-ctx-cell{flex:none;font:600 11px Consolas,monospace;color:var(--muted)}
+.sv-ctx-none{padding:12px 6px;font-size:12px;color:var(--muted)}
+.sv-ctx-count{padding:6px 14px 10px;font-size:11px;color:var(--muted);border-top:1px solid rgba(120,180,230,.2)}
+@media(max-width:760px){.sv-ctx{left:12px;width:auto;bottom:110px}.sv.ctx-on .sv-info{right:12px}.sv-info{right:52px;width:calc(100% - 92px)}}
 @media(max-width:760px){.sv-tools{top:auto;bottom:56px;max-height:40vh;width:calc(100% - 48px)}.sv-info{width:calc(100% - 48px);max-height:45vh}.sv-hint{display:none}}
 </style>
 </head>
@@ -585,9 +611,14 @@ body.sv-open .toast{z-index:30}
 <div class="zoom"><button class="btn" type="button" id="zoom-in" aria-label="Zoom in">+</button><button class="btn" type="button" id="zoom-out" aria-label="Zoom out">−</button><button class="btn" type="button" id="zoom-reset" aria-label="Reset view">⌂</button></div>
 <div class="sv" id="sv" hidden role="dialog" aria-modal="true" aria-label="Star system view">
 <canvas id="sv-canvas" tabindex="0" aria-label="Star system. Drag to move, mouse wheel to zoom, click objects for details."></canvas>
-<div class="sv-top"><div class="sv-title"><span class="eyebrow">Star system</span><h2 id="sv-name"></h2></div><div class="sv-top-actions"><button class="btn" type="button" id="sv-grid" aria-pressed="true" title="Show or hide the grid (G)" aria-label="Grid">#</button><button class="btn" type="button" id="sv-fit" title="Show the whole system (Home)" aria-label="Show the whole system">⌂</button><button class="btn" type="button" id="sv-close" title="Back to the starmap (Esc)" aria-label="Back to the starmap">✕</button></div></div>
+<div class="sv-top"><div class="sv-title"><span class="eyebrow">Star system</span><h2 id="sv-name"></h2></div><div class="sv-top-actions"><button class="btn" type="button" id="sv-grid" aria-pressed="true" title="Show or hide the grid (G)" aria-label="Grid">#</button><button class="btn" type="button" id="sv-fit" title="Centre and zoom all the way out (Home)" aria-label="Centre and zoom all the way out">⌂</button><button class="btn" type="button" id="sv-close" title="Back to the starmap (Esc)" aria-label="Back to the starmap">✕</button></div></div>
 <div class="sv-tools" id="sv-tools" hidden></div>
 <aside class="sv-info" id="sv-info" hidden aria-live="polite"></aside>
+<button class="sv-ctx-tab" id="sv-ctx-open" type="button" aria-controls="sv-ctx" aria-expanded="false" aria-label="Open the Context Menu: search this system" title="Context Menu: search this system"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg></button>
+<aside class="sv-ctx" id="sv-ctx" hidden aria-label="Context Menu"><div class="sv-ctx-head"><h3>Context Menu</h3><button class="btn sv-x" type="button" id="sv-ctx-close" aria-label="Collapse the Context Menu" title="Collapse">✕</button></div>
+<div class="sv-ctx-search"><input id="sv-ctx-q" type="search" placeholder="Search planets, stations, gates…" aria-label="Search this system" autocomplete="off"></div>
+<div class="sv-ctx-filters" id="sv-ctx-filters" role="group" aria-label="Show"><button type="button" data-sv-cf="all" aria-pressed="true">All</button><button type="button" data-sv-cf="planet" aria-pressed="false">Planets</button><button type="button" data-sv-cf="station" aria-pressed="false">Stations</button><button type="button" data-sv-cf="gate" aria-pressed="false">Gates</button><button type="button" data-sv-cf="rock" aria-pressed="false">Asteroids</button></div>
+<ul class="sv-ctx-list" id="sv-ctx-list"></ul><div class="sv-ctx-count" id="sv-ctx-count"></div></aside>
 <div class="sv-zoom"><button class="btn" type="button" id="sv-zin" aria-label="Zoom in">+</button><button class="btn" type="button" id="sv-zout" aria-label="Zoom out">−</button></div>
 <div class="sv-hint" id="sv-hint"></div>
 <div class="sv-cell" id="sv-cell" aria-live="off"></div>
@@ -2229,11 +2260,20 @@ function svName(o,s){return o.type==='control'?(o.name||`${s.name} Traffic Contr
 function svGridUI(){$('sv').classList.toggle('grid-on',SV.grid);$('sv-grid').setAttribute('aria-pressed',String(SV.grid));if(!SV.grid)$('sv-cell').textContent='';}
 function svOpen(id){svGridUI();
  const s=sys(id);if(!s)return;SV.open=true;SV.id=id;SV.sel=null;SV.placing=null;SV.drag=null;SV.ships=[];SV.shipKey='';SV.bgKey='';
- $('sv').hidden=false;document.body.classList.add('sv-open');$('sv-name').textContent=s.name;svFit();svTools();svInfo();svHint();
+ $('sv').hidden=false;document.body.classList.add('sv-open');$('sv-name').textContent=s.name;svFit();svTools();svInfo();svHint();svCtxUI();
  svCanvas().focus({preventScroll:true});requestAnimationFrame(svFrame);
 }
 function svClose(){SV.open=false;$('sv').hidden=true;document.body.classList.remove('sv-open');clearTimeout(SV.saveTimer);if(SV.saveTimer&&isAdmin())save();SV.saveTimer=0;dirty=true;}
-function svFit(){const c=svCanvas(),w=c.clientWidth||innerWidth,h=c.clientHeight||innerHeight;SV.cam={x:0,y:0,z:Math.min(w,h)/((SV_GATE_R+3200)*2)};}
+// The view never goes past the edge of the grid: the furthest zoom-out shows about 24 × 12 squares on a
+// 1920 × 1080 screen (never less than the screen), and the camera is held so the grid always fills the view.
+const SV_ZOOM_MIN=.08,SV_ZOOM_MAX=3;
+function svPads(){return SV.grid?[22,18]:[0,0];} // grid rulers along the left and top edges
+function svMinZoom(w,h){const [L,T]=svPads();return Math.max(SV_ZOOM_MIN,(w-L)/(2*SV_GRID_HALF),(h-T)/(2*SV_GRID_HALF));}
+function svClampCam(w,h){const c=svCanvas();w=w||c.clientWidth||innerWidth;h=h||c.clientHeight||innerHeight;const [L,T]=svPads(),cam=SV.cam;
+ cam.z=clamp(cam.z,svMinZoom(w,h),SV_ZOOM_MAX);
+ const lim=(v,half,pad)=>{const lo=-SV_GRID_HALF+(half-pad)/cam.z,hi=SV_GRID_HALF-half/cam.z;return lo>hi?(lo+hi)/2:clamp(v,lo,hi);};
+ cam.x=lim(cam.x,w/2,L);cam.y=lim(cam.y,h/2,T);}
+function svFit(){SV.fly=null;SV.cam={x:0,y:0,z:0};svClampCam();}
 function svHint(t){const h=$('sv-hint');const msg=t||(SV.placing?`Click in the system to place the new ${SV_TYPES[SV.placing].toLowerCase()}. Esc cancels.`:'Drag to move around · mouse wheel or Q / E to zoom · click anything for details');h.textContent=msg;}
 // ---------- admin tools ----------
 function svTools(){
@@ -2378,8 +2418,10 @@ function svFrame(now){
  if(SV.admin!==isAdmin()){svTools();svInfo();}
  const c=svCanvas(),dpr=Math.min(2,devicePixelRatio||1),w=c.clientWidth,h=c.clientHeight;if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);}
  const x=c.getContext('2d'),t=now/1000,dt=Math.min(.05,(now-(SV.last||now))/1000);SV.last=now;
- if(SV.keys&&SV.keys.size){const sp=600/SV.cam.z*dt;let dx=0,dy=0;if(SV.keys.has('w')||SV.keys.has('arrowup'))dy--;if(SV.keys.has('s')||SV.keys.has('arrowdown'))dy++;if(SV.keys.has('a')||SV.keys.has('arrowleft'))dx--;if(SV.keys.has('d')||SV.keys.has('arrowright'))dx++;SV.cam.x+=dx*sp;SV.cam.y+=dy*sp;
+ if(SV.keys&&SV.keys.size){const sp=600/SV.cam.z*dt;let dx=0,dy=0;if(SV.keys.has('w')||SV.keys.has('arrowup'))dy--;if(SV.keys.has('s')||SV.keys.has('arrowdown'))dy++;if(SV.keys.has('a')||SV.keys.has('arrowleft'))dx--;if(SV.keys.has('d')||SV.keys.has('arrowright'))dx++;if(dx||dy)SV.fly=null;SV.cam.x+=dx*sp;SV.cam.y+=dy*sp;
   if(SV.keys.has('q'))svZoom(1+dt*1.5,w/2,h/2);if(SV.keys.has('e'))svZoom(1/(1+dt*1.5),w/2,h/2);}
+ if(SV.fly){const f=SV.fly,k=Math.min(1,(now-(f.t0??(f.t0=now)))/650),e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;SV.cam.x=f.a.x+(f.b.x-f.a.x)*e;SV.cam.y=f.a.y+(f.b.y-f.a.y)*e;SV.cam.z=Math.exp(Math.log(f.a.z)+(Math.log(f.b.z)-Math.log(f.a.z))*e);if(k>=1)SV.fly=null;}
+ svClampCam(w,h);if(SV.ctxOpen&&now-(SV.ctxT||0)>1000){SV.ctxT=now;svCtxList();}
  const it=svInterior(s),z=SV.cam.z,sx=wx=>(wx-SV.cam.x)*z+w/2,sy=wy=>(wy-SV.cam.y)*z+h/2;
  x.setTransform(dpr,0,0,dpr,0,0);x.fillStyle='#01030a';x.fillRect(0,0,w,h);
  // background nebula (slow parallax) and stars
@@ -2449,8 +2491,8 @@ function svHit(wx,wy){
  return null;
 }
 function svWorld(e){const c=svCanvas(),b=c.getBoundingClientRect();return [(e.clientX-b.left-b.width/2)/SV.cam.z+SV.cam.x,(e.clientY-b.top-b.height/2)/SV.cam.z+SV.cam.y];}
-function svZoom(f,px,py){const c=svCanvas(),w=c.clientWidth,h=c.clientHeight,wx=(px-w/2)/SV.cam.z+SV.cam.x,wy=(py-h/2)/SV.cam.z+SV.cam.y;SV.cam.z=clamp(SV.cam.z*f,.004,3);SV.cam.x=wx-(px-w/2)/SV.cam.z;SV.cam.y=wy-(py-h/2)/SV.cam.z;}
-function svSelect(id){SV.sel=id;svInfo();}
+function svZoom(f,px,py){const c=svCanvas(),w=c.clientWidth,h=c.clientHeight,wx=(px-w/2)/SV.cam.z+SV.cam.x,wy=(py-h/2)/SV.cam.z+SV.cam.y;SV.fly=null;SV.cam.z=clamp(SV.cam.z*f,svMinZoom(w,h),SV_ZOOM_MAX);SV.cam.x=wx-(px-w/2)/SV.cam.z;SV.cam.y=wy-(py-h/2)/SV.cam.z;svClampCam(w,h);}
+function svSelect(id){SV.sel=id;svInfo();if(SV.ctxOpen)svCtxList(true);}
 function svAdd(type,wx,wy){
  if(!isAdmin())return;const it=svOwn(),id='o'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),seed=Math.floor(Math.random()*1e9);
  const [px,py]=svPos(wx,wy),o={id,type,name:'',x:px,y:py,seed};
@@ -2468,13 +2510,14 @@ function svWire(){
  c.addEventListener('pointermove',e=>{if(SV.grid){const [gx,gy]=svWorld(e);$('sv-cell').textContent=Math.abs(gx)<SV_GRID_HALF&&Math.abs(gy)<SV_GRID_HALF?svCell(gx,gy):'';}const d=SV.down;if(!d){const [wx,wy]=svWorld(e),hit=SV.placing?null:svHit(wx,wy);c.style.cursor=SV.placing?'crosshair':hit?'pointer':'grab';return;}
   if(Math.hypot(e.clientX-d.x,e.clientY-d.y)>4)d.moved=true;if(!d.moved)return;
   if(d.obj){const [wx,wy]=svWorld(e);if(!svSys().interior){svOwn();d.obj=svObj(d.obj.id);}[d.obj.x,d.obj.y]=svPos(wx+d.ox,wy+d.oy);if(d.obj.type==='planet')SV.cache.delete(d.obj.id);}
-  else{SV.cam.x=d.cam.x-(e.clientX-d.x)/SV.cam.z;SV.cam.y=d.cam.y-(e.clientY-d.y)/SV.cam.z;}});
+  else{SV.fly=null;SV.cam.x=d.cam.x-(e.clientX-d.x)/SV.cam.z;SV.cam.y=d.cam.y-(e.clientY-d.y)/SV.cam.z;}});
  const up=e=>{const d=SV.down;SV.down=null;c.style.cursor='grab';if(!d)return;
   if(d.moved){if(d.obj){svSelect(d.obj.id);svCommit();}return;}
   const [wx,wy]=svWorld(e);if(SV.placing){svAdd(SV.placing,wx,wy);return;}svSelect(d.hit);};
  c.addEventListener('pointerup',up);c.addEventListener('pointercancel',()=>{SV.down=null;});
  document.addEventListener('keydown',e=>{if(!SV.open)return;const k=e.key.toLowerCase();
   if(e.target.closest&&e.target.closest('input,select,textarea'))return;
+  if(e.target.closest&&e.target.closest('.sv-ctx')){if(k==='escape'){e.preventDefault();e.stopImmediatePropagation();svCtxToggle(false);}return;}
   if(k==='escape'){e.preventDefault();e.stopImmediatePropagation();if(SV.placing){SV.placing=null;svTools();svHint();}else if(SV.sel)svSelect(null);else svClose();return;}
   if(k==='home'){svFit();e.preventDefault();e.stopImmediatePropagation();return;}
   if(k==='g'&&!e.ctrlKey&&!e.altKey&&!e.metaKey){$('sv-grid').click();e.preventDefault();e.stopImmediatePropagation();return;}
@@ -2482,7 +2525,7 @@ function svWire(){
   else if((k==='delete'||k==='backspace')&&isAdmin()&&SV.sel){const o=svObj(SV.sel);if(o&&o.type!=='control'){e.preventDefault();e.stopImmediatePropagation();$('sv-info').querySelector('[data-sv-del]')?.click();}}},true);
  document.addEventListener('keyup',e=>{if(SV.keys)SV.keys.delete(e.key.toLowerCase());},true);
  window.addEventListener('blur',()=>SV.keys&&SV.keys.clear());
- $('sv-grid').onclick=()=>{SV.grid=!SV.grid;svSetPref('grid',SV.grid);svGridUI();};
+ $('sv-grid').onclick=()=>{SV.grid=!SV.grid;svSetPref('grid',SV.grid);svGridUI();svClampCam();};
  $('sv-close').onclick=svClose;$('sv-fit').onclick=svFit;$('sv-zin').onclick=()=>{const c=svCanvas();svZoom(1.4,c.clientWidth/2,c.clientHeight/2);};$('sv-zout').onclick=()=>{const c=svCanvas();svZoom(1/1.4,c.clientWidth/2,c.clientHeight/2);};
  $('sv').addEventListener('click',e=>{
   if(e.target.closest('[data-sv-desel]')){svSelect(null);return;}
@@ -2503,6 +2546,45 @@ function svWire(){
   SV.cache.delete(o.id);svCommit();if(e.type==='input'&&e.target.tagName==='SELECT')svInfo();
   if(f!=='name'){const h=$('sv-info').querySelector('h3');if(h)h.textContent=svName(o,svSys());}else{const h=$('sv-info').querySelector('h3');if(h)h.textContent=svName(o,svSys());}});
 }
+// ---------- Context Menu: search everything in the system and fly to it ----------
+SV.ctxOpen=svPref('ctx',false);SV.ctxF='all';SV.ctxKey='';
+const SV_CTX_COLORS={star:'#ffd36b',planet:'#7fc4ff',station:'#d8e8ff',control:'#9dffc4',gate:'#9cd8ff',asteroid:'#c9c2b8',cluster:'#c9c2b8'};
+function svCtxItems(){
+ const s=svSys();if(!s)return [];const it=svInterior(s),st=svStar(s,it),out=[];
+ const sc=STAR_COLORS[s.starColor];out.push({id:'star',kind:'star',name:s.name,sub:`Star · ${sc?sc.label:'Standard'}`,x:st.x,y:st.y,f:'all'});
+ for(const g of svGates(s))out.push({id:g.id,kind:'gate',name:`Gate to ${g.to.name}`,sub:`Jump gate · ${LANE_CONDITIONS[g.cond].label}`,x:g.x,y:g.y,f:'gate'});
+ const order={control:0,station:1,planet:2,cluster:3,asteroid:4};
+ for(const o of [...it.objects].sort((a,b)=>order[a.type]-order[b.type]||svName(a,s).localeCompare(svName(b,s)))){
+  const sub=o.type==='planet'?`Planet · ${PLANET_STYLES[o.style]||''}`:o.type==='control'?'Traffic control station':o.type==='station'?`Space station · ${STATION_SIZES[o.size][0]}`:o.type==='cluster'?'Asteroid field':'Asteroid';
+  out.push({id:o.id,kind:o.type,name:svName(o,s),sub,x:o.x,y:o.y,f:o.type==='control'||o.type==='station'?'station':o.type==='planet'?'planet':'rock'});}
+ return out;
+}
+function svCtxCell(i){return Math.abs(i.x)<SV_GRID_HALF&&Math.abs(i.y)<SV_GRID_HALF?svCell(i.x,i.y):'Edge';}
+function svCtxList(force){
+ const all=svCtxItems(),q=$('sv-ctx-q').value.trim().toLowerCase(),words=q.split(/\s+/).filter(Boolean);
+ const key=SV.id+'|'+SV.ctxF+'|'+q+'|'+SV.sel+'|'+all.map(i=>i.id+i.name+i.sub+Math.round(i.x)+','+Math.round(i.y)).join(';');if(!force&&key===SV.ctxKey)return;SV.ctxKey=key;
+ const hits=all.filter(i=>(SV.ctxF==='all'||i.f===SV.ctxF)&&words.every(w=>(i.name+' '+i.sub+' '+svCtxCell(i)).toLowerCase().includes(w)));
+ const list=$('sv-ctx-list'),had=document.activeElement&&list.contains(document.activeElement)?document.activeElement.dataset.svCtx:null;
+ list.innerHTML=hits.length?hits.map(i=>`<li><button class="sv-ctx-item" type="button" data-sv-ctx="${esc(i.id)}"${SV.sel===i.id?' aria-current="true"':''}><i style="background:${SV_CTX_COLORS[i.kind]}"></i><span class="sv-ctx-name">${esc(i.name)}<small>${esc(i.sub)}</small></span><span class="sv-ctx-cell">${svCtxCell(i)}</span></button></li>`).join(''):`<li class="sv-ctx-none">${q?'Nothing in this system matches.':'Nothing of this kind in this system.'}</li>`;
+ if(had){const b=[...list.querySelectorAll('[data-sv-ctx]')].find(b=>b.dataset.svCtx===had);if(b)b.focus({preventScroll:true});}
+ $('sv-ctx-count').textContent=`${hits.length} of ${all.length} shown`;
+}
+function svCtxUI(){const on=SV.ctxOpen;$('sv').classList.toggle('ctx-on',on);$('sv-ctx').hidden=!on;$('sv-ctx-open').setAttribute('aria-expanded',String(on));
+ $('sv-ctx-filters').querySelectorAll('[data-sv-cf]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.svCf===SV.ctxF)));if(on)svCtxList(true);}
+function svCtxToggle(on){SV.ctxOpen=on;svSetPref('ctx',on);svCtxUI();if(on)$('sv-ctx-q').focus({preventScroll:true});else $('sv-ctx-open').focus({preventScroll:true});}
+function svFlyTo(id){ // centre the camera on an object, zoomed so it fills about a third of the view
+ const s=svSys();if(!s)return;const it=svInterior(s),b=svBounds(id,it,svGates(s),s);if(!b)return;const c=svCanvas(),w=c.clientWidth||innerWidth,h=c.clientHeight||innerHeight;
+ const save={...SV.cam},target={x:b[0],y:b[1],z:clamp(Math.min(w,h)*.32/Math.max(1,b[2]),svMinZoom(w,h),1.2)};SV.cam={...target};svClampCam(w,h);const to={...SV.cam};SV.cam=save;
+ SV.fly={a:{...save},b:to,t0:null};svSelect(id);
+}
+$('sv-ctx-open').onclick=()=>svCtxToggle(true);$('sv-ctx-close').onclick=()=>svCtxToggle(false);
+$('sv-ctx-q').addEventListener('input',()=>svCtxList(true));
+$('sv-ctx-q').addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();if(e.target.value){e.target.value='';svCtxList(true);}else svCtxToggle(false);}
+ else if(e.key==='Enter'){const b=$('sv-ctx-list').querySelector('[data-sv-ctx]');if(b)b.click();}else if(e.key==='ArrowDown'){const b=$('sv-ctx-list').querySelector('[data-sv-ctx]');if(b){e.preventDefault();b.focus();}}});
+$('sv-ctx-filters').addEventListener('click',e=>{const b=e.target.closest('[data-sv-cf]');if(!b)return;SV.ctxF=b.dataset.svCf;svCtxUI();});
+$('sv-ctx-list').addEventListener('click',e=>{const b=e.target.closest('[data-sv-ctx]');if(!b)return;svFlyTo(b.dataset.svCtx);if(innerWidth<=760)svCtxToggle(false);});
+$('sv-ctx-list').addEventListener('keydown',e=>{const b=e.target.closest('[data-sv-ctx]');if(!b)return;const all=[...$('sv-ctx-list').querySelectorAll('[data-sv-ctx]')],i=all.indexOf(b);
+ if(e.key==='ArrowDown'&&all[i+1]){e.preventDefault();e.stopPropagation();all[i+1].focus();}else if(e.key==='ArrowUp'){e.preventDefault();e.stopPropagation();(all[i-1]||$('sv-ctx-q')).focus();}});
 svWire();
 
 if(Cloud.enabled)$('chat-note').textContent='Live channel: everyone on the site sees these messages as they are sent.';
