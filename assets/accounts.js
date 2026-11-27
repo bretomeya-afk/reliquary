@@ -69,6 +69,7 @@ dlg.addEventListener('submit',async e=>{
  const name=$('acct-name').value.trim(),pin=$('acct-pin').value.trim(),up=mode==='signup';
  if(up&&pin!==$('acct-pin2').value.trim()){error='The PINs do not match.';redraw();return;}
  busy=true;redraw();
+ if(typeof Cloud.memberSignUp!=='function'){busy=false;error='This page loaded an old copy of assets/cloud.js. Upload the latest cloud.js to the assets folder on GitHub, wait a minute, then reload with Ctrl+F5.';redraw();return;}
  try{const m=up?await Cloud.memberSignUp(name,pin):await Cloud.memberSignIn(name,pin);busy=false;dlg.close();say(up?`Account created. Welcome, ${m.name}.`:`Signed in as ${m.display}.`);}
  catch(x){busy=false;error=x.message;redraw();}
 });
