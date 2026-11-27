@@ -500,7 +500,8 @@ html.faction-dropdown-open,html.faction-dropdown-open body,html.faction-dropdown
 
 /* Message Board page */
 #board-new-btn[hidden]{display:none}
-.board-page main{max-width:1100px}
+.board-page .workspace{margin-left:0}
+.board-page main{max-width:none;width:100%;box-sizing:border-box} /* the forum uses the full width of the window */
 .board-page .heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:4px 0 10px}
 .board-page h1{margin:0}
 .board-online{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 16px;min-height:22px}
@@ -529,8 +530,9 @@ html.faction-dropdown-open,html.faction-dropdown-open body,html.faction-dropdown
 .board-note{margin:12px 0 0}.board-error{margin:0 0 8px;color:#ff9c86;font-size:12px}
 .board-link{padding:0;border:0;background:none;color:var(--accent);font:inherit;text-decoration:underline;cursor:pointer}
 a.home-icon{display:inline-flex;align-items:center;justify-content:center;color:inherit}
+#characters-btn[aria-current="page"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);color:var(--text)}
 /* Forum sections, boards, characters */
-.board-tabs{display:flex;gap:4px;margin:0 0 14px;border-bottom:1px solid var(--line)}
+.board-tabs-unused{display:flex;gap:4px;margin:0 0 14px;border-bottom:1px solid var(--line)}
 .board-tabs a{padding:8px 14px;border:1px solid transparent;border-bottom:0;border-radius:5px 5px 0 0;color:var(--muted);font-size:12px;letter-spacing:.12em;text-transform:uppercase;text-decoration:none}
 .board-tabs a:hover{color:var(--text)}
 .board-tabs a[aria-current="page"]{border-color:var(--line);background:var(--panel2);color:var(--text);margin-bottom:-1px}
@@ -601,11 +603,10 @@ a.board-from{text-decoration:none}a.board-from:hover{text-decoration:underline}
 </head>
 <body class="board-page">
 <div class="workspace">
-<header class="topbar"><div class="topbar-start"><a class="home-icon" href="index.html" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h4.5v-6h4v6h4.5V9.5"/></svg></a><div class="brand-title"><span class="brand-kicker">Project</span><span class="brand-name">RELIQUARY</span></div></div><div class="topbar-tools"><button class="btn utility" id="account-btn" type="button" aria-haspopup="dialog">Sign in</button></div></header>
+<header class="topbar"><div class="topbar-start"><a class="home-icon" href="index.html" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h4.5v-6h4v6h4.5V9.5"/></svg></a><div class="brand-title"><span class="brand-kicker">Project</span><span class="brand-name">RELIQUARY</span></div></div><div class="topbar-tools"><a class="btn utility" id="characters-btn" href="#characters" data-tab="characters">Characters</a><button class="btn utility" id="account-btn" type="button" aria-haspopup="dialog">Sign in</button></div></header>
 <main id="main">
 <div class="heading"><div><div class="eyebrow">Forum</div><h1>Message Board</h1></div><button class="btn primary" type="button" id="board-new-btn" hidden>New topic</button></div>
 <p class="board-online" id="board-online" aria-live="polite"></p>
-<nav class="board-tabs" aria-label="Message board menu"><a href="#forum" data-tab="forum">Forum</a><a href="#characters" data-tab="characters">Characters</a></nav>
 <section class="panel board-panel" id="board-body" aria-label="Forum"></section>
 </main>
 </div>
@@ -714,24 +715,24 @@ function charactersHTML(){
  if(!charsLoaded)return '<p class="subtext">Loading…</p>';
  const u=myUid(),mc=myChars(),others=Object.values(chars).filter(c=>c.owner!==u).sort((a,b)=>a.name.localeCompare(b.name));
  const full=mc.length>=CHAR_MAX;
- return (u?`<div class="char-head"><h2>Your characters<small>${mc.length} of ${CHAR_MAX}</small></h2><button class="btn primary" type="button" data-char-new${full?' disabled':''}>New character</button></div>`+
+ return crumbs([['Forum','#forum'],['Characters']])+(u?`<div class="char-head"><h2>Your characters<small>${mc.length} of ${CHAR_MAX}</small></h2><button class="btn primary" type="button" data-char-new${full?' disabled':''}>New character</button></div>`+
    (mc.length?`<ul class="char-grid-list">${mc.map(c=>cardHTML(c,true)).join('')}</ul>`:'<p class="subtext">You have no characters yet.</p>')+
    (full?`<p class="subtext board-note">You have reached the limit of ${CHAR_MAX} characters. Delete one to create another.</p>`:'')
   :'<p class="subtext board-note"><button class="board-link" type="button" data-board-signin>Sign in or create an account</button> to create characters.</p>')+
   `<h2 class="char-sub">${u?'Other characters':'Characters'}</h2>`+(others.length?`<ul class="char-grid-list">${others.map(c=>cardHTML(c,false)).join('')}</ul>`:'<p class="subtext">None yet.</p>');
 }
 function profileHTML(id){
- const c=chars[id];if(!c)return charsLoaded?crumbs([['Characters','#characters'],['Not found']])+'<p class="subtext">This character no longer exists.</p>':'<p class="subtext">Loading…</p>';
+ const c=chars[id];if(!c)return charsLoaded?crumbs([['Forum','#forum'],['Characters','#characters'],['Not found']])+'<p class="subtext">This character no longer exists.</p>':'<p class="subtext">Loading…</p>';
  const own=c.owner===myUid(),rows=CHAR_INFO.filter(([k])=>c[k]).map(([k,l])=>`<dt>${l}</dt><dd>${escapeHTML(c[k])}</dd>`).join('');
  const acts=own?`<button class="btn" type="button" data-char-edit="${escapeHTML(c.id)}">Edit</button><button class="btn danger" type="button" data-char-del="${escapeHTML(c.id)}">Delete</button>`:isAdmin()?`<button class="btn danger" type="button" data-char-del="${escapeHTML(c.id)}">Delete (administrator)</button>`:'';
- return crumbs([['Characters','#characters'],[c.name]])+`<article class="char-profile">${charImg(c)}<div><h2>${escapeHTML(c.name)}</h2>${c.player?`<p class="subtext">Played by ${escapeHTML(c.player)}</p>`:''}${rows?`<dl class="char-info">${rows}</dl>`:''}${acts?`<div class="char-actions">${acts}</div>`:''}</div></article>`+
+ return crumbs([['Forum','#forum'],['Characters','#characters'],[c.name]])+`<article class="char-profile">${charImg(c)}<div><h2>${escapeHTML(c.name)}</h2>${c.player?`<p class="subtext">Played by ${escapeHTML(c.player)}</p>`:''}${rows?`<dl class="char-info">${rows}</dl>`:''}${acts?`<div class="char-actions">${acts}</div>`:''}</div></article>`+
   (c.background?`<h3 class="char-section-title">Background</h3><div class="char-bg">${escapeHTML(c.background)}</div>`:'');
 }
 function blankChar(){const d={names:['','','',''],background:'',image:''};CHAR_INFO.forEach(([k])=>d[k]='');return d;}
 function editorHTML(){
  const e=charEdit,d=e.d,title=e.id?'Edit '+(chars[e.id]?chars[e.id].name:'character'):'New character',url=d.image.startsWith('https://')?d.image:'';
  const fld=(k,l,ph='')=>`<label class="field">${l}<input id="cf-${k}" data-char-field="${k}" maxlength="60" value="${escapeHTML(d[k])}"${ph?` placeholder="${ph}"`:''}></label>`;
- return crumbs([['Characters','#characters'],[title]])+`<h2 class="board-thread-title">${escapeHTML(title)}</h2><form class="char-form" id="char-form" autocomplete="off" novalidate>`+
+ return crumbs([['Forum','#forum'],['Characters','#characters'],[title]])+`<h2 class="board-thread-title">${escapeHTML(title)}</h2><form class="char-form" id="char-form" autocomplete="off" novalidate>`+
   `<div class="char-form-top"><div class="char-image-edit">${d.image?`<span class="char-img"><img src="${escapeHTML(d.image)}" alt="Character image"></span>`:'<span class="char-img empty">No image</span>'}`+
    `<div class="char-img-btns"><label class="btn">Upload image<input class="sr-only" type="file" id="char-file" accept="image/*"></label>${d.image?'<button class="btn" type="button" data-char-img-clear>Remove</button>':''}</div>`+
    `<label class="field">Or image link<input id="cf-imageurl" data-char-field="imageurl" maxlength="1000" placeholder="https://…" value="${escapeHTML(url)}"></label></div>`+
