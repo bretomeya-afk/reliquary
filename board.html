@@ -534,10 +534,11 @@ a.home-icon{display:inline-flex;align-items:center;justify-content:center;color:
 .board-layout{display:flex;align-items:flex-start}
 .board-col{flex:1;min-width:0}
 .ctx{position:sticky;top:0;flex:none;width:360px;height:100vh;box-sizing:border-box;border-left:1px solid var(--line);background:rgba(2,14,22,.88);backdrop-filter:blur(4px);z-index:20}
-.ctx.collapsed{width:40px}
-.ctx-tab{display:none;width:100%;height:100%;padding:18px 0;border:0;background:none;color:var(--accent);font:inherit;font-size:11px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer}
-.ctx-tab span{writing-mode:vertical-rl;display:inline-block}
-.ctx-tab:hover{background:rgba(152,220,255,.08)}
+.ctx.collapsed{width:0;border:0;background:none;backdrop-filter:none}
+/* collapsed: only a small information tab on the right edge */
+.ctx-tab{display:none;position:fixed;top:96px;right:0;z-index:25;width:38px;height:40px;padding:0;border:1px solid var(--line);border-right:0;border-radius:8px 0 0 8px;background:rgba(2,14,22,.92);color:var(--accent);cursor:pointer;box-shadow:-4px 4px 14px rgba(0,0,0,.45)}
+.ctx-tab svg{width:20px;height:20px;display:block;margin:auto}
+.ctx-tab:hover{border-color:var(--accent);background:rgba(20,50,70,.95)}
 .ctx.collapsed .ctx-tab{display:block}.ctx.collapsed .ctx-panel{display:none}
 .ctx-panel{display:flex;flex-direction:column;height:100%}
 .ctx-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px}
@@ -547,6 +548,29 @@ a.home-icon{display:inline-flex;align-items:center;justify-content:center;color:
 .ctx-search{padding:0 16px 10px;border-bottom:1px solid var(--line)}
 .ctx-search input{width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:rgba(0,10,16,.9);color:var(--text);font:inherit;font-size:13px}
 .ctx-search input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.ctx-tabs{display:flex;gap:4px;padding:0 16px 10px}
+.ctx-tabs button{flex:1;padding:6px 4px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--muted);font:inherit;font-size:11px;cursor:pointer;white-space:nowrap}
+.ctx-tabs button[aria-selected="true"]{border-color:var(--accent);background:rgba(152,220,255,.15);color:var(--text)}
+.ctx-tabs b{font-weight:600;color:var(--accent)}.ctx-tabs b.unread{display:inline-block;min-width:16px;padding:0 4px;border-radius:8px;background:#ff8a6b;color:#1a0a05;font-size:10px}
+.ctx-search[hidden]{display:none}
+.ctx-dot{position:absolute;top:5px;right:6px;display:block;width:8px;height:8px;border-radius:50%;background:#ff8a6b;box-shadow:0 0 6px #ff8a6b}.ctx-dot[hidden]{display:none}
+.ctx-user{display:flex;align-items:center;gap:8px;width:100%;padding:8px 2px;border:0;background:none;color:inherit;font:inherit;font-size:13px;text-align:left;cursor:pointer}
+.ctx-user:hover:not(:disabled) .ctx-user-name{color:var(--accent);text-decoration:underline}
+.ctx-user:disabled{cursor:default}
+.ctx-user::before{content:"";width:7px;height:7px;flex:none;border-radius:50%;background:#46ff86;box-shadow:0 0 5px #46ff86}
+.ctx-user.off::before{background:#55626a;box-shadow:none}
+.ctx-user small{margin-left:auto;font-size:11px;color:var(--muted)}
+.ctx-convo{display:block;width:100%;padding:8px 2px;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.ctx-convo:hover .ctx-hit-title{color:var(--accent);text-decoration:underline}
+.ctx-convo.unread .ctx-hit-title::after{content:"";display:inline-block;width:7px;height:7px;margin-left:6px;border-radius:50%;background:#ff8a6b;vertical-align:1px}
+.ctx-thread{display:flex;flex-direction:column;gap:8px;margin:8px 0 12px}
+.ctx-msg{max-width:85%;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere}
+.ctx-msg.me{align-self:flex-end;border-color:rgba(152,220,255,.5);background:rgba(152,220,255,.14)}
+.ctx-msg small{display:block;margin-top:2px;font-size:10px;color:var(--muted)}
+.ctx-send textarea{width:100%;box-sizing:border-box;min-height:70px;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:rgba(0,10,16,.9);color:var(--text);font:inherit;font-size:13px;resize:vertical}
+.ctx-send textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
+.ctx-send-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}
+.ctx-back{padding:0;border:0;background:none;color:var(--accent);font:inherit;font-size:12px;cursor:pointer}
 .ctx-scope{display:flex;gap:4px;margin-top:8px}
 .ctx-scope button{flex:1;padding:4px 6px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--muted);font:inherit;font-size:11px;cursor:pointer}
 .ctx-scope button[aria-checked="true"]{border-color:var(--accent);background:rgba(152,220,255,.15);color:var(--text)}
@@ -570,7 +594,9 @@ a.home-icon{display:inline-flex;align-items:center;justify-content:center;color:
 .ctx-bio .char-info{grid-template-columns:max-content minmax(0,1fr);margin:12px 0;font-size:13px}
 .ctx-bio .char-bg{font-size:13px}
 .ctx-bio .char-actions{margin-top:12px}
-@media(max-width:900px){.ctx{position:fixed;top:0;right:0;bottom:0;width:min(360px,92vw);box-shadow:-10px 0 30px rgba(0,0,0,.6)}.ctx.collapsed{width:34px;box-shadow:none}}
+.ctx-bio-title{margin:8px 0 0;font-size:16px}
+.ctx-pick{width:100%;box-sizing:border-box;padding:7px 10px;margin-bottom:6px;border:1px solid var(--line);border-radius:4px;background:rgba(0,10,16,.9);color:var(--text);font:inherit;font-size:13px}
+@media(max-width:900px){.ctx{position:fixed;top:0;right:0;bottom:0;width:min(360px,92vw);box-shadow:-10px 0 30px rgba(0,0,0,.6)}.ctx.collapsed{width:0;box-shadow:none}}
 /* Character quotes: bold speech; hovering or tapping shows the speaking character's portrait */
 .rp{position:relative;display:inline;outline:none;cursor:default}
 .rp strong,.board-text strong{font-weight:700;color:var(--text)}
@@ -589,6 +615,8 @@ a.home-icon{display:inline-flex;align-items:center;justify-content:center;color:
 .quote-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-right:2px}
 .quote-btn{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 3px;border:1px solid var(--line);border-radius:16px;background:var(--panel2);color:var(--text);font:inherit;font-size:12px;cursor:pointer}
 .quote-btn:hover{border-color:var(--accent)}
+.quote-btn kbd{padding:0 4px;border:1px solid var(--line);border-radius:3px;font:10px/1.4 Consolas,monospace;color:var(--muted)}
+.char-card{position:relative}.char-slot{position:absolute;top:6px;left:6px;z-index:1;padding:1px 6px;border:1px solid var(--line);border-radius:3px;background:rgba(2,14,22,.85);font:10px/1.5 Consolas,monospace;color:var(--muted)}
 .quote-btn[aria-pressed="true"]{border-color:var(--accent);background:rgba(152,220,255,.22);box-shadow:0 0 10px rgba(152,220,255,.35);font-weight:700}
 .quote-av{display:flex;align-items:center;justify-content:center;width:24px;height:24px;overflow:hidden;border-radius:50%;background:rgba(0,10,16,.9);color:var(--muted);font-size:12px;font-weight:700}
 .quote-av img{width:100%;height:100%;object-fit:cover}
@@ -679,10 +707,11 @@ a.board-from{text-decoration:none}a.board-from:hover{text-decoration:underline}
 </main>
 </div>
 <aside class="ctx" id="ctx" aria-label="Context Menu">
-<button class="ctx-tab" id="ctx-open" type="button" aria-controls="ctx-panel" aria-expanded="false"><span>Context Menu</span></button>
+<button class="ctx-tab" id="ctx-open" type="button" aria-controls="ctx-panel" aria-expanded="false" aria-label="Open the Context Menu" title="Context Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg><i class="ctx-dot" id="ctx-dot" hidden></i></button>
 <div class="ctx-panel" id="ctx-panel">
 <div class="ctx-head"><h2>Context Menu</h2><button class="ctx-x" id="ctx-collapse" type="button" aria-label="Collapse the Context Menu" title="Collapse">»</button></div>
-<div class="ctx-search"><input id="ctx-q" type="search" placeholder="Search" aria-label="Search" autocomplete="off"><div class="ctx-scope" role="radiogroup" aria-label="Search in"><button type="button" role="radio" data-ctx-scope="all">All</button><button type="button" role="radio" data-ctx-scope="forum">Forum</button><button type="button" role="radio" data-ctx-scope="characters">Characters</button></div></div>
+<div class="ctx-tabs" role="tablist" aria-label="Context Menu"><button type="button" role="tab" data-ctx-tab="characters">Characters</button><button type="button" role="tab" data-ctx-tab="online">Online <b id="ctx-n-online"></b></button><button type="button" role="tab" data-ctx-tab="messages">Messages <b id="ctx-n-unread"></b></button></div>
+<div class="ctx-search" id="ctx-search"><input id="ctx-q" type="search" placeholder="Search characters" aria-label="Search characters" autocomplete="off"></div>
 <div class="ctx-body" id="ctx-body"></div>
 </div>
 </aside>
@@ -690,7 +719,7 @@ a.board-from{text-decoration:none}a.board-from:hover{text-decoration:underline}
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
 <script src="assets/cloud-config.js"></script>
-<script src="assets/cloud.js?v=20261127b"></script>
+<script src="assets/cloud.js?v=20261127d"></script>
 <script src="assets/accounts.js?v=20261127b"></script>
 <script>
 'use strict';
@@ -717,12 +746,14 @@ const FORUM=[
   {id:'memes',name:'Memes',desc:'Memes and jokes.'},
   {id:'offtopic',name:'Off-topic',desc:'Anything not related to the setting.'}]}];
 const DEFAULT_BOARD='general',BOARDS={};FORUM.forEach(s=>s.boards.forEach(b=>BOARDS[b.id]={flat:!!s.flat,...b,sec:s}));
-const CHAR_MAX=Cloud.CHAR_MAX||3;
+const CHAR_MAX=Cloud.CHAR_MAX||10;
+const charSlot=c=>+String(c.id).split('_').pop(); // slot 1-10; Alt+1 … Alt+9 and Alt+0 (slot 10) quote that character
+const slotKey=n=>n===10?'0':String(n);
 const CHAR_INFO=[['dob','Date of birth'],['birthplace','Place of birth'],['gender','Gender'],['height','Height'],['weight','Weight'],['nationality','Nationality'],['race','Race'],['occupation','Occupation'],['affiliation','Affiliation']];
 const NAME_LABELS=['First name','Middle name','Last name','Other name'];
 let member=Accounts.member,boardPosts=[],boardLoaded=false,boardNew=false,boardDraft={title:'',text:'',reply:'',flat:''},boardBusy=false,boardError='',online=[];
 let chars={},charsLoaded=false,charEdit=null,collapsed={};
-let postAs='';try{postAs=localStorage.getItem('reliquary-post-as')||'';collapsed=JSON.parse(localStorage.getItem('reliquary-forum-collapsed')||'{}')||{};}catch(e){}
+try{collapsed=JSON.parse(localStorage.getItem('reliquary-forum-collapsed')||'{}')||{};}catch(e){}
 function route(){
  const h=decodeURIComponent(location.hash.slice(1)),m=/^(topic|board|character)-(.+)$/.exec(h);
  if(m)return {v:m[1],id:m[2]};
@@ -732,11 +763,8 @@ let R=route();
 // ---- People and characters ----
 function myUid(){return isAdmin()?(Cloud.uid&&Cloud.uid()):member?member.uid:null;}
 function baseAuthor(){return isAdmin()?{from:'Administrator',player:'Administrator',faction:''}:member?{from:member.display,player:member.display,faction:commandFaction()}:null;}
-function myChars(){const u=myUid();return u?Object.values(chars).filter(c=>c.owner===u).sort((a,b)=>a.id.localeCompare(b.id)):[];}
-function boardAuthor(){
- const b=baseAuthor();if(!b)return null;
- const c=postAs&&chars[postAs];return c&&c.owner===myUid()?{...b,from:c.name,char:c.id}:{...b,char:''};
-}
+function myChars(){const u=myUid();return u?Object.values(chars).filter(c=>c.owner===u).sort((a,b)=>charSlot(a)-charSlot(b)):[];}
+function boardAuthor(){const b=baseAuthor();return b?{...b,char:''}:null;} // posts go under your own name (older posts made as a character still show the character)
 const canPost=()=>!!baseAuthor();
 const boardTime=t=>t?new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date(t)):'';
 const mine=p=>isAdmin()||(member&&p.uid&&p.uid===member.uid);
@@ -759,12 +787,7 @@ function avatarHTML(p){
  const c=p.char&&chars[p.char],inner=c&&c.image?`<img src="${escapeHTML(c.image)}" alt="" loading="lazy">`:initial(postName(p));
  return c?`<a class="board-av" href="${charHref(c)}" tabindex="-1" aria-hidden="true">${inner}</a>`:`<span class="board-av" aria-hidden="true">${inner}</span>`;
 }
-function asHTML(){
- const b=baseAuthor(),mc=myChars();
- if(!mc.length)return `<span class="subtext">Posting as ${escapeHTML(b.from)}</span>`;
- const cur=boardAuthor().char;
- return `<label class="board-as">Post as <select id="board-as">${[`<option value="">${escapeHTML(b.from)}</option>`,...mc.map(c=>`<option value="${escapeHTML(c.id)}"${cur===c.id?' selected':''}>${escapeHTML(c.name)}</option>`)].join('')}</select></label>`;
-}
+function asHTML(){return `<span class="subtext">Posting as ${escapeHTML(baseAuthor().from)}</span>`;}
 const crumbs=parts=>`<nav class="board-crumbs" aria-label="Location">${parts.map(([l,h])=>h?`<a href="${h}">${escapeHTML(l)}</a>`:escapeHTML(l)).join(' › ')}</nav>`;
 // ---- Character quotes ----
 // The message box has a Quote button for each of your characters. Click one and everything you type is that
@@ -799,7 +822,7 @@ function edSerialize(ed){
 }
 function composerHTML(field,label,rows){
  const mc=myChars(),key=`${R.v}:${R.id||''}:${field}`;
- const bar=mc.length?`<div class="quote-bar" role="toolbar" aria-label="Character quotes"><span class="quote-label">Quote</span>${mc.map(c=>`<button type="button" class="quote-btn" data-quote-char="${escapeHTML(c.id)}" aria-pressed="false" title="Write as ${escapeHTML(c.name)}: click to start their speech, click again to stop">${charImg(c,'quote-av')}<span>${escapeHTML(c.names[0]||c.name)}</span></button>`).join('')}</div>`:'';
+ const bar=mc.length?`<div class="quote-bar" role="toolbar" aria-label="Character quotes"><span class="quote-label">Quote</span>${mc.map(c=>`<button type="button" class="quote-btn" data-quote-char="${escapeHTML(c.id)}" aria-pressed="false" aria-keyshortcuts="Alt+${slotKey(charSlot(c))}" title="Write as ${escapeHTML(c.name)} (Alt+${slotKey(charSlot(c))}): click to start their speech, click again to stop">${charImg(c,'quote-av')}<span>${escapeHTML(c.names[0]||c.name)}</span><kbd>${slotKey(charSlot(c))}</kbd></button>`).join('')}</div>`:'';
  return `<div class="field board-compose"><span>${label}</span>${bar}<div class="board-editor" id="board-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="${label}" data-board-field="${field}" data-key="${escapeHTML(key)}" style="min-height:${rows*1.6+1.4}em">${edFromText(boardDraft[field]||'')}</div></div>`;
 }
 let edPos=null; // last caret position inside the message box {n: node, o: offset}
@@ -827,6 +850,12 @@ function toggleQuote(id){
 document.addEventListener('selectionchange',()=>{const ed=$('board-editor'),s=getSelection();if(ed&&s.rangeCount&&ed.contains(s.anchorNode)){edPos={n:s.anchorNode,o:s.anchorOffset};quoteBtns();}});
 document.addEventListener('mousedown',e=>{if(e.target.closest('[data-quote-char]'))e.preventDefault();}); // keep the caret in the message box
 document.addEventListener('keydown',e=>{
+ // Alt+1 … Alt+9 and Alt+0: start or stop the quote of the character in that slot (works anywhere on the page while a
+ // message box is showing; the caret goes back to where you were typing).
+ if(e.altKey&&!e.ctrlKey&&!e.metaKey&&/^Digit\d$/.test(e.code)&&$('board-editor')){
+  const n=+e.code.slice(5)||10,c=myChars().find(x=>charSlot(x)===n);e.preventDefault();
+  if(c)toggleQuote(c.id);else toast(`No character in slot ${n}.`);return;
+ }
  if(e.target.id!=='board-editor')return;
  if(e.key==='Enter'&&!e.ctrlKey&&!e.metaKey){e.preventDefault();document.execCommand('insertLineBreak');edSync();}
  else if(e.key==='Enter'){e.preventDefault();e.target.closest('form')?.requestSubmit();}
@@ -869,7 +898,7 @@ function threadHTML(topic){
 // ---- Character views ----
 function cardHTML(c,own){
  const sub=[c.race,c.occupation].filter(Boolean).join(' · ');
- return `<li class="char-card"><a class="char-card-link" href="${charHref(c)}">${charImg(c)}<span class="char-card-name">${escapeHTML(c.name)}</span><span class="char-card-sub">${escapeHTML(sub||(own?'':'Played by '+c.player))}</span></a>${own?`<div class="char-card-actions"><button class="btn" type="button" data-char-edit="${escapeHTML(c.id)}">Edit</button><button class="btn danger" type="button" data-char-del="${escapeHTML(c.id)}">Delete</button></div>`:''}</li>`;
+ return `<li class="char-card">${own?`<span class="char-slot" title="Slot ${charSlot(c)}: Alt+${slotKey(charSlot(c))} quotes this character">Alt+${slotKey(charSlot(c))}</span>`:''}<a class="char-card-link" href="${charHref(c)}">${charImg(c)}<span class="char-card-name">${escapeHTML(c.name)}</span><span class="char-card-sub">${escapeHTML(sub||(own?'':'Played by '+c.player))}</span></a>${own?`<div class="char-card-actions"><button class="btn" type="button" data-char-edit="${escapeHTML(c.id)}">Edit</button><button class="btn danger" type="button" data-char-del="${escapeHTML(c.id)}">Delete</button></div>`:''}</li>`;
 }
 function charactersHTML(){
  if(!charsLoaded)return '<p class="subtext">Loading…</p>';
@@ -917,62 +946,103 @@ async function shrinkImage(file){
  }finally{URL.revokeObjectURL(url);}
 }
 // ---- Context Menu ----
-// A panel on the right (collapsible, remembered in this browser). It searches the forum and characters, and clicking
-// any character (a post's picture or name, a quoted portrait, a character card) shows their bio there; × closes it.
-let ctx={open:true,q:'',scope:'all',char:null};
-try{const v=JSON.parse(localStorage.getItem('reliquary-ctx')||'{}');if(typeof v.open==='boolean')ctx.open=v.open;if(['all','forum','characters'].includes(v.scope))ctx.scope=v.scope;}catch(e){}
-function ctxSave(){try{localStorage.setItem('reliquary-ctx',JSON.stringify({open:ctx.open,scope:ctx.scope}));}catch(e){}}
-function ctxOpen(on){ctx.open=on;ctxSave();renderCtx();if(on)$('ctx-q')?.focus({preventScroll:true});}
+// A panel on the right (collapsible, remembered in this browser) with three tabs: Characters (search; clicking a
+// character anywhere on the page shows their bio here, × closes it), Online (members online now; click one to message
+// them) and Messages (private messages between members, with an unread count).
+let ctx={open:true,tab:'characters',q:'',char:null,convo:null,picking:false,pick:'',draft:'',busy:false,error:''},dms=[],users=[];
+try{const v=JSON.parse(localStorage.getItem('reliquary-ctx')||'{}');if(typeof v.open==='boolean')ctx.open=v.open;if(['characters','online','messages'].includes(v.tab))ctx.tab=v.tab;}catch(e){}
+function ctxSave(){try{localStorage.setItem('reliquary-ctx',JSON.stringify({open:ctx.open,tab:ctx.tab}));}catch(e){}}
+function ctxOpen(on){ctx.open=on;ctxSave();renderCtx();}
 function ctxShowChar(id){ctx.char=id;ctx.open=true;ctxSave();renderCtx();$('ctx-body').scrollTop=0;}
-const plainText=t=>String(t||'').replace(QUOTE_RE,'$2');
+function ctxTab(t){ctx.tab=t;ctx.char=null;ctx.picking=false;ctxSave();renderCtx();$('ctx-body').scrollTop=0;}
+function ctxMessage(uid){ctx.tab='messages';ctx.char=null;ctx.convo=uid;ctx.picking=false;ctx.error='';ctx.open=true;ctxSave();renderCtx();setTimeout(()=>$('ctx-dm')?.focus(),0);}
 function hl(text,q){ // escape, then mark every match of q
  const t=String(text||''),lo=t.toLowerCase(),n=q.toLowerCase();if(!n)return escapeHTML(t);let out='',i=0,j;
  while((j=lo.indexOf(n,i))>=0){out+=escapeHTML(t.slice(i,j))+'<mark>'+escapeHTML(t.slice(j,j+n.length))+'</mark>';i=j+n.length;}
  return out+escapeHTML(t.slice(i));
 }
-function snippet(text,q){const t=plainText(text).replace(/\s+/g,' '),k=t.toLowerCase().indexOf(q.toLowerCase());if(k<0)return t.slice(0,120)+(t.length>120?'…':'');const a=Math.max(0,k-50);return (a?'…':'')+t.slice(a,k+q.length+70)+(k+q.length+70<t.length?'…':'');}
-function postHref(p){const b=BOARDS[boardOf(p)];return '#topic-'+encodeURIComponent(b&&b.flat?p.id:(p.topic||p.id));}
 function charRowHTML(c,q){const sub=[c.race,c.occupation].filter(Boolean).join(' · ');return `<li><a class="ctx-hit ctx-char" href="${charHref(c)}">${charImg(c,'quote-av')}<span><span class="ctx-hit-title">${hl(c.name,q)}</span><span class="ctx-hit-meta">${escapeHTML(sub||'Played by '+c.player)}</span></span></a></li>`;}
-function ctxSearchHTML(){
- const q=ctx.q.trim(),all=Object.values(chars).sort((a,b)=>a.name.localeCompare(b.name));
- if(!q){
-  if(ctx.scope==='forum')return '<p class="ctx-empty">Type to search posts and topics.</p>';
-  return `<h3 class="ctx-h">Characters (${all.length})</h3>`+(all.length?`<ul class="ctx-list">${all.map(c=>charRowHTML(c,'')).join('')}</ul>`:'<p class="ctx-empty">No characters yet.</p>');
+function ctxCharsHTML(){
+ const q=ctx.q.trim(),n=q.toLowerCase(),all=Object.values(chars).sort((a,b)=>a.name.localeCompare(b.name));
+ const cs=q?all.filter(c=>[c.name,...c.names,...CHAR_INFO.map(([k])=>c[k]),c.player,c.background].some(v=>String(v||'').toLowerCase().includes(n))):all;
+ return `<h3 class="ctx-h">${q?'Matches':'Characters'} (${cs.length})</h3>`+(cs.length?`<ul class="ctx-list">${cs.slice(0,60).map(c=>charRowHTML(c,q)).join('')}</ul>`:`<p class="ctx-empty">${q?'No matches.':'No characters yet.'}</p>`);
+}
+function ctxOnlineHTML(){
+ const me=myUid();
+ if(!online.length)return '<p class="ctx-empty">No one is online.</p>';
+ return `<h3 class="ctx-h">Online now (${online.length})</h3><ul class="ctx-list">${online.map(o=>o.uid===me?`<li><button class="ctx-user" type="button" disabled><span class="ctx-user-name">${escapeHTML(o.name)}</span><small>you</small></button></li>`:`<li><button class="ctx-user" type="button" data-ctx-msg="${escapeHTML(o.uid)}" title="Message ${escapeHTML(o.name)}"><span class="ctx-user-name">${escapeHTML(o.name)}</span><small>Message</small></button></li>`).join('')}</ul>`+
+  (myUid()?'':'<p class="ctx-empty"><button class="board-link" type="button" data-board-signin>Sign in</button> to send messages.</p>');
+}
+function userName(uid){const u=users.find(x=>x.uid===uid);if(u)return u.display;const o=online.find(x=>x.uid===uid);if(o)return o.name;const m=[...dms].reverse().find(x=>x.from===uid||x.to===uid);return m?(m.from===uid?m.fromName:m.toName):'Member';}
+function convos(){ // one entry per person, newest first
+ const me=myUid(),by={};
+ for(const m of dms){const other=m.from===me?m.to:m.from;const c=by[other]||(by[other]={uid:other,last:null,unread:0});c.last=m;if(m.to===me&&!m.read)c.unread++;}
+ return Object.values(by).sort((a,b)=>b.last.at-a.last.at);
+}
+const unreadCount=()=>{const me=myUid();return me?dms.filter(m=>m.to===me&&!m.read).length:0;};
+function ctxMessagesHTML(){
+ const me=myUid();if(!me)return '<p class="ctx-empty"><button class="board-link" type="button" data-board-signin>Sign in or create an account</button> to send and receive messages.</p>';
+ if(ctx.convo){
+  const other=ctx.convo,name=userName(other),thread=dms.filter(m=>(m.from===me&&m.to===other)||(m.from===other&&m.to===me)),canSend=!!users.find(u=>u.uid===other);
+  return `<button class="ctx-back" type="button" data-ctx-back>‹ All messages</button><h3 class="ctx-bio-title">${escapeHTML(name)}</h3>`+
+   `<div class="ctx-thread" id="ctx-thread">${thread.length?thread.map(m=>`<div class="ctx-msg${m.from===me?' me':''}">${escapeHTML(m.text)}<small>${boardTime(m.at)}</small></div>`).join(''):'<p class="ctx-empty">No messages yet.</p>'}</div>`+
+   (canSend?`<form class="ctx-send" id="ctx-send" autocomplete="off"><textarea id="ctx-dm" maxlength="${Cloud.DM_MAX||1000}" placeholder="Write a message…" aria-label="Message to ${escapeHTML(name)}">${escapeHTML(ctx.draft)}</textarea>${ctx.error?`<p class="board-error" role="alert">${escapeHTML(ctx.error)}</p>`:''}<div class="ctx-send-row"><span class="subtext">Enter sends · Shift+Enter new line</span><button class="btn primary" type="submit"${ctx.busy?' disabled':''}>Send</button></div></form>`:'<p class="ctx-empty">This account no longer exists.</p>');
  }
- const n=q.toLowerCase();let h='';
- if(ctx.scope!=='forum'){
-  const cs=all.filter(c=>[c.name,...c.names,...CHAR_INFO.map(([k])=>c[k]),c.player,c.background].some(v=>String(v||'').toLowerCase().includes(n)));
-  h+=`<h3 class="ctx-h">Characters (${cs.length})</h3>`+(cs.length?`<ul class="ctx-list">${cs.slice(0,30).map(c=>charRowHTML(c,q)).join('')}</ul>`:'<p class="ctx-empty">No matches.</p>');
+ if(ctx.picking){
+  const n=ctx.pick.trim().toLowerCase(),list=users.filter(u=>u.uid!==me&&(!n||u.display.toLowerCase().includes(n)||u.name.toLowerCase().includes(n)));
+  return `<button class="ctx-back" type="button" data-ctx-back>‹ All messages</button><h3 class="ctx-h">New message to</h3><input class="ctx-pick" id="ctx-pick" type="search" placeholder="Find a member" value="${escapeHTML(ctx.pick)}" aria-label="Find a member">`+
+   (list.length?`<ul class="ctx-list">${list.slice(0,60).map(u=>`<li><button class="ctx-user${online.some(o=>o.uid===u.uid)?'':' off'}" type="button" data-ctx-msg="${escapeHTML(u.uid)}"><span class="ctx-user-name">${hl(u.display,ctx.pick.trim())}</span></button></li>`).join('')}</ul>`:'<p class="ctx-empty">No members found.</p>');
  }
- if(ctx.scope!=='characters'){
-  const titles={};boardPosts.forEach(p=>{if(!p.topic)titles[p.id]=p.title;});
-  const ps=boardPosts.filter(p=>[p.title,plainText(p.text),postName(p),p.player].some(v=>String(v||'').toLowerCase().includes(n))).sort((a,b)=>b.at-a.at);
-  h+=`<h3 class="ctx-h">Forum posts (${ps.length})</h3>`+(ps.length?`<ul class="ctx-list">${ps.slice(0,40).map(p=>{const b=BOARDS[boardOf(p)],title=p.title||(p.topic&&titles[p.topic])||b.name;
-   return `<li><a class="ctx-hit" href="${postHref(p)}"><span class="ctx-hit-title">${hl(title,q)}</span><span class="ctx-hit-meta">${escapeHTML(b.name)} · ${hl(postName(p),q)} · ${boardTime(p.at)}</span><span class="ctx-hit-text">${hl(snippet(p.text,q),q)}</span></a></li>`;}).join('')}</ul>`:'<p class="ctx-empty">No matches.</p>');
- }
- return h;
+ const cs=convos();
+ return `<div class="ctx-send-row" style="margin:0 0 6px"><h3 class="ctx-h">Messages</h3><button class="btn" type="button" data-ctx-new>New message</button></div>`+
+  (cs.length?`<ul class="ctx-list">${cs.map(c=>`<li><button class="ctx-convo${c.unread?' unread':''}" type="button" data-ctx-msg="${escapeHTML(c.uid)}"><span class="ctx-hit-title">${escapeHTML(userName(c.uid))}</span><span class="ctx-hit-meta">${c.last.from===me?'You: ':''}${escapeHTML(c.last.text.replace(/\s+/g,' ').slice(0,70))}${c.last.text.length>70?'…':''} · ${boardTime(c.last.at)}</span></button></li>`).join('')}</ul>`:'<p class="ctx-empty">No messages yet. Click someone in Online, or New message.</p>');
 }
 function ctxBioHTML(){
  const c=chars[ctx.char],x='<button class="ctx-x" type="button" data-ctx-close aria-label="Close the character bio" title="Close">×</button>';
  if(!c)return `<div class="ctx-bio-head"><span>Character</span>${x}</div><p class="ctx-empty">${charsLoaded?'This character no longer exists.':'Loading…'}</p>`;
- const own=c.owner===myUid(),rows=CHAR_INFO.filter(([k])=>c[k]).map(([k,l])=>`<dt>${l}</dt><dd>${escapeHTML(c[k])}</dd>`).join('');
+ const me=myUid(),own=c.owner===me,rows=CHAR_INFO.filter(([k])=>c[k]).map(([k,l])=>`<dt>${l}</dt><dd>${escapeHTML(c[k])}</dd>`).join('');
+ const msg=!own&&me&&users.some(u=>u.uid===c.owner)?`<button class="btn" type="button" data-ctx-msg="${escapeHTML(c.owner)}">Message ${escapeHTML(c.player||'player')}</button>`:'';
  return `<div class="ctx-bio-head"><span>Character bio</span>${x}</div><article class="ctx-bio">${charImg(c)}<h3>${escapeHTML(c.name)}</h3>${c.player?`<p class="subtext">Played by ${escapeHTML(c.player)}</p>`:''}${rows?`<dl class="char-info">${rows}</dl>`:''}`+
   (c.background?`<h4 class="char-section-title">Background</h4><div class="char-bg">${escapeHTML(c.background)}</div>`:'')+
-  (own?`<div class="char-actions"><button class="btn" type="button" data-char-edit="${escapeHTML(c.id)}">Edit</button></div>`:'')+`</article>`;
+  (own||msg?`<div class="char-actions">${own?`<button class="btn" type="button" data-char-edit="${escapeHTML(c.id)}">Edit</button>`:''}${msg}</div>`:'')+`</article>`;
 }
 function renderCtx(){
  const el=$('ctx');if(!el)return;el.classList.toggle('collapsed',!ctx.open);$('ctx-open').setAttribute('aria-expanded',String(ctx.open));
- document.querySelectorAll('[data-ctx-scope]').forEach(b=>b.setAttribute('aria-checked',String(b.dataset.ctxScope===ctx.scope)));
- const body=$('ctx-body'),y=body.scrollTop;body.innerHTML=ctx.char?ctxBioHTML():ctxSearchHTML();body.scrollTop=y;
+ document.querySelectorAll('[data-ctx-tab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.ctxTab===ctx.tab&&!ctx.char)));
+ const un=unreadCount();$('ctx-n-online').textContent=online.length?`(${online.length})`:'';const nu=$('ctx-n-unread');nu.textContent=un||'';nu.className=un?'unread':'';$('ctx-dot').hidden=!un;
+ $('ctx-search').hidden=!!ctx.char||ctx.tab!=='characters';
+ const body=$('ctx-body'),a=document.activeElement,fid=a&&a.id&&body.contains(a)?a.id:null,sel=fid&&'selectionStart' in a?[a.selectionStart,a.selectionEnd]:null,y=body.scrollTop,atEnd=body.scrollHeight-body.clientHeight-y<30;
+ body.innerHTML=ctx.char?ctxBioHTML():ctx.tab==='online'?ctxOnlineHTML():ctx.tab==='messages'?ctxMessagesHTML():ctxCharsHTML();
+ body.scrollTop=ctx.tab==='messages'&&ctx.convo&&!ctx.char&&atEnd?body.scrollHeight:y;
+ if(fid){const n=$(fid);if(n){n.focus({preventScroll:true});if(sel)try{n.setSelectionRange(sel[0],sel[1]);}catch(e){}}}
+ // reading a conversation marks its messages read
+ if(ctx.open&&ctx.tab==='messages'&&ctx.convo&&!ctx.char&&document.visibilityState==='visible'){const me=myUid(),ids=dms.filter(m=>m.to===me&&m.from===ctx.convo&&!m.read).map(m=>m.id);if(ids.length&&Cloud.markMessagesRead){dms.forEach(m=>{if(ids.includes(m.id))m.read=true;});Cloud.markMessagesRead(ids);setTimeout(renderCtx,0);}}
 }
-document.addEventListener('input',e=>{if(e.target.id==='ctx-q'){ctx.q=e.target.value;ctx.char=null;renderCtx();$('ctx-body').scrollTop=0;}});
+document.addEventListener('input',e=>{
+ if(e.target.id==='ctx-q'){ctx.q=e.target.value;ctx.char=null;renderCtx();$('ctx-body').scrollTop=0;}
+ else if(e.target.id==='ctx-pick'){ctx.pick=e.target.value;renderCtx();}
+ else if(e.target.id==='ctx-dm')ctx.draft=e.target.value;
+});
+document.addEventListener('keydown',e=>{if(e.target.id==='ctx-dm'&&e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('ctx-send')?.requestSubmit();}});
+document.addEventListener('submit',async e=>{
+ if(e.target.id!=='ctx-send')return;e.preventDefault();if(ctx.busy)return;
+ const text=ctx.draft.trim(),to=ctx.convo,u=users.find(x=>x.uid===to),b=baseAuthor();ctx.error='';
+ if(!text||!u||!b){if(!b)ctx.error='Sign in to send messages.';renderCtx();return;}
+ ctx.busy=true;renderCtx();
+ try{await Cloud.sendMessage(to,u.display,b.from,text);ctx.draft='';const t=$('ctx-dm');if(t)t.value='';}catch(x){ctx.error='Not sent: '+x.message;}
+ ctx.busy=false;renderCtx();const body=$('ctx-body');body.scrollTop=body.scrollHeight;$('ctx-dm')?.focus();
+});
 document.addEventListener('click',e=>{
  if(e.target.closest('#ctx-open')){ctxOpen(true);return;}
  if(e.target.closest('#ctx-collapse')){ctxOpen(false);return;}
  if(e.target.closest('[data-ctx-close]')){ctx.char=null;renderCtx();return;}
- const sc=e.target.closest('[data-ctx-scope]');if(sc){ctx.scope=sc.dataset.ctxScope;ctx.char=null;ctxSave();renderCtx();return;}
+ const t=e.target.closest('[data-ctx-tab]');if(t){ctxTab(t.dataset.ctxTab);return;}
+ const m=e.target.closest('[data-ctx-msg]');if(m){if(!myUid()){Accounts.open('signin');return;}ctxMessage(m.dataset.ctxMsg);return;}
+ if(e.target.closest('[data-ctx-back]')){ctx.convo=null;ctx.picking=false;ctx.error='';renderCtx();return;}
+ if(e.target.closest('[data-ctx-new]')){ctx.picking=true;ctx.pick='';renderCtx();$('ctx-pick')?.focus();return;}
 });
-// ---- Rendering ----
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')renderCtx();});
+// ---- Rendering ----// ---- Rendering ----
 function bodyHTML(){
  if(!Cloud.enabled)return '<p class="subtext">The message board needs shared online storage, which is not set up for this site.</p>';
  if(R.v==='characters')return charEdit?editorHTML():charactersHTML();
@@ -1013,9 +1083,8 @@ function editChar(id){
 async function deleteChar(id){
  const c=chars[id];if(!c)return;
  if(!confirm(`Delete ${c.name}? This cannot be undone. Posts made as this character stay, under the character's name, without the picture.`))return;
- try{await Cloud.deleteCharacter(id);toast(`${c.name} deleted.`);if(postAs===id)setPostAs('');if(R.v==='character')location.hash='characters';}catch(e){toast('Not deleted: '+e.message);}
+ try{await Cloud.deleteCharacter(id);toast(`${c.name} deleted.`);if(R.v==='character')location.hash='characters';}catch(e){toast('Not deleted: '+e.message);}
 }
-function setPostAs(v){postAs=v;try{localStorage.setItem('reliquary-post-as',v);}catch(e){}}
 document.addEventListener('input',e=>{
  if(e.target.id==='board-editor'){edSync();return;}
  const f=e.target.dataset&&e.target.dataset.boardField;if(f){boardDraft[f]=e.target.value;return;}
@@ -1025,7 +1094,6 @@ document.addEventListener('input',e=>{
  else d[k]=v;
 });
 document.addEventListener('change',async e=>{
- if(e.target.id==='board-as'){setPostAs(e.target.value);return;}
  if(e.target.id==='cf-imageurl'&&charEdit){render();return;}
  if(e.target.id==='char-file'&&charEdit){
   const f=e.target.files&&e.target.files[0];if(!f)return;
@@ -1092,13 +1160,15 @@ document.addEventListener('submit',async e=>{
  }catch(x){boardError='Not posted: '+x.message;}
  boardBusy=false;render();
 });
-Accounts.onChange(m=>{member=m;render();});
+Accounts.onChange(m=>{member=m;if(!m){ctx.convo=null;ctx.picking=false;}render();renderCtx();});
 if(Cloud.enabled){
  Cloud.onAuth&&Cloud.onAuth(()=>render());
  Cloud.watchBoard(posts=>{const first=!boardLoaded;boardPosts=posts;boardLoaded=true;render();renderCtx();if(first)flatScroll();},msg=>{boardLoaded=true;boardError='Message board: '+msg;render();});
  if(Cloud.watchCharacters)Cloud.watchCharacters(c=>{chars=c;charsLoaded=true;renderCtx();if(charEdit&&charEdit.busy)return;render();},msg=>{charsLoaded=true;toast('Characters: '+msg);render();});
  else charsLoaded=true;
- Cloud.watchOnline&&Cloud.watchOnline(o=>{online=o;renderOnline();},()=>{});
+ Cloud.watchOnline&&Cloud.watchOnline(o=>{online=o;renderOnline();renderCtx();},()=>{});
+ Cloud.watchMessages&&Cloud.watchMessages(m=>{dms=m;renderCtx();},msg=>toast('Messages: '+msg));
+ Cloud.watchMembers&&Cloud.watchMembers(u=>{users=u;renderCtx();},()=>{});
 }
 renderOnline();render();renderCtx();
 </script>

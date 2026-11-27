@@ -97,7 +97,7 @@ service cloud.firestore {
         && request.resource.data.faction is string && request.resource.data.faction.size() <= 20
         && request.resource.data.at == request.time;
     }
-    // Forum characters: ids are {uid}_1 to {uid}_3, which limits each signed-in user to three. Everyone can read them;
+    // Forum characters: ids are {uid}_1 to {uid}_10, which limits each signed-in user to ten. Everyone can read them;
     // the owner creates, edits and deletes them; the administrator can delete any.
     function shortText(t) {
       return t is string && t.size() <= 60;
@@ -118,13 +118,31 @@ service cloud.firestore {
     match /characters/{id} {
       allow read: if true;
       allow create: if request.auth != null && (isMember() || isAdmin())
-        && id.matches('^' + request.auth.uid + '_[1-3]$')
+        && id.matches('^' + request.auth.uid + '_([1-9]|10)$')
         && !exists(/databases/$(database)/documents/banned/$(request.auth.uid))
         && validCharacter(request.resource.data);
       allow update: if request.auth != null && resource.data.owner == request.auth.uid
-        && id.matches('^' + request.auth.uid + '_[1-3]$')
+        && id.matches('^' + request.auth.uid + '_([1-9]|10)$')
         && validCharacter(request.resource.data);
       allow delete: if isAdmin() || (request.auth != null && resource.data.owner == request.auth.uid);
+    }
+    // Private messages between members (the administrator can send as Administrator). Only the sender and the recipient
+    // can read a message; only the recipient can mark it read. The recipient must be a member.
+    match /messages/{msg} {
+      allow read: if request.auth != null && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['from', 'fromName', 'to', 'toName', 'text', 'at', 'read'])
+        && request.resource.data.from == request.auth.uid
+        && !exists(/databases/$(database)/documents/banned/$(request.auth.uid))
+        && ((isAdmin() && request.resource.data.fromName == 'Administrator')
+          || (isMember() && request.resource.data.fromName == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.display))
+        && request.resource.data.to is string && request.resource.data.to != request.auth.uid
+        && request.resource.data.toName == get(/databases/$(database)/documents/users/$(request.resource.data.to)).data.display
+        && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 1000
+        && request.resource.data.at == request.time && request.resource.data.read == false;
+      allow update: if request.auth != null && resource.data.to == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+        && request.resource.data.read == true;
     }
     // Fleets (ids like gallia-2): anyone logged into a command can place and move its fleets; only the administrator changes the ship count (3 to 10).
     match /fleets/{fleet} {

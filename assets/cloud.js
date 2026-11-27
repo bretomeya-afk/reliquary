@@ -8,6 +8,7 @@
 //                      (at = server time) about once a minute. A command's online count is its number of fresh records.
 //   board/{post}       public read; message board topics and replies (posted by members and the administrator).
 //   users/{uid}, usernames/{name}, banned/{uid}: member accounts (username + PIN sign-up).
+//   messages/{auto id}  private messages between members; only the sender and recipient can read them.
 //   characters/{uid}_{1-3}  public read; forum characters, up to three per signed-in user (owner edits/deletes).
 //   fleets/{fleet}     public read (ids like gallia-2); any browser can place or move a fleet, only the administrator changes its ship count.
 (function(){
@@ -218,7 +219,7 @@ async function deleteBoardPosts(ids){
 // gender, height, weight, nationality, race, occupation, affiliation, background, image, updated}. image is '' or a
 // small JPEG data URL (resized in the browser) or an https link. Public read; the owner saves and deletes, the
 // administrator can delete any. The fixed ids are what limits each user to CHAR_MAX characters.
-const CHAR_MAX=3,CHAR_TEXT=['dob','birthplace','gender','height','weight','nationality','race','occupation','affiliation'];
+const CHAR_MAX=10,CHAR_TEXT=['dob','birthplace','gender','height','weight','nationality','race','occupation','affiliation'];
 function uid(){return auth&&auth.currentUser?auth.currentUser.uid:null;}
 function watchCharacters(cb,onError){
  let stop=()=>{},closed=false;
@@ -227,7 +228,7 @@ function watchCharacters(cb,onError){
 }
 async function saveCharacter(id,c){
  await ready();const u=uid();if(!u)throw Error('Sign in to save characters.');
- if(!new RegExp('^'+u+'_[1-'+CHAR_MAX+']$').test(id))throw Error('You can have up to '+CHAR_MAX+' characters.');
+ const slot=+String(id).slice(u.length+1);if(!String(id).startsWith(u+'_')||!(slot>=1&&slot<=CHAR_MAX&&Number.isInteger(slot)))throw Error('You can have up to '+CHAR_MAX+' characters.');
  const names=(c.names||[]).map(n=>String(n||'').trim().slice(0,30)).filter(Boolean).slice(0,4);if(!names.length)throw Error('Enter a first name.');
  const d={owner:u,player:String(c.player||'').slice(0,60),name:names.join(' ').slice(0,130),names,background:String(c.background||'').slice(0,8000),image:String(c.image||''),updated:window.firebase.firestore.FieldValue.serverTimestamp()};
  CHAR_TEXT.forEach(k=>d[k]=String(c[k]||'').trim().slice(0,60));
@@ -236,6 +237,25 @@ async function saveCharacter(id,c){
  catch(e){throw Error(/permission-denied/.test(e&&e.code||'')?'The shared database refused the character. Publish the latest firestore.rules in Firebase.':friendly(e));}
 }
 async function deleteCharacter(id){await ready();try{await db.collection('characters').doc(id).delete();}catch(e){throw Error(friendly(e));}}
+// Private messages: messages/{id} = {from, fromName, to, toName, text, at, read}. watchMessages follows the signed-in
+// user's sent and received messages (re-subscribing when the sign-in changes) and calls cb with them, oldest first.
+const DM_MAX=1000;
+function watchMessages(cb,onError){
+ let stops=[],closed=false,me=null;const box={in:[],out:[]};
+ const emit=()=>cb([...box.in,...box.out].sort((a,b)=>a.at-b.at));
+ const conv=d=>{const v=d.data({serverTimestamps:'estimate'});return {id:d.id,from:String(v.from||''),fromName:String(v.fromName||''),to:String(v.to||''),toName:String(v.toName||''),text:String(v.text||''),read:!!v.read,at:v.at&&v.at.toMillis?v.at.toMillis():Date.now()};};
+ const follow=()=>{const u=uid();if(u===me)return;me=u;stops.forEach(f=>f());stops=[];box.in=[];box.out=[];emit();if(!u||closed)return;
+  for(const [k,f] of [['in','to'],['out','from']])stops.push(db.collection('messages').where(f,'==',u).onSnapshot(s=>{const o=[];s.forEach(d=>o.push(conv(d)));box[k]=o;emit();},e=>onError&&onError(friendly(e))));};
+ ready().then(()=>{if(closed)return;auth.onAuthStateChanged(()=>follow());follow();}).catch(e=>onError&&onError(friendly(e)));
+ return()=>{closed=true;stops.forEach(f=>f());};
+}
+async function sendMessage(to,toName,fromName,text){
+ await ready();const u=uid();if(!u)throw Error('Sign in to send messages.');
+ const t=String(text||'').trim().slice(0,DM_MAX);if(!t)throw Error('Enter a message.');
+ try{await db.collection('messages').add({from:u,fromName:String(fromName).slice(0,60),to:String(to),toName:String(toName).slice(0,60),text:t,at:window.firebase.firestore.FieldValue.serverTimestamp(),read:false});}
+ catch(e){throw Error(/permission-denied/.test(e&&e.code||'')?'The shared database refused the message. Publish the latest firestore.rules in Firebase.':friendly(e));}
+}
+async function markMessagesRead(ids){await ready();if(!ids.length)return;try{const b=db.batch();ids.slice(0,400).forEach(id=>b.update(db.collection('messages').doc(id),{read:true}));await b.commit();}catch(e){}}
 // Commander presence. Several people on different computers can be logged into the same command at once, so each
 // browser has its own presence record: sessions/{browser id} = {command, at} (command '' when logged out; at = server
 // time). The browser id is kept in localStorage, so the main page and the starmap open in the same browser count as
@@ -269,6 +289,6 @@ function trackPresence(getCmd,onChange){
  addEventListener('pagehide',()=>{if(pres.cur){writePresence(null).catch(()=>{});try{pres.bc&&pres.bc.postMessage('closing');}catch(e){}}});
  addEventListener('pageshow',e=>{if(e.persisted){pres.cur=null;syncPresence();}});
 }
-window.ReliquaryCloud={enabled,adminEmail,ready,isAdmin,onAuth,signIn,signOut,watchDoc,saveDoc,watchChat,addChat,clearChat,trackPresence,syncPresence,presenceStatus,watchFleets,saveFleet,watchBoard,addBoardPost,deleteBoardPosts,CHAR_MAX,uid,watchCharacters,saveCharacter,deleteCharacter,onMember,memberSignUp,memberSignIn,setDisplayName,watchOnline,watchMembers,deleteMember};
+window.ReliquaryCloud={enabled,adminEmail,ready,isAdmin,onAuth,signIn,signOut,watchDoc,saveDoc,watchChat,addChat,clearChat,trackPresence,syncPresence,presenceStatus,watchFleets,saveFleet,watchBoard,addBoardPost,deleteBoardPosts,CHAR_MAX,uid,watchCharacters,saveCharacter,deleteCharacter,DM_MAX,watchMessages,sendMessage,markMessagesRead,onMember,memberSignUp,memberSignIn,setDisplayName,watchOnline,watchMembers,deleteMember};
 if(enabled)ready().catch(()=>{});
 })();
