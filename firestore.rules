@@ -139,7 +139,8 @@ service cloud.firestore {
         && ((isAdmin() && request.resource.data.fromName == 'Administrator')
           || (isMember() && request.resource.data.fromName == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.display))
         && request.resource.data.to is string && request.resource.data.to != request.auth.uid
-        && request.resource.data.toName == get(/databases/$(database)/documents/users/$(request.resource.data.to)).data.display
+        && ((request.resource.data.toName == 'Administrator' && exists(/databases/$(database)/documents/admins/$(request.resource.data.to)))
+          || request.resource.data.toName == get(/databases/$(database)/documents/users/$(request.resource.data.to)).data.display)
         && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 1000
         && request.resource.data.at == request.time && request.resource.data.read == false;
       // The recipient marks messages read or removes them from their inbox; the sender edits their message or removes it
@@ -155,6 +156,12 @@ service cloud.firestore {
       allow delete: if request.auth != null && resource.data.from == request.auth.uid;
     }
     // Fleets (ids like gallia-2): anyone logged into a command can place and move its fleets; only the administrator changes the ship count (3 to 10).
+    // The administrator's account id, so members can send it private messages. Only the administrator writes its own.
+    match /admins/{uid} {
+      allow read: if true;
+      allow create, update: if isAdmin() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name']) && request.resource.data.name == 'Administrator';
+    }
     match /fleets/{fleet} {
       allow read: if true;
       allow create: if validFleet(fleet) && (isAdmin() || request.resource.data.ships == 5);

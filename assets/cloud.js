@@ -30,7 +30,7 @@ function ready(){
   if(!F.apps.length)F.initializeApp({apiKey:fb.apiKey,authDomain:fb.authDomain||fb.projectId+'.firebaseapp.com',projectId:fb.projectId,appId:fb.appId||undefined});
   auth=F.auth();db=F.firestore();
   try{await auth.setPersistence(F.auth.Auth.Persistence.SESSION);}catch(e){} // signed in for this tab, like the old admin login
-  auth.onAuthStateChanged(u=>{user=u;authKnown=true;const a=isAdmin();authCbs.forEach(cb=>{try{cb(a);}catch(e){console.error(e);}});});
+  auth.onAuthStateChanged(u=>{user=u;authKnown=true;const a=isAdmin();if(a)registerAdmin();authCbs.forEach(cb=>{try{cb(a);}catch(e){console.error(e);}});});
   watchMemberProfile();
  })();
  readyP.catch(()=>{readyP=null;}); // a later sign-in or save tries again
@@ -253,6 +253,14 @@ function watchMessages(cb,onError){
  ready().then(()=>{if(closed)return;auth.onAuthStateChanged(()=>follow());follow();}).catch(e=>onError&&onError(friendly(e)));
  return()=>{closed=true;stops.forEach(f=>f());};
 }
+// The administrator account can receive private messages too: while signed in it registers its account id in
+// admins/{uid} = {name: 'Administrator'} (public read), and members can message it as "Administrator".
+function registerAdmin(){if(!user||!isAdmin())return;db.collection('admins').doc(user.uid).set({name:'Administrator'}).catch(()=>{});}
+function watchAdmins(cb){let stop=()=>{},closed=false;ready().then(()=>{if(closed)return;stop=db.collection('admins').onSnapshot(s=>{const o=[];s.forEach(d=>o.push({uid:d.id,name:'administrator',display:'Administrator',admin:true}));cb(o);},()=>cb([]));}).catch(()=>cb([]));return()=>{closed=true;stop();};}
+async function getMember(uid){ // one member's profile, read directly (null if there is no such account)
+ await ready();try{const d=await db.collection('users').doc(String(uid)).get();if(d.exists){const v=d.data();return {uid:d.id,name:String(v.name||''),display:String(v.display||v.name||'')};}
+  const a=await db.collection('admins').doc(String(uid)).get();return a.exists?{uid:a.id,name:'administrator',display:'Administrator',admin:true}:null;}catch(e){return undefined;} // undefined: could not check
+}
 async function sendMessage(to,toName,fromName,text){
  await ready();const u=uid();if(!u)throw Error('Sign in to send messages.');
  const t=String(text||'').trim().slice(0,DM_MAX);if(!t)throw Error('Enter a message.');
@@ -303,6 +311,6 @@ function trackPresence(getCmd,onChange){
  addEventListener('pagehide',()=>{if(pres.cur){writePresence(null).catch(()=>{});try{pres.bc&&pres.bc.postMessage('closing');}catch(e){}}});
  addEventListener('pageshow',e=>{if(e.persisted){pres.cur=null;syncPresence();}});
 }
-window.ReliquaryCloud={enabled,adminEmail,ready,isAdmin,onAuth,signIn,signOut,watchDoc,saveDoc,watchChat,addChat,clearChat,trackPresence,syncPresence,presenceStatus,watchFleets,saveFleet,watchBoard,addBoardPost,deleteBoardPosts,CHAR_MAX,uid,watchCharacters,saveCharacter,deleteCharacter,DM_MAX,watchMessages,sendMessage,markMessagesRead,editMessage,deleteMessage,hideMessages,onMember,memberSignUp,memberSignIn,setDisplayName,watchOnline,watchMembers,deleteMember};
+window.ReliquaryCloud={enabled,adminEmail,ready,isAdmin,onAuth,signIn,signOut,watchDoc,saveDoc,watchChat,addChat,clearChat,trackPresence,syncPresence,presenceStatus,watchFleets,saveFleet,watchBoard,addBoardPost,deleteBoardPosts,CHAR_MAX,uid,watchCharacters,saveCharacter,deleteCharacter,DM_MAX,watchMessages,sendMessage,watchAdmins,getMember,markMessagesRead,editMessage,deleteMessage,hideMessages,onMember,memberSignUp,memberSignIn,setDisplayName,watchOnline,watchMembers,deleteMember};
 if(enabled)ready().catch(()=>{});
 })();

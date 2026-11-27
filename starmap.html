@@ -517,6 +517,39 @@ body.cmd-secara .btn,body.cmd-secara .home-icon,body.cmd-secara .cmd-change,body
 body.cmd-secara .cmd-badge,body.cmd-secara .cmd-treasury,body.cmd-secara .mech-label{border-radius:0;clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px)}
 body.cmd-secara .bar::after{background:linear-gradient(90deg,transparent,#3d7bff 10%,#9cc2ff 46%,#d6453d 47.5%,#d6453d 52.5%,#9cc2ff 54%,#3d7bff 90%,transparent)}
 body.cmd-secara .cmd-badge::before{border-radius:1px}
+/* Star system view (magnifying glass on a system's details) */
+.sv{position:fixed;inset:0;z-index:20;background:#01030a;color:var(--text,#e6f2ff)}
+.sv[hidden]{display:none}
+body.sv-open .toast{z-index:30}
+#sv-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;outline:none;touch-action:none}
+.sv-top{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;pointer-events:none}
+.sv-top>*{pointer-events:auto}
+.sv-title{padding:8px 16px;border:1px solid rgba(120,180,230,.35);border-radius:6px;background:rgba(3,12,24,.78)}
+.sv-title h2{margin:0;font-size:19px;letter-spacing:.06em}
+.sv-title .eyebrow{font-size:10px;letter-spacing:.2em;text-transform:uppercase;opacity:.75}
+.sv-top-actions{display:flex;gap:6px}.sv-top-actions .btn{min-width:38px;justify-content:center}
+.sv-tools,.sv-info{position:absolute;top:82px;max-height:calc(100% - 140px);overflow:auto;padding:12px 14px;border:1px solid rgba(120,180,230,.35);border-radius:6px;background:rgba(3,12,24,.88);box-shadow:0 8px 30px rgba(0,0,0,.5);font-size:13px}
+.sv-tools{left:12px;width:230px}.sv-info{right:12px;width:290px}
+.sv-tools[hidden],.sv-info[hidden]{display:none}
+.sv-tools h3{margin:0 0 4px;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#ffcf6b}
+.sv-small{margin:4px 0 10px;font-size:11px;opacity:.7}
+.sv-group{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-top:1px solid rgba(120,180,230,.2)}
+.sv-lbl{font-size:10px;letter-spacing:.16em;text-transform:uppercase;opacity:.7}
+.sv-add{display:grid;grid-template-columns:1fr 1fr;gap:6px}.sv-add .btn{padding:6px 4px;font-size:11px;justify-content:center;white-space:normal}
+.sv-add .btn[aria-pressed="true"]{outline:2px solid #ffcf6b;outline-offset:1px}
+.sv-field{display:flex;flex-direction:column;gap:3px;font-size:11px;opacity:.95}
+.sv-field input,.sv-field select{width:100%;box-sizing:border-box;padding:5px 7px;border:1px solid rgba(120,180,230,.35);border-radius:4px;background:rgba(0,8,16,.9);color:inherit;font:inherit;font-size:12px}
+.sv-field input[type=range]{padding:0}
+.sv-check{display:flex;align-items:center;gap:6px;font-size:12px}
+.sv-ih{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+.sv-ih h3{margin:2px 0 0;font-size:16px}.sv-ih .eyebrow{font-size:10px;letter-spacing:.18em;text-transform:uppercase;opacity:.7}
+.sv-x{min-width:30px;padding:4px 8px}
+.sv-dl{display:grid;grid-template-columns:max-content 1fr;gap:5px 14px;margin:6px 0 12px}.sv-dl dt{font-size:11px;opacity:.65}.sv-dl dd{margin:0}
+.sv-c-open{color:#9cd8ff}.sv-c-caution{color:#ffd66e}.sv-c-closed{color:#ff8a78}
+.sv-edit{display:flex;flex-direction:column;gap:8px}.sv-edit .btn.danger{color:#ffb3a3;align-self:flex-start}
+.sv-hint{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);padding:6px 14px;border-radius:14px;background:rgba(3,12,24,.75);font-size:12px;opacity:.85;pointer-events:none;white-space:nowrap}
+.sv-zoom{position:absolute;right:12px;bottom:14px;display:flex;flex-direction:column;gap:6px}.sv-zoom .btn{width:38px;justify-content:center}
+@media(max-width:760px){.sv-tools{top:auto;bottom:56px;max-height:40vh;width:calc(100% - 48px)}.sv-info{width:calc(100% - 48px);max-height:45vh}.sv-hint{display:none}}
 </style>
 </head>
 <body>
@@ -546,6 +579,14 @@ body.cmd-secara .cmd-badge::before{border-radius:1px}
 <aside class="panel" id="panel" aria-live="polite"></aside>
 <div class="hud" id="hud"><span id="hud-pos"></span><span class="keys"> &nbsp;·&nbsp; <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move &nbsp;<kbd>Shift</kbd> faster &nbsp;<kbd>Q</kbd><kbd>E</kbd>/wheel zoom &nbsp;drag to pan</span><span id="mode-hint"></span><span id="fleet-hint"></span></div>
 <div class="zoom"><button class="btn" type="button" id="zoom-in" aria-label="Zoom in">+</button><button class="btn" type="button" id="zoom-out" aria-label="Zoom out">−</button><button class="btn" type="button" id="zoom-reset" aria-label="Reset view">⌂</button></div>
+<div class="sv" id="sv" hidden role="dialog" aria-modal="true" aria-label="Star system view">
+<canvas id="sv-canvas" tabindex="0" aria-label="Star system. Drag to move, mouse wheel to zoom, click objects for details."></canvas>
+<div class="sv-top"><div class="sv-title"><span class="eyebrow">Star system</span><h2 id="sv-name"></h2></div><div class="sv-top-actions"><button class="btn" type="button" id="sv-fit" title="Show the whole system (Home)" aria-label="Show the whole system">⌂</button><button class="btn" type="button" id="sv-close" title="Back to the starmap (Esc)" aria-label="Back to the starmap">✕</button></div></div>
+<div class="sv-tools" id="sv-tools" hidden></div>
+<aside class="sv-info" id="sv-info" hidden aria-live="polite"></aside>
+<div class="sv-zoom"><button class="btn" type="button" id="sv-zin" aria-label="Zoom in">+</button><button class="btn" type="button" id="sv-zout" aria-label="Zoom out">−</button></div>
+<div class="sv-hint" id="sv-hint"></div>
+</div>
 <div class="toast" id="toast" role="status" hidden></div>
 <dialog id="command-dialog" aria-labelledby="command-dialog-title"><div id="command-dialog-body"></div></dialog>
 <dialog id="login-dialog" aria-labelledby="login-title"><form id="login-form"><h2 id="login-title">Administrator login</h2><p class="muted">Sign in to place star systems and gate lanes.</p><label class="field">Password<input id="login-password" type="password" autocomplete="current-password" required></label><p class="error" id="login-error" role="alert"></p><div class="dialog-actions"><button class="btn" type="button" data-close>Cancel</button><button class="btn primary" type="submit">Sign in</button></div></form></dialog>
@@ -674,6 +715,7 @@ function validate(raw){
  for(const s of raw.systems){
   if(!s||typeof s.id!=='string'||ids.has(s.id)||typeof s.name!=='string'||!Number.isFinite(+s.x)||!Number.isFinite(+s.y))continue;
   ids.add(s.id);systems.push({id:s.id,name:s.name.slice(0,80),x:+s.x,y:+s.y,notes:typeof s.notes==='string'?s.notes.slice(0,2000):'',state:SYSTEM_STATES[s.state]?s.state:'peace',starColor:STAR_COLORS[s.starColor]?s.starColor:'',shape:starOpt(STAR_SHAPES,legacy&&s.shape==='four'?'eight':s.shape),design:starOpt(STAR_DESIGNS,s.design),size:starOpt(STAR_SIZES,s.size)});
+  const inner=sanitizeInterior(s.interior);if(inner)systems[systems.length-1].interior=inner; // the system's own layout (star system view)
  }
  const seen=new Set(),lanes=[];
  for(const l of raw.lanes){
@@ -995,7 +1037,7 @@ function renderPanel(){
  const p=$('panel'),admin=isAdmin();
  if(selected?.type==='system'&&sys(selected.id)){
   const s=sys(selected.id),links=lanesOf(s.id),admin=canEdit('systems'),laneAdmin=canEdit('lanes');
-  p.innerHTML=`<div class="panel-head"><div><div class="eyebrow">Star system</div><h2>${esc(s.name)}</h2><div class="muted">X ${Math.round(s.x)} · Y ${Math.round(s.y)}</div></div><div class="head-actions">${admin?`<button class="btn gear-btn" data-act="star-color" aria-label="Star appearance settings" aria-expanded="${colorMenuOpen}" title="Star appearance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/><circle cx="12" cy="12" r="6.5"/></svg></button>`:''}<a class="btn gear-btn" href="board.html#board-${esc(sectorBoardId(s.id))}" target="reliquary-forum" rel="opener" title="Open this sector's forum board" aria-label="Open the forum board for ${esc(s.name)} in a separate window"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-4 4v-4H4z"/><path d="M8 9h8M8 12h5"/></svg></a><button class="btn" data-act="close" aria-label="Back to system list">✕</button></div></div>`+
+  p.innerHTML=`<div class="panel-head"><div><div class="eyebrow">Star system</div><h2>${esc(s.name)}</h2><div class="muted">X ${Math.round(s.x)} · Y ${Math.round(s.y)}</div></div><div class="head-actions">${admin?`<button class="btn gear-btn" data-act="star-color" aria-label="Star appearance settings" aria-expanded="${colorMenuOpen}" title="Star appearance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/><circle cx="12" cy="12" r="6.5"/></svg></button>`:''}<button class="btn gear-btn" type="button" data-act="enter-system" title="Enter this star system" aria-label="Enter the ${esc(s.name)} star system"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5.5 5.5"/></svg></button><a class="btn gear-btn" href="board.html#board-${esc(sectorBoardId(s.id))}" target="reliquary-forum" rel="opener" title="Open this sector's forum board" aria-label="Open the forum board for ${esc(s.name)} in a separate window"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v10H9l-4 4v-4H4z"/><path d="M8 9h8M8 12h5"/></svg></a><button class="btn" data-act="close" aria-label="Back to system list">✕</button></div></div>`+
   (admin&&colorMenuOpen?`<div class="star-color-menu" role="group" aria-label="Star appearance">${[['shape','Shape',STAR_SHAPES,Object.keys(STAR_SHAPES)],['design','Design',STAR_DESIGNS,Object.keys(STAR_DESIGNS)],['size','Size',STAR_SIZES,STAR_SIZE_ORDER]].map(([f,title,table,keys])=>`<div class="field">${title}</div><div class="opt-row opt-${f}" role="group" aria-label="Star ${title.toLowerCase()}">${keys.map(k=>`<button class="btn" type="button" data-star-opt="${f}" data-value="${k}" aria-pressed="${starOpt(table,s[f])===k}">${table[k].label}</button>`).join('')}</div>`).join('')}<div class="field">Color <span class="muted">${esc(STAR_COLORS[s.starColor]?.label||'Default')}</span></div>${Object.entries(STAR_HUES).map(([hue,shades])=>`<div class="swatch-row"><span class="swatch-hue">${hue}</span>${Object.entries(shades).map(([shade,rgb])=>{const k=`${hue.toLowerCase()}-${shade.toLowerCase()}`;return `<button class="swatch" type="button" data-star-color="${k}" aria-pressed="${s.starColor===k}" aria-label="${esc(STAR_COLORS[k].label)}" title="${esc(STAR_COLORS[k].label)}" style="--sw:${rgb}"></button>`;}).join('')}</div>`).join('')}<button class="btn" type="button" data-star-color="" aria-pressed="${!s.starColor}">Default blue-white</button></div>`:'')+
   (isAdmin()?`<div class="traffic-control"><div class="field">System state</div><div class="state-picker" role="group" aria-label="System state">${Object.entries(SYSTEM_STATES).map(([k,c])=>`<button class="btn state-${k}" type="button" data-state="${k}" aria-pressed="${(s.state||'peace')===k}">${c.label}</button>`).join('')}</div></div>`:`<div class="traffic-control"><div class="field">System state <strong class="state-text-${s.state||'peace'}">${systemState(s).label}</strong></div></div>`)+
   (s.notes&&!admin?`<p class="notes">${esc(s.notes)}</p>`:'')+
@@ -1042,6 +1084,7 @@ $('panel').addEventListener('click',e=>{
  const act=e.target.closest('[data-act]')?.dataset.act;if(!act)return;
  if(act==='star-color'){colorMenuOpen=!colorMenuOpen;renderPanel();return;}
  if(act==='neb-reshape'){const n=neb(selected?.id);if(!n||!canEdit('nebulae'))return;n.seed=Math.random()*2147483647|0;save();dirty=true;return;}
+ if(act==='enter-system'){if(selected?.type==='system')svOpen(selected.id);return;}
  if(act==='close'){selected=null;renderPanel();dirty=true;}
  else if(act==='delete')deleteSelected();
  else if(act==='lane-from'&&canEdit('lanes')){setMode('lane');laneStart=selected.id;updateHint();dirty=true;}
@@ -2095,6 +2138,289 @@ if(BACKGROUND_IMAGE){bgImg=new Image();bgImg.onload=()=>dirty=true;bgImg.src=BAC
 resize();
 let startAdmin=false;try{startAdmin=sessionStorage.getItem(ADMIN_KEY)===ADMIN_HASH;}catch(e){}
 setAdmin(startAdmin);
+// ---- Star system view ----------------------------------------------------------------------------------------
+// The magnifying glass on a star system's details opens a view of the system itself: its star, the gates to every
+// connected system (placed in the direction of that system on the starmap, coloured by the lane's condition), the
+// traffic control station, planets, asteroids, asteroid fields and other stations, over a background nebula.
+// Systems the administrator has not edited are generated from the system id (everyone sees the same layout);
+// edits are saved as system.interior in the shared starmap. Gates always follow the current gate lanes.
+const SV_TYPES={control:'Traffic control station',station:'Space station',planet:'Planet',asteroid:'Asteroid',cluster:'Asteroid field'};
+const PLANET_STYLES={rocky:'Rocky',desert:'Desert',ocean:'Ocean world',ice:'Ice world',lava:'Volcanic',toxic:'Toxic',gas:'Gas giant',storm:'Storm giant'};
+const PLANET_PAL={rocky:['120,110,100','78,70,64','160,148,132','190,200,215'],desert:['205,160,95','150,105,58','228,195,140','230,200,160'],ocean:['36,92,170','22,58,118','86,150,92','140,200,255'],
+ ice:['196,222,240','140,172,200','238,246,255','200,235,255'],lava:['66,30,26','32,14,14','255,112,40','255,140,80'],toxic:['150,168,62','96,116,40','204,212,96','190,230,90'],
+ gas:['210,172,122','168,120,80','236,212,172','240,215,170'],storm:['88,128,200','56,86,158','172,202,242','150,190,255']};
+const STATION_STYLES={ring:'Ring',spindle:'Spindle',hub:'Hub',outpost:'Outpost'};
+const STATION_SIZES={small:['Small',45],medium:['Medium',80],large:['Large',130],huge:['Huge',200]};
+const SV_GATE_R=2500,SV_GATE_SIZE=95,SV_LIMIT=4200;
+function svHash(str){let h=2166136261;for(const c of String(str))h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0;}
+function sanitizeInterior(v){
+ if(!v||typeof v!=='object'||!Array.isArray(v.objects))return null;
+ const num=(x,d,a,b)=>Number.isFinite(+x)&&x!==null&&x!==''?clamp(+x,a,b):d,str=(x,n)=>typeof x==='string'?x.slice(0,n):'',bg=v.bg&&typeof v.bg==='object'?v.bg:{};
+ const out={v:1,bg:{color:bg.color==='none'||NEBULA_COLORS[bg.color]?bg.color:'violet',accent:NEBULA_COLORS[bg.accent]?bg.accent:'azure',density:num(bg.density,.55,0,1),stars:num(bg.stars,.7,0,1)},objects:[]};
+ const ids=new Set();
+ for(const o of v.objects.slice(0,300)){
+  if(!o||!SV_TYPES[o.type]||typeof o.id!=='string'||!o.id||ids.has(o.id))continue;ids.add(o.id);
+  const c={id:o.id.slice(0,24),type:o.type,name:str(o.name,80),x:num(o.x,0,-SV_LIMIT,SV_LIMIT),y:num(o.y,0,-SV_LIMIT,SV_LIMIT),seed:Number.isInteger(o.seed)?o.seed:svHash(o.id)};
+  if(o.type==='planet'){c.style=PLANET_STYLES[o.style]?o.style:'rocky';c.size=Math.round(num(o.size,300,80,900));c.rings=!!o.rings;}
+  else if(o.type==='asteroid')c.size=Math.round(num(o.size,40,8,180));
+  else if(o.type==='cluster'){c.count=Math.round(num(o.count,40,5,200));c.spread=Math.round(num(o.spread,260,60,900));}
+  else{c.style=STATION_STYLES[o.style]?o.style:'ring';c.size=STATION_SIZES[o.size]?o.size:'medium';}
+  out.objects.push(c);
+ }
+ if(!out.objects.some(o=>o.type==='control'))out.objects.unshift({id:'control',type:'control',name:'',x:650,y:0,seed:1,style:'ring',size:'large'});
+ return out;
+}
+function svGenerate(s,seed){
+ const r=rng(seed??svHash(s.id)),pick=a=>a[Math.floor(r()*a.length)],cols=Object.keys(NEBULA_COLORS).filter(c=>c!=='dust'),objs=[];
+ const free=(x,y,rad)=>Math.hypot(x,y)>rad+260&&Math.hypot(x,y)+rad<SV_GATE_R-200&&objs.every(o=>Math.hypot(o.x-x,o.y-y)>rad+(o.type==='planet'?o.size*(o.rings?1.9:1):o.type==='cluster'?o.spread:150)+120);
+ const place=(dMin,dMax,rad)=>{for(let i=0;i<40;i++){const a=r()*Math.PI*2,d=dMin+r()*(dMax-dMin),x=Math.cos(a)*d,y=Math.sin(a)*d;if(free(x,y,rad))return [Math.round(x),Math.round(y)];}const a=r()*Math.PI*2;return [Math.round(Math.cos(a)*dMax),Math.round(Math.sin(a)*dMax)];};
+ const [cx,cy]=place(560,760,140);objs.push({id:'control',type:'control',name:'',x:cx,y:cy,seed:Math.floor(r()*1e9),style:pick(['ring','hub','spindle']),size:'large'});
+ const np=Math.floor(r()*4),num=['I','II','III','IV','V'];
+ for(let i=0;i<np;i++){const size=Math.round(240+r()*320),rings=r()<.3,[x,y]=place(1150,2000,size*(rings?1.9:1));objs.push({id:'p'+i,type:'planet',name:`${s.name} ${num[i]}`,x,y,seed:Math.floor(r()*1e9),style:pick(Object.keys(PLANET_STYLES)),size,rings});}
+ const nc=Math.floor(r()*3);for(let i=0;i<nc;i++){const spread=Math.round(180+r()*260),[x,y]=place(900,2100,spread);objs.push({id:'c'+i,type:'cluster',name:'Asteroid field',x,y,seed:Math.floor(r()*1e9),count:Math.round(25+r()*60),spread});}
+ if(r()<.45){const [x,y]=place(800,2000,120);objs.push({id:'s0',type:'station',name:`${s.name} Station`,x,y,seed:Math.floor(r()*1e9),style:pick(['ring','spindle','hub','outpost']),size:pick(['small','medium','medium','large'])});}
+ return sanitizeInterior({bg:{color:pick(cols),accent:pick(cols),density:Math.round((.35+r()*.45)*100)/100,stars:.7},objects:objs});
+}
+const SV={open:false,id:null,cam:{x:0,y:0,z:.2},sel:null,placing:null,drag:null,down:null,gen:new Map(),cache:new Map(),bgKey:'',bgCanvas:null,stars:null,ships:[],shipKey:'',admin:null,last:0,saveTimer:0};
+const svCanvas=()=>$('sv-canvas');
+function svSys(){return sys(SV.id);}
+function svInterior(s=svSys()){if(!s)return null;if(s.interior)return s.interior;let g=SV.gen.get(s.id);if(!g){g=svGenerate(s);SV.gen.set(s.id,g);}return g;}
+function svOwn(){const s=svSys();if(!s)return null;if(!s.interior)s.interior=JSON.parse(JSON.stringify(svInterior(s)));return s.interior;} // the editable copy
+function svCommit(msg){ // admin edits save to the shared starmap (batched)
+ if(!isAdmin())return;clearTimeout(SV.saveTimer);SV.saveTimer=setTimeout(()=>{save();dirty=true;},350);if(msg)toast(msg);
+}
+function svObj(id){const it=svInterior();return it&&it.objects.find(o=>o.id===id);}
+function svGates(s){
+ return lanesOf(s.id).map(l=>{const o=sys(l.a===s.id?l.b:l.a);if(!o)return null;const a=Math.atan2(o.y-s.y,o.x-s.x);
+  const cond=l.condition==='closed'?'closed':(isHostile(s)||isHostile(o))?'caution':(l.condition||'open');
+  return {id:'gate:'+l.id,lane:l,to:o,x:Math.cos(a)*SV_GATE_R,y:Math.sin(a)*SV_GATE_R,angle:a,cond};}).filter(Boolean);
+}
+function svStarR(s){return 150*(STAR_SIZES[s.size]?.scale||1);}
+function svName(o,s){return o.type==='control'?(o.name||`${s.name} Traffic Control`):(o.name||SV_TYPES[o.type]);}
+// ---------- opening and closing ----------
+function svOpen(id){
+ const s=sys(id);if(!s)return;SV.open=true;SV.id=id;SV.sel=null;SV.placing=null;SV.drag=null;SV.ships=[];SV.shipKey='';SV.bgKey='';
+ $('sv').hidden=false;document.body.classList.add('sv-open');$('sv-name').textContent=s.name;svFit();svTools();svInfo();svHint();
+ svCanvas().focus({preventScroll:true});requestAnimationFrame(svFrame);
+}
+function svClose(){SV.open=false;$('sv').hidden=true;document.body.classList.remove('sv-open');clearTimeout(SV.saveTimer);if(SV.saveTimer&&isAdmin())save();SV.saveTimer=0;dirty=true;}
+function svFit(){const c=svCanvas(),w=c.clientWidth||innerWidth,h=c.clientHeight||innerHeight;SV.cam={x:0,y:0,z:Math.min(w,h)/(SV_GATE_R*2+700)};}
+function svHint(t){const h=$('sv-hint');const msg=t||(SV.placing?`Click in the system to place the new ${SV_TYPES[SV.placing].toLowerCase()}. Esc cancels.`:'Drag to move around · mouse wheel or Q / E to zoom · click anything for details');h.textContent=msg;}
+// ---------- admin tools ----------
+function svTools(){
+ const el=$('sv-tools'),admin=isAdmin();SV.admin=admin;el.hidden=!admin;if(!admin){SV.placing=null;return;}
+ const it=svInterior(),bg=it.bg,s=svSys();
+ const colOpts=(sel,none)=>(none?`<option value="none"${sel==='none'?' selected':''}>None</option>`:'')+Object.entries(NEBULA_COLORS).map(([k,[l]])=>`<option value="${k}"${sel===k?' selected':''}>${l}</option>`).join('');
+ el.innerHTML=`<h3>Admin tools</h3><p class="sv-small">Only you can change this system. Changes save automatically.</p>`+
+  `<div class="sv-group"><span class="sv-lbl">Add</span><div class="sv-add">${['planet','asteroid','cluster','station'].map(t=>`<button class="btn" type="button" data-sv-add="${t}" aria-pressed="${SV.placing===t}">${t==='cluster'?'Asteroid field':t==='station'?'Space station':SV_TYPES[t]}</button>`).join('')}</div></div>`+
+  `<div class="sv-group"><span class="sv-lbl">Background nebula</span><label class="sv-field">Colour<select data-sv-bg="color">${colOpts(bg.color,true)}</select></label><label class="sv-field">Accent<select data-sv-bg="accent">${colOpts(bg.accent)}</select></label>`+
+  `<label class="sv-field">Density<input type="range" min="0" max="100" value="${Math.round(bg.density*100)}" data-sv-bg="density"></label><label class="sv-field">Star field<input type="range" min="0" max="100" value="${Math.round(bg.stars*100)}" data-sv-bg="stars"></label></div>`+
+  `<div class="sv-group"><span class="sv-lbl">Layout</span><button class="btn" type="button" data-sv-layout="random">New random layout</button><button class="btn" type="button" data-sv-layout="reset"${s&&s.interior?'':' disabled'}>Reset to automatic</button></div>`;
+}
+// ---------- details panel ----------
+function svInfo(){
+ const el=$('sv-info'),s=svSys();if(!s){el.hidden=true;return;}const sel=SV.sel,admin=isAdmin();
+ if(!sel){el.hidden=true;return;}el.hidden=false;
+ const x='<button class="btn sv-x" type="button" data-sv-desel aria-label="Close details">✕</button>';
+ if(sel==='star'){const c=STAR_COLORS[s.starColor];el.innerHTML=`<div class="sv-ih"><div><span class="eyebrow">Star</span><h3>${esc(s.name)}</h3></div>${x}</div><dl class="sv-dl"><dt>Colour</dt><dd>${esc(c?c.label:'Standard')}</dd><dt>Size</dt><dd>${esc(STAR_SIZES[s.size]?.label||'Medium')}</dd><dt>State</dt><dd>${esc(systemState(s).label)}</dd></dl>`;return;}
+ if(sel.startsWith('gate:')){const g=svGates(s).find(g=>g.id===sel);if(!g){SV.sel=null;el.hidden=true;return;}
+  el.innerHTML=`<div class="sv-ih"><div><span class="eyebrow">Jump gate</span><h3>Gate to ${esc(g.to.name)}</h3></div>${x}</div><dl class="sv-dl"><dt>Lane</dt><dd>${esc(g.lane.name||s.name+' ⟷ '+g.to.name)}</dd><dt>Condition</dt><dd class="sv-c-${g.cond}">${esc(LANE_CONDITIONS[g.cond].label)}</dd><dt>Traffic</dt><dd>${g.lane.traffic} / 10</dd></dl><button class="btn primary" type="button" data-sv-go="${esc(g.to.id)}">Enter ${esc(g.to.name)}</button>`;return;}
+ const o=svObj(sel);if(!o){SV.sel=null;el.hidden=true;return;}
+ const row=(l,v)=>`<dt>${l}</dt><dd>${esc(v)}</dd>`,opt=(map,cur)=>Object.entries(map).map(([k,v])=>`<option value="${k}"${k===cur?' selected':''}>${esc(Array.isArray(v)?v[0]:v)}</option>`).join('');
+ let view='',edit='';
+ if(o.type==='planet'){view=row('Type',PLANET_STYLES[o.style])+row('Diameter',`${(o.size*96).toLocaleString('en-US')} km`)+(o.rings?row('Rings','Yes'):'');
+  edit=`<label class="sv-field">Type<select data-sv-f="style">${opt(PLANET_STYLES,o.style)}</select></label><label class="sv-field">Size<input type="range" min="80" max="900" value="${o.size}" data-sv-f="size"></label><label class="sv-check"><input type="checkbox" data-sv-f="rings"${o.rings?' checked':''}> Rings</label>`;}
+ else if(o.type==='asteroid'){view=row('Size',`${(o.size*40).toLocaleString('en-US')} m across`);edit=`<label class="sv-field">Size<input type="range" min="8" max="180" value="${o.size}" data-sv-f="size"></label>`;}
+ else if(o.type==='cluster'){view=row('Asteroids',`About ${o.count}`);edit=`<label class="sv-field">Number of asteroids<input type="range" min="5" max="200" value="${o.count}" data-sv-f="count"></label><label class="sv-field">Spread<input type="range" min="60" max="900" value="${o.spread}" data-sv-f="spread"></label>`;}
+ else{view=row('Design',STATION_STYLES[o.style])+row('Size',STATION_SIZES[o.size][0])+(o.type==='control'?row('Role','Issues gate clearance and controls traffic'):'');
+  edit=`<label class="sv-field">Design<select data-sv-f="style">${opt(STATION_STYLES,o.style)}</select></label><label class="sv-field">Size<select data-sv-f="size">${opt(STATION_SIZES,o.size)}</select></label>`;}
+ el.innerHTML=`<div class="sv-ih"><div><span class="eyebrow">${esc(SV_TYPES[o.type])}</span><h3>${esc(svName(o,s))}</h3></div>${x}</div>`+(admin?'':`<dl class="sv-dl">${view}</dl>`)+
+  (admin?`<div class="sv-edit"><label class="sv-field">Name<input maxlength="80" value="${esc(o.name)}" placeholder="${esc(svName(o,s))}" data-sv-f="name"></label>${edit}<p class="sv-small">Drag it in the view to move it.</p>${o.type==='control'?'':`<button class="btn danger" type="button" data-sv-del>Delete</button>`}</div>`:'');
+}
+// ---------- drawing ----------
+function svBackground(w,h,s,it){
+ const key=[s.id,it.bg.color,it.bg.accent,it.bg.density,w>>6,h>>6].join('|');if(key===SV.bgKey&&SV.bgCanvas)return SV.bgCanvas;
+ const c=document.createElement('canvas'),W=c.width=Math.ceil(w/2)+64,H=c.height=Math.ceil(h/2)+64,x=c.getContext('2d'),r=rng(svHash(s.id+'bg'));
+ if(it.bg.color!=='none'&&it.bg.density>0){
+  const c1=NEBULA_COLORS[it.bg.color][1],c2=NEBULA_COLORS[it.bg.accent][1];x.globalCompositeOperation='lighter';
+  for(let i=0;i<70;i++){const px=r()*W,py=H*.5+(r()-.5)*H*(.55+.5*r()),rad=(.08+r()*.32)*Math.max(W,H),col=r()<.68?c1:c2,a=(.02+r()*.06)*it.bg.density*1.6;
+   const g=x.createRadialGradient(px,py,0,px,py,rad);g.addColorStop(0,`rgba(${col},${a})`);g.addColorStop(1,`rgba(${col},0)`);x.fillStyle=g;x.fillRect(0,0,W,H);}
+  x.globalCompositeOperation='destination-out'; // dark dust lanes
+  for(let i=0;i<14;i++){const px=r()*W,py=r()*H,rad=(.05+r()*.18)*W,g=x.createRadialGradient(px,py,0,px,py,rad);g.addColorStop(0,`rgba(0,0,0,${.25*it.bg.density})`);g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,W,H);}
+ }
+ SV.bgKey=key;SV.bgCanvas=c;return c;
+}
+function svStarField(s){if(SV.stars&&SV.stars.id===s.id)return SV.stars;const r=rng(svHash(s.id+'stars')),list=[];for(let i=0;i<420;i++)list.push([r()*2048,r()*2048,r()<.08?1.6:r()<.3?1.1:.7,.35+r()*.65,r()]);return SV.stars={id:s.id,list};}
+function svPlanetImage(o){
+ const light=Math.atan2(-o.y,-o.x),key=[o.style,o.size,o.rings,o.seed,Math.round(light*20)].join('|'),hit=SV.cache.get(o.id);if(hit&&hit.key===key)return hit;
+ const R=Math.min(360,Math.max(60,o.size)),pad=o.rings?R*.95:R*.18,S=Math.ceil((R+pad)*2),c=document.createElement('canvas');c.width=c.height=S;const x=c.getContext('2d'),m=S/2,pal=PLANET_PAL[o.style],r=rng(o.seed);
+ const ringTilt=.28,ringRot=(r()-.5)*.8;
+ const ring=(front)=>{if(!o.rings)return;x.save();x.translate(m,m);x.rotate(ringRot);x.scale(1,ringTilt);x.beginPath();if(front)x.arc(0,0,R*1.0001,0,Math.PI);else x.arc(0,0,R,Math.PI,Math.PI*2);x.restore();
+  x.save();x.translate(m,m);x.rotate(ringRot);x.scale(1,ringTilt);for(const [rr,w,a] of [[R*1.4,R*.14,.5],[R*1.62,R*.22,.38],[R*1.85,R*.1,.25]]){x.beginPath();x.ellipse(0,0,rr,rr,0,front?0:Math.PI,front?Math.PI:Math.PI*2);x.lineWidth=w;x.strokeStyle=`rgba(${pal[2]},${a})`;x.stroke();}x.restore();};
+ ring(false);
+ // atmosphere glow
+ const ag=x.createRadialGradient(m,m,R*.95,m,m,R*1.16);ag.addColorStop(0,`rgba(${pal[3]},.45)`);ag.addColorStop(1,`rgba(${pal[3]},0)`);x.fillStyle=ag;x.beginPath();x.arc(m,m,R*1.16,0,Math.PI*2);x.fill();
+ x.save();x.beginPath();x.arc(m,m,R,0,Math.PI*2);x.clip();
+ const base=x.createRadialGradient(m-R*.3,m-R*.3,R*.1,m,m,R);base.addColorStop(0,`rgb(${pal[2]})`);base.addColorStop(.55,`rgb(${pal[0]})`);base.addColorStop(1,`rgb(${pal[1]})`);x.fillStyle=base;x.fillRect(m-R,m-R,R*2,R*2);
+ if(o.style==='gas'||o.style==='storm'){ // banded giants
+  x.save();x.translate(m,m);x.rotate((r()-.5)*.5);for(let i=0;i<26;i++){const y=-R+(i/26)*2*R,hgt=R*(.04+r()*.1),col=pal[Math.floor(r()*3)];x.fillStyle=`rgba(${col},${.25+r()*.35})`;x.beginPath();x.moveTo(-R,y);for(let k=0;k<=24;k++){const xx=-R+k*R/12;x.lineTo(xx,y+Math.sin(k*.7+i)*hgt*.25);}x.lineTo(R,y+hgt);x.lineTo(-R,y+hgt);x.fill();}
+  if(o.style==='storm'||r()<.5){x.fillStyle=`rgba(${pal[2]},.55)`;x.beginPath();x.ellipse((r()-.5)*R,(r()-.2)*R*.6,R*.18,R*.09,0,0,Math.PI*2);x.fill();}x.restore();
+ }else{
+  for(let i=0;i<60;i++){const px=m+(r()*2-1)*R,py=m+(r()*2-1)*R,rr=R*(.04+r()*.22);x.fillStyle=o.style==='ocean'?`rgba(${r()<.7?pal[2]:'200,190,150'},${.35+r()*.35})`:`rgba(${pal[Math.floor(r()*3)]},${.18+r()*.3})`;x.beginPath();
+   for(let k=0;k<9;k++){const a=k/9*Math.PI*2,d=rr*(.6+r()*.6);k?x.lineTo(px+Math.cos(a)*d,py+Math.sin(a)*d):x.moveTo(px+Math.cos(a)*d,py+Math.sin(a)*d);}x.fill();}
+  if(o.style==='lava'){x.strokeStyle='rgba(255,140,50,.75)';x.lineWidth=Math.max(1,R*.012);for(let i=0;i<22;i++){let px=m+(r()*2-1)*R,py=m+(r()*2-1)*R;x.beginPath();x.moveTo(px,py);for(let k=0;k<6;k++){px+=(r()-.5)*R*.25;py+=(r()-.5)*R*.25;x.lineTo(px,py);}x.stroke();}}
+  if(o.style==='ice'||o.style==='rocky'||o.style==='desert'){for(let i=0;i<18;i++){const px=m+(r()*2-1)*R,py=m+(r()*2-1)*R,rr=R*(.02+r()*.06);x.strokeStyle='rgba(0,0,0,.18)';x.lineWidth=Math.max(1,rr*.25);x.beginPath();x.arc(px,py,rr,0,Math.PI*2);x.stroke();}}
+  if(o.style==='ocean'||o.style==='ice'){x.fillStyle='rgba(255,255,255,.5)';for(const sy of [-1,1]){x.beginPath();x.ellipse(m,m+sy*R*.93,R*.55,R*.14,0,0,Math.PI*2);x.fill();}}
+ }
+ // lit side and shadow (the star is at the centre of the system)
+ const lx=Math.cos(light),ly=Math.sin(light),sh=x.createLinearGradient(m+lx*R,m+ly*R,m-lx*R,m-ly*R);sh.addColorStop(0,'rgba(255,255,255,.12)');sh.addColorStop(.42,'rgba(0,0,0,0)');sh.addColorStop(.62,'rgba(0,0,0,.55)');sh.addColorStop(1,'rgba(0,0,0,.92)');x.fillStyle=sh;x.fillRect(m-R,m-R,R*2,R*2);
+ x.restore();
+ ring(true);
+ const img={key,c,R,S};SV.cache.set(o.id,img);return img;
+}
+function svRock(seed,n=11){const r=rng(seed),pts=[];for(let k=0;k<n;k++){const a=k/n*Math.PI*2,d=.65+r()*.45;pts.push([Math.cos(a)*d,Math.sin(a)*d]);}return pts;}
+function svDrawRock(x,px,py,rad,pts,rot){x.save();x.translate(px,py);x.rotate(rot);x.beginPath();pts.forEach(([a,b],i)=>i?x.lineTo(a*rad,b*rad):x.moveTo(a*rad,b*rad));x.closePath();const g=x.createLinearGradient(-rad,-rad,rad,rad);g.addColorStop(0,'#9a948c');g.addColorStop(1,'#3a3632');x.fillStyle=g;x.fill();x.strokeStyle='rgba(0,0,0,.35)';x.lineWidth=Math.max(.5,rad*.06);x.stroke();x.restore();}
+function svDrawStation(x,o,px,py,z,t){
+ const size=STATION_SIZES[o.size][1],k=size*z/100;if(k<.02){x.fillStyle='#cfe7ff';x.fillRect(px-1,py-1,2,2);return;}
+ x.save();x.translate(px,py);x.scale(k,k);const metal='#9aa8b6',dark='#4b5663',blink=(t*1.3+o.seed%7)%2<.35;const light=(lx,ly,col)=>{x.fillStyle=blink?col:'rgba(0,0,0,0)';x.beginPath();x.arc(lx,ly,4,0,Math.PI*2);x.fill();};
+ if(o.style==='ring'){x.rotate(t*.06);x.lineWidth=16;x.strokeStyle=dark;x.beginPath();x.arc(0,0,86,0,Math.PI*2);x.stroke();x.lineWidth=10;x.strokeStyle=metal;x.stroke();
+  x.lineWidth=6;for(let i=0;i<4;i++){x.rotate(Math.PI/2);x.beginPath();x.moveTo(20,0);x.lineTo(80,0);x.stroke();}x.fillStyle=metal;x.beginPath();x.arc(0,0,24,0,Math.PI*2);x.fill();x.fillStyle=dark;x.beginPath();x.arc(0,0,11,0,Math.PI*2);x.fill();
+  for(let i=0;i<8;i++){const a=i/8*Math.PI*2;x.fillStyle='rgba(255,230,160,.85)';x.fillRect(Math.cos(a)*86-2,Math.sin(a)*86-2,4,4);}light(0,-96,'#ff5040');light(0,96,'#40ff80');}
+ else if(o.style==='spindle'){x.fillStyle='#3a5a8a';for(const sx of [-1,1]){x.fillRect(sx*22,-40,sx*62,24);x.fillRect(sx*22,16,sx*62,24);}x.strokeStyle='rgba(160,200,255,.4)';x.lineWidth=1.5;for(const sx of [-1,1])for(let i=1;i<6;i++){x.beginPath();x.moveTo(sx*(22+i*10.3),-40);x.lineTo(sx*(22+i*10.3),-16);x.moveTo(sx*(22+i*10.3),16);x.lineTo(sx*(22+i*10.3),40);x.stroke();}
+  x.fillStyle=metal;x.fillRect(-12,-100,24,200);x.fillStyle=dark;for(let i=-3;i<=3;i++)x.fillRect(-18,i*26-6,36,12);x.strokeStyle=metal;x.lineWidth=7;x.beginPath();x.ellipse(0,0,46,14,0,0,Math.PI*2);x.stroke();light(0,-104,'#ff5040');light(0,104,'#40ff80');}
+ else if(o.style==='hub'){x.rotate(t*.03);x.strokeStyle=metal;x.lineWidth=8;for(let i=0;i<6;i++){const a=i/6*Math.PI*2;x.beginPath();x.moveTo(Math.cos(a)*30,Math.sin(a)*30);x.lineTo(Math.cos(a)*78,Math.sin(a)*78);x.stroke();x.fillStyle=dark;x.beginPath();x.arc(Math.cos(a)*84,Math.sin(a)*84,15,0,Math.PI*2);x.fill();x.fillStyle='rgba(255,220,150,.8)';x.fillRect(Math.cos(a)*84-3,Math.sin(a)*84-3,6,6);}
+  const g=x.createRadialGradient(-10,-10,4,0,0,38);g.addColorStop(0,'#dfe8f0');g.addColorStop(1,'#56616d');x.fillStyle=g;x.beginPath();x.arc(0,0,38,0,Math.PI*2);x.fill();light(0,0,'#ffffff');}
+ else{x.fillStyle=dark;x.fillRect(-60,-22,70,44);x.fillStyle=metal;x.fillRect(-20,-40,48,34);x.fillRect(4,0,56,30);x.fillStyle='#3a5a8a';x.fillRect(-92,-14,30,28);x.strokeStyle=metal;x.lineWidth=4;x.beginPath();x.moveTo(30,-40);x.lineTo(46,-80);x.stroke();x.beginPath();x.arc(46,-84,10,Math.PI*.1,Math.PI*1.1);x.stroke();light(46,-84,'#ff5040');x.fillStyle='rgba(255,230,160,.85)';for(let i=0;i<4;i++)x.fillRect(-14+i*10,-30,4,4);}
+ if(o.type==='control'){const p=(t*.5)%1;x.strokeStyle=`rgba(120,255,170,${.6*(1-p)})`;x.lineWidth=3/Math.max(k,.2)*.6;x.beginPath();x.arc(0,0,110+p*160,0,Math.PI*2);x.stroke();}
+ x.restore();
+}
+function svDrawGate(x,g,px,py,z,t){
+ const R=SV_GATE_SIZE*z,col=LANE_CONDITIONS[g.cond].colors[1];if(R<2){x.fillStyle=`rgb(${col})`;x.beginPath();x.arc(px,py,2.5,0,Math.PI*2);x.fill();return;}
+ x.save();x.translate(px,py);x.rotate(g.angle+Math.PI/2);
+ const glow=x.createRadialGradient(0,0,R*.2,0,0,R*1.9);glow.addColorStop(0,`rgba(${col},${g.cond==='closed'?.12:.35})`);glow.addColorStop(1,`rgba(${col},0)`);x.fillStyle=glow;x.beginPath();x.arc(0,0,R*1.9,0,Math.PI*2);x.fill();
+ if(g.cond!=='closed'){x.save();x.beginPath();x.arc(0,0,R*.86,0,Math.PI*2);x.clip();x.rotate(t*(g.cond==='open'?.8:.35));for(let i=0;i<6;i++){x.rotate(Math.PI/3);x.strokeStyle=`rgba(${col},.35)`;x.lineWidth=R*.08;x.beginPath();x.arc(R*.25,0,R*.55,Math.PI*.6,Math.PI*1.4);x.stroke();}x.restore();
+  const core=x.createRadialGradient(0,0,0,0,0,R*.86);core.addColorStop(0,`rgba(255,255,255,.45)`);core.addColorStop(.4,`rgba(${col},.25)`);core.addColorStop(1,`rgba(${col},.05)`);x.fillStyle=core;x.beginPath();x.arc(0,0,R*.86,0,Math.PI*2);x.fill();}
+ x.lineWidth=R*.2;x.strokeStyle='#4a5560';x.beginPath();x.arc(0,0,R,0,Math.PI*2);x.stroke();x.lineWidth=R*.08;x.strokeStyle='#9aa8b6';x.stroke();
+ for(let i=0;i<8;i++){const a=i/8*Math.PI*2,on=g.cond!=='closed'?((t*2+i)%8)<1.2:(t%2)<1;x.fillStyle=on?`rgb(${col})`:'rgba(40,40,40,.9)';x.beginPath();x.arc(Math.cos(a)*R,Math.sin(a)*R,R*.07,0,Math.PI*2);x.fill();}
+ x.restore();
+}
+function svShips(s,it,gates){
+ const ctl=it.objects.find(o=>o.type==='control'),key=gates.map(g=>g.id+g.cond+g.lane.traffic).join()+'|'+(ctl?ctl.x+','+ctl.y:'');if(key===SV.shipKey)return SV.ships;
+ const r=rng(svHash(s.id+'ships')),ships=[];
+ for(const g of gates){if(g.cond==='closed'||!ctl)continue;const n=Math.max(1,Math.round(g.lane.traffic*(g.cond==='caution'?.25:.5)));
+  for(let i=0;i<n;i++)ships.push({g,out:r()<.5,p:r(),v:.025+r()*.03,bend:(r()-.5)*.6});}
+ SV.shipKey=key;return SV.ships=ships;
+}
+function svFrame(now){
+ if(!SV.open)return;requestAnimationFrame(svFrame);
+ const s=svSys();if(!s){svClose();toast('This system was removed from the starmap.');return;}
+ if(SV.admin!==isAdmin()){svTools();svInfo();}
+ const c=svCanvas(),dpr=Math.min(2,devicePixelRatio||1),w=c.clientWidth,h=c.clientHeight;if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);}
+ const x=c.getContext('2d'),t=now/1000,dt=Math.min(.05,(now-(SV.last||now))/1000);SV.last=now;
+ if(SV.keys&&SV.keys.size){const sp=600/SV.cam.z*dt;let dx=0,dy=0;if(SV.keys.has('w')||SV.keys.has('arrowup'))dy--;if(SV.keys.has('s')||SV.keys.has('arrowdown'))dy++;if(SV.keys.has('a')||SV.keys.has('arrowleft'))dx--;if(SV.keys.has('d')||SV.keys.has('arrowright'))dx++;SV.cam.x+=dx*sp;SV.cam.y+=dy*sp;
+  if(SV.keys.has('q'))svZoom(1+dt*1.5,w/2,h/2);if(SV.keys.has('e'))svZoom(1/(1+dt*1.5),w/2,h/2);}
+ const it=svInterior(s),z=SV.cam.z,sx=wx=>(wx-SV.cam.x)*z+w/2,sy=wy=>(wy-SV.cam.y)*z+h/2;
+ x.setTransform(dpr,0,0,dpr,0,0);x.fillStyle='#01030a';x.fillRect(0,0,w,h);
+ // background nebula (slow parallax) and stars
+ const bgc=svBackground(w,h,s,it),ox=(-SV.cam.x*.02)%64,oy=(-SV.cam.y*.02)%64;x.globalAlpha=1;x.drawImage(bgc,-64+ox+32,-64+oy+32,bgc.width*2,bgc.height*2);
+ if(it.bg.stars>0){const st=svStarField(s),n=Math.round(st.list.length*it.bg.stars);for(let i=0;i<n;i++){const [a,b,sz,al,tw]=st.list[i],px=((a-SV.cam.x*.05*(1+tw))%2048+2048)%2048,py=((b-SV.cam.y*.05*(1+tw))%2048+2048)%2048;if(px>w||py>h)continue;x.fillStyle=`rgba(230,240,255,${al*(.75+.25*Math.sin(t*2+i))})`;x.fillRect(px,py,sz,sz);}}
+ // star
+ const sc=starColor(s),sr=svStarR(s)*z,spx=sx(0),spy=sy(0);
+ const corona=x.createRadialGradient(spx,spy,sr*.3,spx,spy,sr*6);corona.addColorStop(0,`rgba(${sc.glow},.55)`);corona.addColorStop(.25,`rgba(${sc.glow},.16)`);corona.addColorStop(1,`rgba(${sc.glow},0)`);x.fillStyle=corona;x.beginPath();x.arc(spx,spy,sr*6,0,Math.PI*2);x.fill();
+ const core=x.createRadialGradient(spx,spy,0,spx,spy,Math.max(1,sr));core.addColorStop(0,'#fff');core.addColorStop(.6,sc.core);core.addColorStop(1,`rgba(${sc.glow},.9)`);x.fillStyle=core;x.beginPath();x.arc(spx,spy,Math.max(1.5,sr),0,Math.PI*2);x.fill();
+ const gates=svGates(s),labels=[];
+ // orbits (faint) and objects: fields, planets, asteroids, stations
+ x.strokeStyle='rgba(150,190,230,.07)';x.lineWidth=1;for(const o of it.objects)if(o.type==='planet'||o.type==='control'){x.beginPath();x.arc(spx,spy,Math.hypot(o.x,o.y)*z,0,Math.PI*2);x.stroke();}
+ for(const o of it.objects){
+  const px=sx(o.x),py=sy(o.y);
+  if(o.type==='cluster'){const r=rng(o.seed),rad=o.spread*z;if(px<-rad-50||px>w+rad+50||py<-rad-50||py>h+rad+50)continue;
+   for(let i=0;i<o.count;i++){const a=r()*Math.PI*2,d=Math.sqrt(r())*o.spread,rs=(6+r()*r()*30),pts=svRock(o.seed+i,9),rot=r()*6+t*(r()-.5)*.1;const ax=px+Math.cos(a)*d*z,ay=py+Math.sin(a)*d*.75*z;if(rs*z<.8){x.fillStyle='rgba(170,160,150,.8)';x.fillRect(ax,ay,1.2,1.2);}else svDrawRock(x,ax,ay,rs*z,pts,rot);}
+   labels.push([px,py+o.spread*z*.8+14,svName(o,s),'#c9c2b8',o.id]);}
+  else if(o.type==='planet'){const img=svPlanetImage(o),sz=img.S*(o.size/img.R)*z;if(px+sz<0||px-sz>w||py+sz<0||py-sz>h)continue;x.drawImage(img.c,px-sz/2,py-sz/2,sz,sz);labels.push([px,py+o.size*z+18,svName(o,s),'#d8e8ff',o.id]);}
+  else if(o.type==='asteroid'){svDrawRock(x,px,py,Math.max(1.5,o.size*z),svRock(o.seed),o.seed%6+t*.05);labels.push([px,py+o.size*z+14,svName(o,s),'#c9c2b8',o.id]);}
+ }
+ for(const g of gates){const px=sx(g.x),py=sy(g.y);svDrawGate(x,g,px,py,z,t);labels.push([px,py+SV_GATE_SIZE*z+18,`Gate to ${g.to.name}`,`rgb(${LANE_CONDITIONS[g.cond].colors[2]})`,g.id,LANE_CONDITIONS[g.cond].label]);}
+ // traffic between the gates and traffic control
+ const ctl=it.objects.find(o=>o.type==='control');
+ for(const sh of svShips(s,it,gates)){sh.p+=sh.v*dt*(900/Math.hypot(sh.g.x-ctl.x,sh.g.y-ctl.y));if(sh.p>=1){sh.p=0;sh.out=!sh.out;}
+  const [ax,ay,bx,by]=sh.out?[ctl.x,ctl.y,sh.g.x,sh.g.y]:[sh.g.x,sh.g.y,ctl.x,ctl.y],e=sh.p<.5?2*sh.p*sh.p:1-Math.pow(-2*sh.p+2,2)/2,mx=(ax+bx)/2+(by-ay)*sh.bend*.3,my=(ay+by)/2-(bx-ax)*sh.bend*.3;
+  const qx=(1-e)*(1-e)*ax+2*(1-e)*e*mx+e*e*bx,qy=(1-e)*(1-e)*ay+2*(1-e)*e*my+e*e*by,dx=2*(1-e)*(mx-ax)+2*e*(bx-mx),dy=2*(1-e)*(my-ay)+2*e*(by-my),ang=Math.atan2(dy,dx),px=sx(qx),py=sy(qy),k=Math.max(2.2,9*z);
+  const col=LANE_CONDITIONS[sh.g.cond].colors[2];x.strokeStyle=`rgba(${col},.35)`;x.lineWidth=Math.max(1,k*.35);x.beginPath();x.moveTo(px,py);x.lineTo(px-Math.cos(ang)*k*4,py-Math.sin(ang)*k*4);x.stroke();
+  x.fillStyle='#e8f2ff';x.beginPath();x.moveTo(px+Math.cos(ang)*k,py+Math.sin(ang)*k);x.lineTo(px+Math.cos(ang+2.5)*k*.7,py+Math.sin(ang+2.5)*k*.7);x.lineTo(px+Math.cos(ang-2.5)*k*.7,py+Math.sin(ang-2.5)*k*.7);x.fill();}
+ for(const o of it.objects)if(o.type==='station'||o.type==='control'){const px=sx(o.x),py=sy(o.y);svDrawStation(x,o,px,py,z,t);labels.push([px,py+STATION_SIZES[o.size][1]*z+18,svName(o,s),o.type==='control'?'#9dffc4':'#d8e8ff',o.id,o.type==='control'?'Traffic control':'']);}
+ // selection ring and labels
+ if(SV.sel){const b=svBounds(SV.sel,it,gates,s);if(b){const px=sx(b[0]),py=sy(b[1]),rr=Math.max(10,b[2]*z+8);x.strokeStyle='rgba(152,220,255,.85)';x.setLineDash([6,5]);x.lineWidth=1.5;x.beginPath();x.arc(px,py,rr,0,Math.PI*2);x.stroke();x.setLineDash([]);}}
+ x.textAlign='center';x.font='600 12px system-ui,Segoe UI,Arial';x.lineWidth=3;x.strokeStyle='rgba(0,0,0,.75)';
+ for(const [px,py,txt,col,id,sub] of labels){if(px<-200||px>w+200||py<-40||py>h+40)continue;if(z<.06&&!String(id).startsWith('gate:')&&id!=='control')continue;x.fillStyle=col;x.strokeText(txt,px,py);x.fillText(txt,px,py);if(sub){x.font='11px system-ui,Segoe UI,Arial';x.fillStyle='rgba(200,215,230,.75)';x.strokeText(sub,px,py+14);x.fillText(sub,px,py+14);x.font='600 12px system-ui,Segoe UI,Arial';}}
+ x.fillStyle='rgba(255,255,255,.9)';x.strokeText(s.name,spx,spy+Math.max(sr,6)+18);x.fillText(s.name,spx,spy+Math.max(sr,6)+18);
+}
+function svBounds(id,it,gates,s){ // [x, y, radius] in system units
+ if(id==='star')return [0,0,svStarR(s)];if(id.startsWith('gate:')){const g=gates.find(g=>g.id===id);return g&&[g.x,g.y,SV_GATE_SIZE*1.2];}
+ const o=it.objects.find(o=>o.id===id);if(!o)return null;
+ return [o.x,o.y,o.type==='planet'?o.size:o.type==='cluster'?o.spread:o.type==='asteroid'?o.size+6:STATION_SIZES[o.size][1]*1.05];
+}
+function svHit(wx,wy){
+ const s=svSys(),it=svInterior(s),gates=svGates(s),z=SV.cam.z,pad=10/z,near=(x,y,r)=>Math.hypot(wx-x,wy-y)<=r+pad;
+ for(const o of [...it.objects].reverse())if((o.type==='station'||o.type==='control')&&near(o.x,o.y,STATION_SIZES[o.size][1]))return o.id;
+ for(const g of gates)if(near(g.x,g.y,SV_GATE_SIZE*1.2))return g.id;
+ for(const o of [...it.objects].reverse())if(o.type==='asteroid'&&near(o.x,o.y,o.size))return o.id;
+ for(const o of [...it.objects].reverse())if(o.type==='planet'&&near(o.x,o.y,o.size))return o.id;
+ if(near(0,0,svStarR(s)))return 'star';
+ for(const o of [...it.objects].reverse())if(o.type==='cluster'&&near(o.x,o.y,o.spread))return o.id;
+ return null;
+}
+function svWorld(e){const c=svCanvas(),b=c.getBoundingClientRect();return [(e.clientX-b.left-b.width/2)/SV.cam.z+SV.cam.x,(e.clientY-b.top-b.height/2)/SV.cam.z+SV.cam.y];}
+function svZoom(f,px,py){const c=svCanvas(),w=c.clientWidth,h=c.clientHeight,wx=(px-w/2)/SV.cam.z+SV.cam.x,wy=(py-h/2)/SV.cam.z+SV.cam.y;SV.cam.z=clamp(SV.cam.z*f,.02,3);SV.cam.x=wx-(px-w/2)/SV.cam.z;SV.cam.y=wy-(py-h/2)/SV.cam.z;}
+function svSelect(id){SV.sel=id;svInfo();}
+function svAdd(type,wx,wy){
+ if(!isAdmin())return;const it=svOwn(),id='o'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),seed=Math.floor(Math.random()*1e9);
+ const o={id,type,name:'',x:Math.round(clamp(wx,-SV_LIMIT,SV_LIMIT)),y:Math.round(clamp(wy,-SV_LIMIT,SV_LIMIT)),seed};
+ if(type==='planet')Object.assign(o,{name:'New planet',style:'rocky',size:380,rings:false});else if(type==='asteroid')Object.assign(o,{name:'Asteroid',size:45});
+ else if(type==='cluster')Object.assign(o,{name:'Asteroid field',count:45,spread:260});else Object.assign(o,{name:'New station',style:'ring',size:'medium'});
+ it.objects.push(o);SV.placing=null;svTools();svSelect(id);svHint();svCommit(`${SV_TYPES[type]} added.`);
+}
+// ---------- input ----------
+function svWire(){
+ const c=svCanvas();SV.keys=new Set();
+ c.addEventListener('wheel',e=>{e.preventDefault();const b=c.getBoundingClientRect();svZoom(Math.exp(-e.deltaY*.0015),e.clientX-b.left,e.clientY-b.top);},{passive:false});
+ c.addEventListener('pointerdown',e=>{if(e.button!==0)return;c.setPointerCapture(e.pointerId);const [wx,wy]=svWorld(e),hit=svHit(wx,wy),o=hit&&svObj(hit);
+  SV.down={x:e.clientX,y:e.clientY,cam:{...SV.cam},hit,moved:false,obj:isAdmin()&&o&&!SV.placing?o:null,ox:o?o.x-wx:0,oy:o?o.y-wy:0};c.style.cursor='grabbing';});
+ c.addEventListener('pointermove',e=>{const d=SV.down;if(!d){const [wx,wy]=svWorld(e),hit=SV.placing?null:svHit(wx,wy);c.style.cursor=SV.placing?'crosshair':hit?'pointer':'grab';return;}
+  if(Math.hypot(e.clientX-d.x,e.clientY-d.y)>4)d.moved=true;if(!d.moved)return;
+  if(d.obj){const [wx,wy]=svWorld(e);if(!svSys().interior){svOwn();d.obj=svObj(d.obj.id);}d.obj.x=Math.round(clamp(wx+d.ox,-SV_LIMIT,SV_LIMIT));d.obj.y=Math.round(clamp(wy+d.oy,-SV_LIMIT,SV_LIMIT));if(d.obj.type==='planet')SV.cache.delete(d.obj.id);}
+  else{SV.cam.x=d.cam.x-(e.clientX-d.x)/SV.cam.z;SV.cam.y=d.cam.y-(e.clientY-d.y)/SV.cam.z;}});
+ const up=e=>{const d=SV.down;SV.down=null;c.style.cursor='grab';if(!d)return;
+  if(d.moved){if(d.obj){svSelect(d.obj.id);svCommit();}return;}
+  const [wx,wy]=svWorld(e);if(SV.placing){svAdd(SV.placing,wx,wy);return;}svSelect(d.hit);};
+ c.addEventListener('pointerup',up);c.addEventListener('pointercancel',()=>{SV.down=null;});
+ document.addEventListener('keydown',e=>{if(!SV.open)return;const k=e.key.toLowerCase();
+  if(e.target.closest&&e.target.closest('input,select,textarea'))return;
+  if(k==='escape'){e.preventDefault();e.stopImmediatePropagation();if(SV.placing){SV.placing=null;svTools();svHint();}else if(SV.sel)svSelect(null);else svClose();return;}
+  if(k==='home'){svFit();e.preventDefault();e.stopImmediatePropagation();return;}
+  if(['w','a','s','d','q','e','arrowup','arrowdown','arrowleft','arrowright'].includes(k)){SV.keys.add(k);e.preventDefault();e.stopImmediatePropagation();}
+  else if((k==='delete'||k==='backspace')&&isAdmin()&&SV.sel){const o=svObj(SV.sel);if(o&&o.type!=='control'){e.preventDefault();e.stopImmediatePropagation();$('sv-info').querySelector('[data-sv-del]')?.click();}}},true);
+ document.addEventListener('keyup',e=>{if(SV.keys)SV.keys.delete(e.key.toLowerCase());},true);
+ window.addEventListener('blur',()=>SV.keys&&SV.keys.clear());
+ $('sv-close').onclick=svClose;$('sv-fit').onclick=svFit;$('sv-zin').onclick=()=>{const c=svCanvas();svZoom(1.4,c.clientWidth/2,c.clientHeight/2);};$('sv-zout').onclick=()=>{const c=svCanvas();svZoom(1/1.4,c.clientWidth/2,c.clientHeight/2);};
+ $('sv').addEventListener('click',e=>{
+  if(e.target.closest('[data-sv-desel]')){svSelect(null);return;}
+  const go=e.target.closest('[data-sv-go]');if(go){svOpen(go.dataset.svGo);return;}
+  const add=e.target.closest('[data-sv-add]');if(add&&isAdmin()){SV.placing=SV.placing===add.dataset.svAdd?null:add.dataset.svAdd;svTools();svHint();svCanvas().focus({preventScroll:true});return;}
+  const lay=e.target.closest('[data-sv-layout]');if(lay&&isAdmin()){const s=svSys();
+   if(lay.dataset.svLayout==='random'){if(!confirm(`Replace everything in ${s.name} with a new random layout?`))return;s.interior=svGenerate(s,Math.floor(Math.random()*2147483647));}
+   else{if(!confirm(`Reset ${s.name} to its automatic layout? Your changes to this system are removed.`))return;delete s.interior;}
+   SV.cache.clear();SV.sel=null;SV.bgKey='';svTools();svInfo();save();dirty=true;toast('Layout updated.');return;}
+  if(e.target.closest('[data-sv-del]')&&isAdmin()){const o=svObj(SV.sel);if(!o||o.type==='control')return;if(!confirm(`Delete ${svName(o,svSys())}?`))return;const it=svOwn();it.objects=it.objects.filter(x=>x.id!==o.id);SV.sel=null;svInfo();svCommit('Deleted.');}
+ });
+ $('sv').addEventListener('input',e=>{if(!isAdmin())return;
+  const bg=e.target.dataset.svBg;if(bg){const it=svOwn(),v=e.target.value;it.bg[bg]=bg==='density'||bg==='stars'?clamp(+v/100,0,1):v;SV.bgKey='';svCommit();return;}
+  const f=e.target.dataset.svF;if(!f||!SV.sel)return;svOwn();const o=svObj(SV.sel);if(!o)return;
+  if(f==='name')o.name=e.target.value.slice(0,80);else if(f==='rings')o.rings=e.target.checked;else if(f==='style'||(f==='size'&&o.type!=='planet'&&o.type!=='asteroid'))o[f]=e.target.value;else o[f]=Math.round(+e.target.value);
+  SV.cache.delete(o.id);svCommit();if(e.type==='input'&&e.target.tagName==='SELECT')svInfo();
+  if(f!=='name'){const h=$('sv-info').querySelector('h3');if(h)h.textContent=svName(o,svSys());}else{const h=$('sv-info').querySelector('h3');if(h)h.textContent=svName(o,svSys());}});
+}
+svWire();
+
 if(Cloud.enabled)$('chat-note').textContent='Live channel: everyone on the site sees these messages as they are sent.';
 load().then(()=>{renderPanel();dirty=true;startShared();});
 requestAnimationFrame(frame);

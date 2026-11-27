@@ -726,7 +726,7 @@ a.board-from{text-decoration:none}a.board-from:hover{text-decoration:underline}
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
 <script src="assets/cloud-config.js"></script>
-<script src="assets/cloud.js?v=20261127f"></script>
+<script src="assets/cloud.js?v=20261127g"></script>
 <script src="assets/accounts.js?v=20261127b"></script>
 <script>
 'use strict';
@@ -973,12 +973,22 @@ async function shrinkImage(file){
 // A panel on the right (collapsible, remembered in this browser) with three tabs: Characters (search; clicking a
 // character anywhere on the page shows their bio here, × closes it), Online (members online now; click one to message
 // them) and Messages (private messages between members, with an unread count).
+let usersLoaded=false,lookedUp={};
 let ctx={open:true,tab:'characters',q:'',char:null,convo:null,editing:null,editText:'',picking:false,pick:'',draft:'',busy:false,error:''},dms=[],users=[];
 try{const v=JSON.parse(localStorage.getItem('reliquary-ctx')||'{}');if(typeof v.open==='boolean')ctx.open=v.open;if(['characters','online','messages'].includes(v.tab))ctx.tab=v.tab;}catch(e){}
 function ctxSave(){try{localStorage.setItem('reliquary-ctx',JSON.stringify({open:ctx.open,tab:ctx.tab}));}catch(e){}}
 function ctxOpen(on){ctx.open=on;ctxSave();renderCtx();}
 function ctxShowChar(id){ctx.char=id;ctx.open=true;ctxSave();renderCtx();$('ctx-body').scrollTop=0;}
 function ctxTab(t){ctx.tab=t;ctx.char=null;ctx.picking=false;ctxSave();renderCtx();$('ctx-body').scrollTop=0;}
+// A conversation partner missing from the list (for example while it is still loading) is looked up directly once
+// before the conversation says the account is gone.
+function recipientLookup(uid){
+ if(!usersLoaded)return 'checking';
+ const st=lookedUp[uid];if(st==='missing')return 'missing';if(st)return 'checking';
+ lookedUp[uid]='checking';
+ (Cloud.getMember?Cloud.getMember(uid):Promise.resolve(null)).then(m=>{if(m){lookedUp[uid]='found';if(!users.some(u=>u.uid===m.uid))users=[...users,m];}else if(m===null)lookedUp[uid]='missing';else setTimeout(()=>{delete lookedUp[uid];renderCtx();},10000);renderCtx();}); // could not check: try again in 10 s
+ return 'checking';
+}
 function ctxMessage(uid){ctx.tab='messages';ctx.char=null;ctx.convo=uid;ctx.picking=false;ctx.error='';ctx.open=true;ctxSave();renderCtx();setTimeout(()=>$('ctx-dm')?.focus(),0);}
 function hl(text,q){ // escape, then mark every match of q
  const t=String(text||''),lo=t.toLowerCase(),n=q.toLowerCase();if(!n)return escapeHTML(t);let out='',i=0,j;
@@ -1011,12 +1021,12 @@ function ctxMessagesHTML(){
 }
 function ctxMessagesBody(me){
  if(ctx.convo){
-  const other=ctx.convo,name=userName(other),thread=visibleDms().filter(m=>(m.from===me&&m.to===other)||(m.from===other&&m.to===me)),canSend=!!users.find(u=>u.uid===other);
+  const other=ctx.convo,name=userName(other),thread=visibleDms().filter(m=>(m.from===me&&m.to===other)||(m.from===other&&m.to===me)),canSend=!!users.find(u=>u.uid===other),lookup=canSend?null:recipientLookup(other);
   return `<div class="ctx-send-row"><button class="ctx-back" type="button" data-ctx-back>‹ All messages</button>${thread.length?'<button class="ctx-act" type="button" data-dm-clear>Delete conversation</button>':''}</div><h3 class="ctx-bio-title">${escapeHTML(name)}</h3>`+
    `<div class="ctx-thread" id="ctx-thread">${thread.length?thread.map(m=>{const mine=m.from===me;
     if(ctx.editing===m.id)return `<form class="ctx-msg me ctx-edit" data-dm-edit-form="${escapeHTML(m.id)}"><textarea id="ctx-edit" maxlength="${Cloud.DM_MAX||1000}" aria-label="Edit message">${escapeHTML(ctx.editText)}</textarea><span class="ctx-msg-acts"><button class="ctx-act" type="button" data-dm-cancel>Cancel</button><button class="ctx-act" type="submit">Save</button></span></form>`;
     return `<div class="ctx-msg${mine?' me':''}">${escapeHTML(m.text)}<small>${boardTime(m.at)}${m.edited?' · edited':''}</small><span class="ctx-msg-acts">${mine?`<button class="ctx-act" type="button" data-dm-edit="${escapeHTML(m.id)}">Edit</button><button class="ctx-act" type="button" data-dm-del="${escapeHTML(m.id)}">Delete</button>`:`<button class="ctx-act" type="button" data-dm-del="${escapeHTML(m.id)}">Delete</button>`}</span></div>`;}).join(''):'<p class="ctx-empty">No messages yet.</p>'}</div>`+
-   (canSend?`<form class="ctx-send" id="ctx-send" autocomplete="off"><textarea id="ctx-dm" maxlength="${Cloud.DM_MAX||1000}" placeholder="Write a message…" aria-label="Message to ${escapeHTML(name)}">${escapeHTML(ctx.draft)}</textarea>${ctx.error?`<p class="board-error" role="alert">${escapeHTML(ctx.error)}</p>`:''}<div class="ctx-send-row"><span class="subtext">Enter sends · Shift+Enter new line</span><button class="btn primary" type="submit"${ctx.busy?' disabled':''}>Send</button></div></form>`:'<p class="ctx-empty">This account no longer exists.</p>');
+   (canSend?`<form class="ctx-send" id="ctx-send" autocomplete="off"><textarea id="ctx-dm" maxlength="${Cloud.DM_MAX||1000}" placeholder="Write a message…" aria-label="Message to ${escapeHTML(name)}">${escapeHTML(ctx.draft)}</textarea>${ctx.error?`<p class="board-error" role="alert">${escapeHTML(ctx.error)}</p>`:''}<div class="ctx-send-row"><span class="subtext">Enter sends · Shift+Enter new line</span><button class="btn primary" type="submit"${ctx.busy?' disabled':''}>Send</button></div></form>`:lookup==='checking'?'<p class="ctx-empty">Checking this account…':'<p class="ctx-empty">This account no longer exists, so you cannot reply.</p>');
  }
  if(ctx.picking){
   const n=ctx.pick.trim().toLowerCase(),list=users.filter(u=>u.uid!==me&&(!n||u.display.toLowerCase().includes(n)||u.name.toLowerCase().includes(n)));
@@ -1221,7 +1231,11 @@ if(Cloud.enabled){
  Cloud.watchOnline&&Cloud.watchOnline(o=>{online=o;renderOnline();renderCtx();},()=>{});
  Cloud.watchDoc&&Cloud.watchDoc('starmap',v=>{mapSystems=v&&Array.isArray(v.systems)?v.systems.filter(x=>x&&x.id&&x.name).map(x=>({id:String(x.id),name:String(x.name).slice(0,80),notes:typeof x.notes==='string'?x.notes:'',state:x.state})):[];mapLoaded=true;buildForum();render();},()=>{mapLoaded=true;buildForum();render();});
  Cloud.watchMessages&&Cloud.watchMessages((m,problem)=>{dms=m;ctx.dmError=problem||'';renderCtx();},()=>{});
- Cloud.watchMembers&&Cloud.watchMembers(u=>{users=u;renderCtx();},()=>{});
+ // Everyone who can receive messages: members plus the administrator account. People not found here are looked up
+ // directly before a conversation says the account is gone.
+ let memberList=[],adminList=[];const setUsers=()=>{users=[...memberList,...adminList.filter(a=>!memberList.some(m=>m.uid===a.uid))];renderCtx();};
+ Cloud.watchMembers&&Cloud.watchMembers(u=>{memberList=u;usersLoaded=true;setUsers();},()=>{usersLoaded=true;setUsers();});
+ Cloud.watchAdmins&&Cloud.watchAdmins(a=>{adminList=a;setUsers();});
 }
 renderOnline();render();renderCtx();
 </script>
