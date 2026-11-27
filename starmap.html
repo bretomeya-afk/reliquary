@@ -2190,9 +2190,142 @@ const PLANET_PAL={rocky:['120,110,100','78,70,64','160,148,132','190,200,215'],d
  eyeball:['220,235,245','150,180,205','250,252,255','200,230,255'],shattered:['80,70,66','40,34,32','120,105,96','255,140,80'],icegiant:['90,190,210','50,130,160','170,235,245','160,240,255'],
  swamp:['80,90,50','46,56,32','120,120,80','190,210,160'],ash:['70,68,68','36,34,34','110,106,104','200,120,90'],coral:['220,110,160','150,60,110','250,170,200','255,190,220'],
  inferno:['220,100,40','130,40,20','255,180,90','255,130,60'],frozen:['220,210,195','170,150,130','245,240,232','230,240,255']};
-const STATION_STYLES={ring:'Ring',spindle:'Spindle',hub:'Hub',outpost:'Outpost'};
-const STATION_SIZES={small:['Small',45],medium:['Medium',80],large:['Large',130],huge:['Huge',200]};
-const SV_GATE_R=9000,SV_GATE_SIZE=110,SV_LIMIT=12999;
+// ---------- station designs ----------
+// Each design is drawn in a 200 × 200 box (radius about 100) and scaled to the station's size. Designs are grouped:
+// General, plus a cultural set for each faction (Eisdon: green-tinted industrial metal; Gallia: blue-grey
+// modular stations in the style of classic space-trading games; Secaran Republic: sleek white hulls with blue lighting).
+const SV_PAL={
+ gen:{hull:'#9aa8b6',dark:'#3a434e',panel:'#2f4f80',win:'255,228,160',nav:['255,80,64','64,255,128'],glow:'150,200,255'},
+ eis:{hull:'#7f9177',dark:'#2c3529',panel:'#56613e',win:'255,166,60',nav:['255,120,40','255,200,74'],glow:'255,150,60'},
+ gal:{hull:'#8a9aad',dark:'#323c49',panel:'#2a3d62',win:'255,224,168',nav:['255,74,58','74,255,122'],glow:'150,195,255'},
+ sec:{hull:'#c2cddb',dark:'#34435a',panel:'#1b3a78',win:'40,140,255',nav:['77,166,255','168,216,255'],glow:'70,150,255'}};
+const svShadeCache=new Map();
+function svShade(hex,f){const k=hex+f;let v=svShadeCache.get(k);if(v)return v;const n=parseInt(hex.slice(1),16);
+ v=`rgb(${[n>>16,n>>8&255,n&255].map(q=>Math.max(0,Math.min(255,Math.round(f>=1?q+(255-q)*(f-1):q*f))))})`;svShadeCache.set(k,v);return v;}
+function svKit(x,P,t,seed){
+ const r=rng((seed>>>0)||7),S=svShade,TAU=Math.PI*2;
+ const lin=(x0,y0,x1,y1,stops)=>{const g=x.createLinearGradient(x0,y0,x1,y1);for(const [o,c] of stops)g.addColorStop(o,c);return g;};
+ const at=(cx,cy,a,fn)=>{x.save();x.translate(cx,cy);if(a)x.rotate(a);fn();x.restore();};
+ const K={x,P,t,r,TAU,at,lin,
+  box(cx,cy,w,h,o={}){at(cx,cy,o.a,()=>{const c=o.c||P.hull;x.beginPath();x.roundRect(-w/2,-h/2,w,h,o.r||0);x.fillStyle=lin(-w/2,-h/2,w/2,h/2,[[0,S(c,1.3)],[.5,c],[1,S(c,.55)]]);x.fill();x.lineWidth=o.lw??1.4;x.strokeStyle=P.dark;x.stroke();
+   if(o.lines){x.beginPath();x.strokeStyle='rgba(0,0,0,.28)';x.lineWidth=1;for(let i=1;i<o.lines;i++){const q=-w/2+w*i/o.lines;x.moveTo(q,-h/2+1);x.lineTo(q,h/2-1);}x.stroke();}
+   if(o.win)K.wins(-w/2+5,0,w/2-5,0,o.win);if(o.rivets)K.rivets(w,h);});},
+  cyl(cx,cy,len,th,o={}){at(cx,cy,o.a,()=>{const c=o.c||P.hull;x.beginPath();x.roundRect(-len/2,-th/2,len,th,o.cap??th/2);x.fillStyle=lin(0,-th/2,0,th/2,[[0,S(c,.72)],[.28,S(c,1.35)],[.6,c],[1,S(c,.45)]]);x.fill();x.lineWidth=o.lw??1.4;x.strokeStyle=P.dark;x.stroke();
+   if(o.ribs){x.beginPath();x.strokeStyle='rgba(0,0,0,.3)';x.lineWidth=Math.max(1,th*.07);for(let i=1;i<o.ribs;i++){const q=-len/2+len*i/o.ribs;x.moveTo(q,-th/2+.5);x.lineTo(q,th/2-.5);}x.stroke();}
+   if(o.band){x.fillStyle=o.band;x.fillRect(-len/2+th*.4,-th*.1,len-th*.8,th*.2);}
+   if(o.win)K.wins(-len/2+th*.45,o.wy||0,len/2-th*.45,o.wy||0,o.win);});},
+  disc(cx,cy,R,o={}){const c=o.c||P.hull,g=x.createRadialGradient(cx-R*.35,cy-R*.4,R*.08,cx,cy,R);g.addColorStop(0,S(c,1.45));g.addColorStop(.55,c);g.addColorStop(1,S(c,.42));x.beginPath();x.arc(cx,cy,R,0,TAU);x.fillStyle=g;x.fill();x.lineWidth=o.lw??1.4;x.strokeStyle=P.dark;x.stroke();
+   if(o.band){x.save();x.beginPath();x.arc(cx,cy,R,0,TAU);x.clip();x.fillStyle=o.band===true?'rgba(0,0,0,.22)':o.band;x.fillRect(cx-R,cy-R*.11,R*2,R*.22);x.restore();}
+   if(o.rivets){x.fillStyle='rgba(20,25,18,.5)';const n=Math.round(R/3);for(let i=0;i<n;i++){const a=i/n*TAU;x.fillRect(cx+Math.cos(a)*R*.86-.8,cy+Math.sin(a)*R*.86-.8,1.6,1.6);}}
+   if(o.win)K.arcWins(cx,cy,R*.74,o.win,o.wa||0);},
+  hex(cx,cy,R,o={}){K.poly([...Array(6)].map((_,i)=>[cx+Math.cos(i*TAU/6+(o.a||0))*R,cy+Math.sin(i*TAU/6+(o.a||0))*R]),o);if(o.win)K.arcWins(cx,cy,R*.6,o.win);},
+  poly(pts,o={}){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const [a,b] of pts){x0=Math.min(x0,a);y0=Math.min(y0,b);x1=Math.max(x1,a);y1=Math.max(y1,b);}const c=o.c||P.hull;
+   x.beginPath();pts.forEach(([a,b],i)=>i?x.lineTo(a,b):x.moveTo(a,b));x.closePath();x.fillStyle=lin(x0,y0,x1,y1,[[0,S(c,1.35)],[.5,c],[1,S(c,.5)]]);x.fill();x.lineWidth=o.lw??1.4;x.strokeStyle=P.dark;x.stroke();
+   if(o.seams){const mx=(x0+x1)/2,my=(y0+y1)/2;x.beginPath();x.strokeStyle='rgba(0,0,0,.2)';x.lineWidth=1;for(const [a,b] of pts){x.moveTo(mx,my);x.lineTo(a,b);}x.stroke();}},
+  ring(cx,cy,R,w,o={}){const c=o.c||P.hull;
+   if(o.spokes)at(cx,cy,o.rot||0,()=>{x.beginPath();for(let i=0;i<o.spokes;i++){const a=i/o.spokes*TAU;x.moveTo(Math.cos(a)*(o.hub||0),Math.sin(a)*(o.hub||0));x.lineTo(Math.cos(a)*R,Math.sin(a)*R);}x.strokeStyle=P.dark;x.lineWidth=(o.sw||w*.4)+2;x.stroke();x.strokeStyle=S(c,.85);x.lineWidth=o.sw||w*.4;x.stroke();});
+   x.beginPath();x.arc(cx,cy,R,0,TAU);x.strokeStyle=P.dark;x.lineWidth=w+3;x.stroke();x.strokeStyle=c;x.lineWidth=w;x.stroke();
+   x.beginPath();x.arc(cx,cy,R-w*.24,Math.PI*.95,Math.PI*1.75);x.strokeStyle=S(c,1.35);x.lineWidth=w*.22;x.stroke();
+   x.beginPath();x.arc(cx,cy,R+w*.24,-Math.PI*.05,Math.PI*.75);x.strokeStyle=S(c,.6);x.stroke();
+   at(cx,cy,o.rot||0,()=>{if(o.seg){x.beginPath();x.strokeStyle=P.dark;x.lineWidth=1.1;for(let i=0;i<o.seg;i++){const a=i/o.seg*TAU;x.moveTo(Math.cos(a)*(R-w/2),Math.sin(a)*(R-w/2));x.lineTo(Math.cos(a)*(R+w/2),Math.sin(a)*(R+w/2));}x.stroke();}
+    if(o.win)K.arcWins(0,0,R,o.win,0,TAU,o.wcol);
+    if(o.pods)for(let i=0;i<o.pods;i++){const a=(i+.5)/o.pods*TAU;K.box(Math.cos(a)*R,Math.sin(a)*R,w*1.9,w*1.35,{a,r:2,win:2});}});},
+  arcHull(cx,cy,R,w,a0,a1,o={}){const c=o.c||P.hull;x.lineCap='butt';x.beginPath();x.arc(cx,cy,R,a0,a1);x.strokeStyle=P.dark;x.lineWidth=w+3;x.stroke();x.strokeStyle=c;x.lineWidth=w;x.stroke();
+   x.beginPath();x.arc(cx,cy,R-w*.25,a0,a1);x.strokeStyle=S(c,1.3);x.lineWidth=w*.2;x.stroke();x.beginPath();x.arc(cx,cy,R+w*.25,a0,a1);x.strokeStyle=S(c,.6);x.stroke();
+   if(o.seg){x.beginPath();x.strokeStyle=P.dark;x.lineWidth=1.1;for(let i=0;i<=o.seg;i++){const a=a0+(a1-a0)*i/o.seg;x.moveTo(cx+Math.cos(a)*(R-w/2),cy+Math.sin(a)*(R-w/2));x.lineTo(cx+Math.cos(a)*(R+w/2),cy+Math.sin(a)*(R+w/2));}x.stroke();}
+   if(o.win)K.arcWins(cx,cy,R,o.win,a0,a1);},
+  truss(x1,y1,x2,y2,w=8,c){const L=Math.hypot(x2-x1,y2-y1),a=Math.atan2(y2-y1,x2-x1),n=Math.max(1,Math.round(L/w));at(x1,y1,a,()=>{x.strokeStyle=P.dark;x.lineWidth=3;x.beginPath();x.moveTo(0,-w/2);x.lineTo(L,-w/2);x.moveTo(0,w/2);x.lineTo(L,w/2);x.stroke();
+   x.strokeStyle=c||S(P.hull,.95);x.lineWidth=1.6;x.beginPath();x.moveTo(0,-w/2);x.lineTo(L,-w/2);x.moveTo(0,w/2);x.lineTo(L,w/2);for(let i=0;i<n;i++){x.moveTo(i*L/n,i%2?-w/2:w/2);x.lineTo((i+1)*L/n,i%2?w/2:-w/2);}x.stroke();});},
+  beam(x1,y1,x2,y2,w=6,c){x.lineCap='butt';x.beginPath();x.moveTo(x1,y1);x.lineTo(x2,y2);x.strokeStyle=P.dark;x.lineWidth=w+2.4;x.stroke();x.strokeStyle=c||S(P.hull,.9);x.lineWidth=w;x.stroke();x.strokeStyle='rgba(255,255,255,.16)';x.lineWidth=w*.3;x.stroke();},
+  solar(cx,cy,w,h,a=0,nx=4,ny=2){at(cx,cy,a,()=>{x.fillStyle=lin(-w/2,-h/2,w/2,h/2,[[0,S(P.panel,1.5)],[.5,P.panel],[1,S(P.panel,.6)]]);x.fillRect(-w/2,-h/2,w,h);x.strokeStyle='rgba(200,225,255,.3)';x.lineWidth=.8;x.beginPath();
+   for(let i=1;i<nx;i++){x.moveTo(-w/2+w*i/nx,-h/2);x.lineTo(-w/2+w*i/nx,h/2);}for(let j=1;j<ny;j++){x.moveTo(-w/2,-h/2+h*j/ny);x.lineTo(w/2,-h/2+h*j/ny);}x.stroke();x.strokeStyle=P.dark;x.lineWidth=1.2;x.strokeRect(-w/2,-h/2,w,h);});},
+  wins(x1,y1,x2,y2,n,rgb=P.win,sz=2.6){for(let i=0;i<n;i++){if(r()>.82)continue;const p=(i+.5)/n;x.fillStyle=`rgba(${rgb},.92)`;x.fillRect(x1+(x2-x1)*p-sz/2,y1+(y2-y1)*p-sz/2,sz,sz);}},
+  arcWins(cx,cy,R,n,a0=0,a1=a0+TAU,rgb=P.win,sz=2.6){for(let i=0;i<n;i++){if(r()>.85)continue;const a=a0+(a1-a0)*(i+.5)/n;x.fillStyle=`rgba(${rgb},.92)`;x.fillRect(cx+Math.cos(a)*R-sz/2,cy+Math.sin(a)*R-sz/2,sz,sz);}},
+  rivets(w,h){x.fillStyle='rgba(18,22,16,.55)';const st=7;for(let q=-w/2+4;q<=w/2-4;q+=st){x.fillRect(q-.8,-h/2+2.2,1.6,1.6);x.fillRect(q-.8,h/2-3.8,1.6,1.6);}for(let q=-h/2+4+st;q<=h/2-4-st;q+=st){x.fillRect(-w/2+2.2,q-.8,1.6,1.6);x.fillRect(w/2-3.8,q-.8,1.6,1.6);}},
+  hazard(cx,cy,w,h,a=0){at(cx,cy,a,()=>{x.save();x.beginPath();x.rect(-w/2,-h/2,w,h);x.clip();x.fillStyle='#d4a21e';x.fillRect(-w/2,-h/2,w,h);x.fillStyle='#1c1d19';
+   for(let q=-w/2-h;q<w/2+h;q+=h*1.6){x.beginPath();x.moveTo(q,-h/2);x.lineTo(q+h*.8,-h/2);x.lineTo(q-h*.2,h/2);x.lineTo(q-h,h/2);x.closePath();x.fill();}x.restore();x.strokeStyle=P.dark;x.lineWidth=1;x.strokeRect(-w/2,-h/2,w,h);});},
+  glow(px,py,R,rgb,a=.6){if(R<=0)return;const g=x.createRadialGradient(px,py,0,px,py,R);g.addColorStop(0,`rgba(${rgb},${a})`);g.addColorStop(1,`rgba(${rgb},0)`);x.fillStyle=g;x.fillRect(px-R,py-R,R*2,R*2);},
+  nav(px,py,rgb,ph=0,R=3.2){const on=((t*1.2+ph+seed%5)%2)<.45;x.fillStyle=on?`rgb(${rgb})`:'rgba(70,70,70,.9)';x.beginPath();x.arc(px,py,R*.6,0,TAU);x.fill();if(on)K.glow(px,py,R*3.2,rgb,.75);},
+  strip(x1,y1,x2,y2,w=2,rgb=P.win,a=1){x.save();x.lineCap='round';x.beginPath();x.moveTo(x1,y1);x.lineTo(x2,y2);x.strokeStyle=`rgba(${rgb},${.3*a})`;x.lineWidth=w*4;x.stroke();x.strokeStyle=`rgba(${rgb},${a})`;x.lineWidth=w;x.stroke();x.strokeStyle=`rgba(225,240,255,${.8*a})`;x.lineWidth=w*.35;x.stroke();x.restore();},
+  arcStrip(cx,cy,R,a0,a1,w=2,rgb=P.win,a=1){x.save();x.beginPath();x.arc(cx,cy,R,a0,a1);x.strokeStyle=`rgba(${rgb},${.3*a})`;x.lineWidth=w*4;x.stroke();x.strokeStyle=`rgba(${rgb},${a})`;x.lineWidth=w;x.stroke();x.restore();},
+  dish(cx,cy,R,a=0){at(cx,cy,a,()=>{x.beginPath();x.moveTo(0,0);x.lineTo(R*.9,0);x.strokeStyle=S(P.hull,.8);x.lineWidth=1.6;x.stroke();x.beginPath();x.ellipse(0,0,R*.32,R,0,Math.PI/2,Math.PI*1.5);x.closePath();x.fillStyle=lin(0,-R,0,R,[[0,S(P.hull,1.45)],[1,S(P.hull,.55)]]);x.fill();x.strokeStyle=P.dark;x.lineWidth=1.2;x.stroke();x.fillStyle=S(P.hull,.7);x.beginPath();x.arc(R*.9,0,2.2,0,TAU);x.fill();});},
+  mast(x1,y1,x2,y2,rgb=P.nav[0]){x.beginPath();x.moveTo(x1,y1);x.lineTo(x2,y2);x.strokeStyle=P.dark;x.lineWidth=3.4;x.stroke();x.strokeStyle=S(P.hull,1.1);x.lineWidth=1.8;x.stroke();K.nav(x2,y2,rgb,.3);},
+  turret(cx,cy,R,a){at(cx,cy,a,()=>{x.fillStyle=P.dark;x.fillRect(0,-R*.2,R*1.7,R*.4);x.fillStyle=S(P.hull,.8);x.fillRect(R*.2,-R*.12,R*1.45,R*.24);});K.disc(cx,cy,R);},
+  pad(cx,cy,R){x.beginPath();x.arc(cx,cy,R,0,TAU);x.fillStyle=S(P.hull,.42);x.fill();x.strokeStyle=S(P.hull,1.2);x.lineWidth=1.5;x.stroke();x.beginPath();x.arc(cx,cy,R*.66,0,TAU);x.strokeStyle='rgba(255,220,120,.55)';x.lineWidth=1.2;x.stroke();
+   const k=Math.floor(t*4)%8;for(let i=0;i<8;i++){const a=i/8*TAU;x.fillStyle=i===k?'rgba(255,240,180,1)':'rgba(255,220,120,.35)';x.fillRect(cx+Math.cos(a)*R*.85-1.2,cy+Math.sin(a)*R*.85-1.2,2.4,2.4);}},
+  bay(cx,cy,w,h,a=0){at(cx,cy,a,()=>{x.fillStyle='#090d13';x.fillRect(-w/2,-h/2,w,h);x.fillStyle=lin(-w/2,0,w/2,0,[[0,`rgba(${P.win},0)`],[.5,`rgba(${P.win},.5)`],[1,`rgba(${P.win},0)`]]);x.fillRect(-w/2,-h/2,w,h);x.strokeStyle=P.dark;x.lineWidth=1;x.strokeRect(-w/2,-h/2,w,h);
+   const k=Math.floor(t*3)%4;for(let i=0;i<4;i++){x.fillStyle=i===k?'rgba(140,255,160,1)':'rgba(140,255,160,.3)';x.fillRect(-w/2-2.5,-h/2+(i+.5)*h/4-1,2,2);x.fillRect(w/2+.5,-h/2+(i+.5)*h/4-1,2,2);}});},
+  smoke(px,py,ph=0,dir=-Math.PI/2){for(let i=0;i<4;i++){const p=(t*.22+ph+i/4)%1,d=p*30,R=3+p*10;x.fillStyle=`rgba(150,150,138,${.32*(1-p)})`;x.beginPath();x.arc(px+Math.cos(dir)*d+Math.sin(p*6+i)*2,py+Math.sin(dir)*d,R,0,TAU);x.fill();}},
+  searchlight(cx,cy,a,len,spread=.14,rgb='255,236,190'){x.save();x.globalCompositeOperation='lighter';const g=x.createRadialGradient(cx,cy,0,cx,cy,len);g.addColorStop(0,`rgba(${rgb},.32)`);g.addColorStop(1,`rgba(${rgb},0)`);x.fillStyle=g;x.beginPath();x.moveTo(cx,cy);x.arc(cx,cy,len,a-spread,a+spread);x.closePath();x.fill();x.restore();},
+  ship(px,py,a,L=8){at(px,py,a,()=>{x.fillStyle='#dfe8f2';x.beginPath();x.moveTo(L,0);x.lineTo(-L*.7,-L*.55);x.lineTo(-L*.4,0);x.lineTo(-L*.7,L*.55);x.closePath();x.fill();x.strokeStyle=P.dark;x.lineWidth=.8;x.stroke();});}
+ };
+ return K;
+}
+const SV_OCT=R=>[...Array(8)].map((_,i)=>{const a=(i+.5)/8*Math.PI*2;return [Math.cos(a)*R,Math.sin(a)*R];});
+// [label, palette, draw]
+const SV_STATION_DESIGNS={
+ // ----- General -----
+ twinring:['Twin Ring','gen',({ring,disc,nav,P,t})=>{ring(0,0,88,10,{rot:t*.05,spokes:4,hub:20,seg:16,win:24});ring(0,0,58,8,{rot:-t*.07,spokes:3,hub:20,seg:12,win:16});disc(0,0,22,{band:true});nav(0,-100,P.nav[0]);nav(0,100,P.nav[1],1);}],
+ wheel:['Wheel','gen',({ring,disc,cyl,nav,P,t})=>{cyl(0,0,74,14,{a:Math.PI/2,ribs:5});ring(0,0,84,12,{rot:t*.04,spokes:8,hub:24,seg:24,win:30,pods:8});disc(0,0,24,{band:true,win:8});nav(0,-44,P.nav[0]);nav(0,44,P.nav[1],1);}],
+ cylinder:['Cylinder','gen',({cyl,solar,box,nav,wins,P})=>{for(const sy of[-1,1])for(let i=-1;i<=1;i++)solar(i*48,sy*42,40,22,sy*.12,4,2);cyl(0,0,172,40,{ribs:8,win:22,wy:-8,band:'rgba(255,228,160,.16)'});wins(-70,8,70,8,22);box(-92,0,12,26,{r:3});box(92,0,12,26,{r:3});nav(-100,0,P.nav[0]);nav(100,0,P.nav[1],1);}],
+ sphere:['Sphere','gen',({disc,cyl,nav,arcWins,P})=>{for(let i=0;i<4;i++){const a=Math.PI/4+i*Math.PI/2;cyl(Math.cos(a)*76,Math.sin(a)*76,36,10,{a,ribs:3});nav(Math.cos(a)*96,Math.sin(a)*96,P.nav[i%2],i*.5);}disc(0,0,66,{band:true});arcWins(0,0,54,28);arcWins(0,0,36,18,.1);}],
+ cross:['Cross','gen',({cyl,box,disc,nav,P})=>{for(let i=0;i<4;i++){const a=i*Math.PI/2;cyl(Math.cos(a)*48,Math.sin(a)*48,70,16,{a,ribs:4,win:6});box(Math.cos(a)*86,Math.sin(a)*86,22,34,{a,r:3,lines:3});}disc(0,0,28,{win:10});nav(0,0,P.nav[1]);}],
+ trident:['Trident','gen',({truss,disc,hex,solar,nav,P})=>{for(let i=0;i<3;i++){const a=-Math.PI/2+i*2*Math.PI/3,c=Math.cos(a),s=Math.sin(a),pc=Math.cos(a+Math.PI/2),ps=Math.sin(a+Math.PI/2);truss(c*24,s*24,c*72,s*72,10);solar(c*48+pc*17,s*48+ps*17,30,12,a);solar(c*48-pc*17,s*48-ps*17,30,12,a);disc(c*80,s*80,16,{win:6});nav(c*98,s*98,P.nav[i%2],i*.6);}hex(0,0,28,{win:8});}],
+ lattice:['Lattice','gen',({truss,box,disc,cyl,nav,P})=>{for(let i=-1;i<=1;i++){truss(-82,i*45,82,i*45,8);truss(i*55,-72,i*55,72,8);}box(0,0,40,30,{r:4,win:5,lines:3});box(-55,-45,26,20,{r:3});cyl(55,45,40,14,{ribs:3});disc(55,-45,14);disc(-55,45,14);box(0,45,24,18,{r:3});nav(-82,-45,P.nav[0]);nav(82,45,P.nav[1],1);}],
+ shipyard:['Shipyard','gen',({box,poly,truss,nav,P,t})=>{poly([[-60,-12],[40,-18],[70,0],[40,18],[-60,12]],{c:'#7d8895',seams:true});box(-66,0,10,20);truss(-90,-40,90,-40,10);truss(-90,40,90,40,10);truss(-90,-40,-90,40,10);const c=Math.sin(t*.3)*50;box(c,-40,10,26,{c:'#c9a640'});box(c*.7,40,10,26,{c:'#c9a640'});nav(-90,-40,P.nav[0]);nav(90,-40,P.nav[0],.5);nav(-90,40,P.nav[1],1);nav(90,40,P.nav[1],1.5);}],
+ fueldepot:['Fuel Depot','gen',({disc,truss,box,nav})=>{for(let i=0;i<6;i++){const a=i/6*Math.PI*2;truss(0,0,Math.cos(a)*62,Math.sin(a)*62,7);}for(let i=0;i<6;i++){const a=i/6*Math.PI*2;disc(Math.cos(a)*64,Math.sin(a)*64,22,{c:i%2?'#b9a27a':'#a0aab5',band:true});}box(0,0,30,30,{r:4,a:Math.PI/4});nav(0,0,'255,180,60');}],
+ relay:['Relay','gen',({beam,solar,dish,box,nav,P})=>{solar(-56,0,60,22,0,6,2);solar(56,0,60,22,0,6,2);beam(0,-94,0,94,6);box(0,0,22,30,{r:3,win:2});dish(0,-70,22,-Math.PI/2);dish(0,70,18,Math.PI/2);nav(0,-100,P.nav[0]);nav(0,100,P.nav[1],1);}],
+ habitat:['Habitat Cluster','gen',({disc,beam,nav,P})=>{const pts=[[0,0,32],[-58,-30,22],[55,-36,24],[-42,50,20],[50,46,18]];for(const [a,b] of pts.slice(1))beam(0,0,a,b,8);pts.forEach(([a,b,R],i)=>disc(a,b,R,{win:Math.round(R/2.5),band:i===0}));nav(-58,-56,P.nav[0]);nav(72,46,P.nav[1],1);}],
+ tower:['Tower','gen',({cyl,box,nav,P})=>{cyl(0,0,200,20,{a:Math.PI/2,ribs:10});box(0,-55,70,14,{r:3,win:8});box(0,0,100,18,{r:4,win:12,lines:4});box(0,55,60,12,{r:3,win:6});nav(0,-100,P.nav[0]);nav(0,100,P.nav[1],1);nav(-50,0,P.nav[0],.7);nav(50,0,P.nav[1],1.3);}],
+ hexhub:['Hex Hub','gen',({hex,beam,nav,P})=>{for(let i=0;i<6;i++){const a=i/6*Math.PI*2+Math.PI/6;beam(0,0,Math.cos(a)*58,Math.sin(a)*58,8);}for(let i=0;i<6;i++){const a=i/6*Math.PI*2+Math.PI/6;hex(Math.cos(a)*60,Math.sin(a)*60,22,{win:5});}hex(0,0,30,{win:8});nav(0,-98,P.nav[0]);nav(0,98,P.nav[1],1);}],
+ saucer:['Saucer','gen',({disc,arcWins,nav,P,t})=>{disc(0,0,92,{c:'#7f8b98'});arcWins(0,0,84,48,t*.02);disc(0,0,66);arcWins(0,0,58,34);disc(0,0,40,{c:'#aeb9c4'});disc(0,0,16,{c:'#d9e2ea'});nav(0,-92,P.nav[0]);nav(0,92,P.nav[1],1);}],
+ crescent:['Crescent','gen',({arcHull,box,cyl,nav,P})=>{arcHull(0,10,76,20,Math.PI*.85,Math.PI*2.15,{win:20,seg:10});box(-60,56,26,22,{r:4,a:-.7});box(60,56,26,22,{r:4,a:.7});cyl(0,-20,50,14,{a:Math.PI/2,ribs:3});nav(-66,68,P.nav[0]);nav(66,68,P.nav[1],1);}],
+ starport:['Starport','gen',({poly,pad,nav,box,P})=>{poly(SV_OCT(92),{c:'#7d8896',seams:true});for(const [a,b] of [[-40,-40],[40,-40],[-40,40],[40,40]])pad(a,b,22);box(0,0,30,30,{r:4,win:4});SV_OCT(88).forEach(([a,b],i)=>nav(a,b,P.nav[i%2],i*.25));}],
+ refinery:['Refinery','gen',({disc,cyl,beam,box,glow,nav,P,t})=>{beam(-60,0,60,0,8);beam(0,-60,0,60,8);disc(-60,-40,22,{band:true});disc(-60,40,22,{band:true});cyl(50,-40,60,22,{ribs:4});cyl(50,40,60,22,{ribs:4});box(0,0,36,36,{r:4,lines:3,win:4});beam(0,-18,0,-90,4);const f=.7+.3*Math.sin(t*9);glow(0,-94,16*f,'255,150,50',.9);nav(90,0,P.nav[0]);}],
+ observatory:['Observatory','gen',({cyl,disc,solar,box,nav,x,P})=>{solar(-60,52,50,20,.3);solar(60,52,50,20,-.3);box(0,30,62,40,{r:5,win:6,lines:3});cyl(14,-28,140,30,{a:-.6,ribs:6,cap:4});x.fillStyle='#0b1018';x.beginPath();x.ellipse(14+Math.cos(-.6)*70,-28+Math.sin(-.6)*70,4,13,-.6,0,Math.PI*2);x.fill();disc(-22,22,24,{c:'#c5cfda'});nav(70,-76,P.nav[0]);}],
+ gyroscope:['Gyroscope','gen',({x,disc,nav,P,t})=>{const g=(rx,ry,a,c)=>{x.save();x.rotate(a);x.beginPath();x.ellipse(0,0,rx,Math.max(.5,ry),0,0,Math.PI*2);x.lineWidth=9;x.strokeStyle=P.dark;x.stroke();x.lineWidth=6;x.strokeStyle=c;x.stroke();x.restore();};g(92,92*Math.abs(Math.cos(t*.4)),0,'#a9b6c3');g(84,84*Math.abs(Math.sin(t*.3)),Math.PI/3,'#97a5b3');g(76,76*Math.abs(Math.cos(t*.5+1)),-Math.PI/3,'#8794a2');disc(0,0,30,{band:true,win:8});nav(0,0,P.nav[1]);}],
+ dockring:['Docking Hub','gen',({ring,beam,ship,disc,nav,P})=>{for(let i=0;i<8;i++){const a=i/8*Math.PI*2,c=Math.cos(a),s=Math.sin(a);beam(c*62,s*62,c*88,s*88,5);if(i%3!==1)ship(c*95,s*95,a+Math.PI,8);}ring(0,0,62,14,{seg:16,win:24,spokes:4,hub:20});disc(0,0,22,{band:true});nav(0,0,P.nav[1]);}],
+ // ----- Eisdon: green-tinted metal, heavy plating, rivets, hazard stripes, smoke and amber work lights -----
+ 'eis-foundry':['Foundry','eis',({box,hazard,smoke,glow,cyl,nav,P,t})=>{box(0,12,150,90,{lines:6,rivets:true,r:2});box(-40,-46,50,26,{rivets:true});box(35,-48,40,30,{rivets:true});for(const sx of[-55,-28,30,56]){cyl(sx,-72,30,12,{a:Math.PI/2,ribs:3});smoke(sx,-90,sx*.01);}const f=.75+.25*Math.sin(t*5);box(0,22,44,24,{c:'#3a2a1c'});glow(0,22,40*f,'255,120,30',.7);glow(0,22,20,'255,180,70',.9*f);hazard(0,60,150,9);nav(-75,60,P.nav[0]);nav(75,60,P.nav[1],1);}],
+ 'eis-bastion':['Bastion','eis',({poly,turret,box,nav,P,t})=>{poly(SV_OCT(86),{seams:true});poly(SV_OCT(54),{c:'#6c7b64'});box(0,0,40,40,{rivets:true,win:3});for(let i=0;i<4;i++){const a=Math.PI/4+i*Math.PI/2;turret(Math.cos(a)*68,Math.sin(a)*68,12,a+Math.sin(t*.4+i)*1.2);}for(let i=0;i<4;i++){const a=i*Math.PI/2;nav(Math.cos(a)*80,Math.sin(a)*80,P.nav[i%2],i*.4);}}],
+ 'eis-mine':['Mining Platform','eis',({box,truss,cyl,hazard,smoke,nav,P,t})=>{truss(-95,32,95,32,12);box(-20,-8,90,60,{rivets:true,lines:4,win:5});hazard(-20,24,90,8);const d=Math.sin(t*2)*4;cyl(50+d,-40,70,14,{a:-.5,ribs:5});cyl(-74,-50,60,12,{a:.6,ribs:4});box(70,32,30,26,{c:'#7a6a50',rivets:true});smoke(-40,-42,0);nav(-95,32,P.nav[0]);nav(95,32,P.nav[1],1);}],
+ 'eis-drydock':['Drydock','eis',({box,hazard,poly,truss,nav,P,t})=>{poly([[-55,-14],[45,-14],[70,0],[45,14],[-55,14]],{c:'#5d6a58',seams:true});truss(-30,-14,30,-14,6);box(-82,0,18,112,{rivets:true});box(4,-60,172,16,{rivets:true});box(4,60,172,16,{rivets:true});hazard(4,-50,160,5);hazard(4,50,160,5);const c=Math.sin(t*.25)*55;box(c,-60,14,30,{c:'#b98d2a'});box(-c*.8,60,14,30,{c:'#b98d2a'});nav(90,-60,P.nav[0]);nav(90,60,P.nav[1],1);}],
+ 'eis-silo':['Silo Array','eis',({disc,truss,box,nav,P})=>{for(let i=-1;i<=1;i++)truss(i*55,-40,i*55,40,6);truss(-55,0,55,0,6);for(let i=-1;i<=1;i++)for(const j of[-1,1])disc(i*55,j*40,25,{band:true,rivets:true});box(0,0,24,24,{rivets:true});nav(-82,-40,P.nav[0]);nav(82,40,P.nav[1],1);}],
+ 'eis-bulwark':['Bulwark Ring','eis',({ring,box,disc,nav,at,P,t})=>{at(0,0,t*.02,()=>{ring(0,0,76,20,{seg:12,spokes:4,hub:26,sw:10});for(let i=0;i<12;i++){const a=(i+.5)/12*Math.PI*2;box(Math.cos(a)*76,Math.sin(a)*76,22,28,{a,rivets:true,r:1});}});disc(0,0,30,{rivets:true,band:'#c9a12a'});nav(0,-100,P.nav[0]);nav(0,100,P.nav[1],1);}],
+ 'eis-ironworks':['Ironworks','eis',({beam,box,cyl,smoke,glow,nav,P,t})=>{beam(-100,0,100,0,14);for(let i=-3;i<=3;i++){const h=30+(((i+3)*37)%4)*10;box(i*27,i%2?-h/2-8:h/2+8,22,h,{rivets:true,lines:2});}cyl(0,-12,170,5,{c:'#8a6b45'});cyl(0,12,170,5,{c:'#8a6b45'});for(const sx of[-54,27,81])smoke(sx,-58,sx*.01);glow(-27,40,12+3*Math.sin(t*6),'255,140,40',.8);nav(-100,0,P.nav[0]);nav(100,0,P.nav[1],1);}],
+ 'eis-oredepot':['Ore Depot','eis',({poly,box,beam,truss,nav,P,t})=>{truss(-90,0,90,0,10);for(let i=-1;i<=1;i++){poly([[i*58-22,-62],[i*58+22,-62],[i*58+14,-14],[i*58-14,-14]],{c:'#6f6650',seams:true});poly([[i*58-22,62],[i*58+22,62],[i*58+14,14],[i*58-14,14]],{c:'#6f6650',seams:true});}const a=Math.sin(t*.3)*.6-Math.PI/2;beam(0,0,Math.cos(a)*72,Math.sin(a)*72,5,'#b98d2a');box(0,0,26,26,{rivets:true});nav(-90,0,P.nav[0]);nav(90,0,P.nav[1],1);}],
+ 'eis-frontier':['Frontier Post','eis',({box,cyl,mast,hazard,searchlight,t})=>{searchlight(34,-32,t*.5,110);box(-30,0,60,36,{rivets:true,win:4});box(25,10,40,30,{rivets:true});cyl(-30,-34,50,14,{ribs:3});box(-70,20,24,24,{c:'#6c5f45',rivets:true});hazard(25,28,40,6);mast(34,-6,34,-56);}],
+ 'eis-citadel':['Citadel','eis',({box,turret,mast,hazard,t})=>{box(0,0,150,150,{rivets:true,lines:6,r:3});box(0,0,106,106,{c:'#6d7d66',rivets:true});box(0,0,64,64,{rivets:true,win:4});hazard(0,0,64,8);for(const [a,b] of [[-62,-62],[62,-62],[-62,62],[62,62]])turret(a,b,13,Math.atan2(b,a)+Math.sin(t*.3)*.5);mast(0,-20,22,-48);}],
+ // ----- Gallia: blue-grey modular stations: chunky cylinders, docking rings, lit windows, red and green guide lights -----
+ 'gal-battleship':['Battleship','gal',({poly,box,turret,cyl,wins,glow,nav,P,t})=>{poly([[-96,-14],[60,-22],[100,0],[60,22],[-96,14]],{seams:true});box(-20,0,70,24,{r:3,win:7});box(10,0,30,16,{r:2});for(const tx of[-60,40,66])turret(tx,0,8,Math.sin(t*.3+tx)*.5);cyl(-94,-9,12,7);cyl(-94,9,12,7);glow(-102,-9,10,P.glow,.8);glow(-102,9,10,P.glow,.8);wins(-80,-11,50,-16,14);wins(-80,11,50,16,14);nav(100,0,P.nav[0]);nav(-60,-16,P.nav[1],1);}],
+ 'gal-dockring':['Docking Ring','gal',({arcHull,box,glow,nav,P,t})=>{arcHull(0,0,78,22,Math.PI*.17,Math.PI*1.83,{win:30,seg:14});for(const a of [Math.PI*.5,Math.PI,Math.PI*1.5])box(Math.cos(a)*78,Math.sin(a)*78,30,40,{a,r:3,win:3,lines:2});for(const a of[Math.PI*.17,-Math.PI*.17])box(Math.cos(a)*78,Math.sin(a)*78,18,30,{a,r:3});const k=Math.floor(t*4)%5;for(let i=0;i<5;i++)for(const sy of[-1,1]){const px=96-i*9,py=sy*(36-i*1.5);glow(px,py,i===k?7:3,i===k?'140,255,160':'255,220,150',.9);}nav(84,-42,P.nav[0]);nav(84,42,P.nav[1],.5);}],
+ 'gal-fort':['Fort','gal',({disc,cyl,turret,bay,nav,P,t})=>{for(let i=0;i<4;i++){const a=i*Math.PI/2+Math.PI/4;cyl(Math.cos(a)*50,Math.sin(a)*50,64,20,{a,ribs:4,win:5});turret(Math.cos(a)*86,Math.sin(a)*86,11,a+Math.sin(t*.3+i)*.4);}disc(0,0,44,{band:true,win:16});disc(0,0,22,{c:'#a9b7c6'});bay(0,-44,30,12);nav(-18,-52,P.nav[0]);nav(18,-52,P.nav[1],.5);}],
+ 'gal-trade':['Trade Station','gal',({cyl,box,bay,beam,nav,P})=>{beam(-94,-30,94,-30,7);box(-88,-30,16,24,{r:2});box(88,-30,16,24,{r:2});bay(-88,-30,8,14);bay(88,-30,8,14);cyl(0,0,190,28,{a:Math.PI/2,ribs:9});for(const [y,w] of [[-62,60],[-10,84],[46,70]])cyl(0,y,w,20,{ribs:4,win:Math.round(w/7)});nav(-98,-30,P.nav[0]);nav(98,-30,P.nav[1],1);nav(0,-96,P.nav[0],.5);}],
+ 'gal-mining':['Mining Station','gal',({x,cyl,box,truss,nav,P})=>{svDrawRock(x,-30,10,58,svRock(17,13),.3);truss(10,-10,88,-50,9);cyl(50,30,80,22,{a:-.4,ribs:5,win:8});box(80,-50,26,30,{r:3,win:3});box(-60,-52,30,22,{r:3,win:2});nav(88,-68,P.nav[0]);nav(-78,-52,P.nav[1],1);}],
+ 'gal-prison':['Prison Station','gal',({box,cyl,searchlight,nav,P,t})=>{for(let k=0;k<2;k++)searchlight(0,0,t*.4+k*Math.PI,125,.12);for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++)if(i||j)box(i*44,j*44,38,38,{r:2,lines:3,win:2,c:(i+j)%2?P.hull:'#76859a'});cyl(0,0,46,46,{cap:10,ribs:3});for(const [a,b] of[[-64,-64],[64,-64],[-64,64],[64,64]])nav(a,b,P.nav[0],a*.01+b*.003);}],
+ 'gal-research':['Research Station','gal',({disc,ring,mast,dish,solar,t})=>{solar(-72,0,36,60,0,2,5);solar(72,0,36,60,0,2,5);ring(0,0,58,6,{rot:t*.08,seg:10,win:12,spokes:3,hub:34});disc(0,0,36,{band:true,win:12});mast(0,-36,0,-96);dish(0,52,20,Math.PI/2);}],
+ 'gal-shipyard':['Shipyard','gal',({cyl,poly,box,truss,nav,P,t})=>{poly([[-60,-16],[30,-20],[66,0],[30,20],[-60,16]],{c:'#6f7d8e',seams:true});for(const y of[-48,48])cyl(0,y,190,18,{ribs:8,win:16});for(const sx of[-86,86])cyl(sx,0,80,16,{a:Math.PI/2,ribs:3});for(let i=-2;i<=2;i++)truss(i*30,-39,i*30,-21,6);const c=Math.sin(t*.25)*60;box(c,-48,16,26,{c:'#c9a640',r:2});nav(-97,-48,P.nav[0]);nav(97,48,P.nav[1],1);}],
+ 'gal-depot':['Depot','gal',({truss,cyl,box,nav,P})=>{truss(-96,0,96,0,12);const cc=['#8a7a5a','#6d7f99','#9a5a4a','#7a8a6a'];for(let i=-2;i<=2;i++){if(!i)continue;for(const sy of[-1,1])box(i*34,sy*22,26,28,{c:cc[(i+2+(sy>0?1:0))%4],lines:3});}cyl(0,0,50,46,{cap:10,ribs:3,win:6});nav(-96,0,P.nav[0]);nav(96,0,P.nav[1],1);}],
+ 'gal-freeport':['Freeport','gal',({cyl,ring,box,beam,bay,nav,P,t})=>{beam(-20,0,-88,60,6);box(-88,60,20,16,{r:2});bay(-88,60,8,10);ring(38,-30,42,9,{rot:t*.05,spokes:4,hub:12,seg:12,win:16});cyl(-10,10,130,32,{a:.5,ribs:6,win:12});box(-60,-40,40,26,{r:3,win:4,lines:2});cyl(52,50,50,16,{a:-.3,ribs:3});nav(82,-30,P.nav[0]);nav(-100,60,P.nav[1],1);}],
+ // ----- Secaran Republic: sleek light hulls, glowing blue light strips and cores -----
+ 'sec-spire':['Spire','sec',({poly,strip,glow,x,P,t})=>{for(const sx of[-1,1])poly([[sx*10,10],[sx*46,52],[sx*40,64],[sx*12,48]]);poly([[0,-100],[9,-20],[14,60],[0,100],[-14,60],[-9,-20]]);for(let i=0;i<3;i++){const y=-50+i*40,p=.6+.4*Math.sin(t*2-i);x.save();x.strokeStyle=`rgba(${P.win},${.9*p})`;x.lineWidth=2.5;x.beginPath();x.ellipse(0,y,26-i*2,6,0,0,Math.PI*2);x.stroke();x.restore();}strip(0,-88,0,88,1.6);glow(0,100,14,P.win,.8);}],
+ 'sec-halo':['Halo','sec',({disc,strip,arcStrip,glow,x,at,P,t})=>{at(0,0,t*.05,()=>{x.beginPath();x.arc(0,0,84,0,Math.PI*2);x.lineWidth=11;x.strokeStyle=P.dark;x.stroke();x.lineWidth=8;x.strokeStyle=P.hull;x.stroke();for(let i=0;i<4;i++){const a=i*Math.PI/2;strip(Math.cos(a)*32,Math.sin(a)*32,Math.cos(a)*78,Math.sin(a)*78,1.4);}arcStrip(0,0,84,0,Math.PI*2,1.6);});disc(0,0,30);glow(0,0,26,P.win,.75);}],
+ 'sec-nexus':['Nexus','sec',({x,disc,glow,lin,P,t})=>{for(let i=0;i<3;i++){x.save();x.rotate(i*Math.PI*2/3+t*.03);x.beginPath();x.moveTo(0,-14);x.quadraticCurveTo(50,-42,86,-10);x.lineTo(88,4);x.quadraticCurveTo(50,-22,0,14);x.closePath();x.fillStyle=lin(0,-30,0,14,[[0,'#eef4fb'],[1,'#6a788d']]);x.fill();x.strokeStyle=P.dark;x.lineWidth=1.2;x.stroke();x.save();x.strokeStyle=`rgba(${P.win},.9)`;x.lineWidth=1.5;x.beginPath();x.moveTo(8,-2);x.quadraticCurveTo(50,-31,84,-4);x.stroke();x.restore();disc(88,-3,10);glow(88,-3,11,P.win,.85);x.restore();}disc(0,0,30);glow(0,0,22+2*Math.sin(t*2),P.win,.8);}],
+ 'sec-crescent':['Crescent','sec',({x,disc,glow,lin,arcStrip,P,t})=>{x.beginPath();x.arc(0,0,88,0,Math.PI*2);x.moveTo(86,0);x.arc(20,0,66,0,Math.PI*2,true);x.fillStyle=lin(-88,-88,88,88,[[0,'#eef4fb'],[.5,P.hull],[1,'#5d6b80']]);x.fill('evenodd');x.strokeStyle=P.dark;x.lineWidth=1.2;x.stroke();arcStrip(0,0,76,Math.PI*.62,Math.PI*1.38,1.8);arcStrip(0,0,62,Math.PI*.7,Math.PI*1.3,1.1,P.win,.6);disc(-58,0,13);glow(-58,0,14+2*Math.sin(t*2),P.win,.9);}],
+ 'sec-prism':['Prism','sec',({poly,glow,strip,P,t})=>{poly([[0,-96],[60,0],[0,96],[-60,0]]);poly([[0,-96],[60,0],[0,0]],{c:'#e3ebf4'});poly([[-60,0],[0,96],[0,0]],{c:'#8a97aa'});strip(0,-80,0,80,1.4);strip(-48,0,48,0,1.4);glow(0,0,24+3*Math.sin(t*2.5),P.win,.95);}],
+ 'sec-lotus':['Lotus','sec',({x,lin,glow,disc,P,t})=>{for(let i=0;i<6;i++){x.save();x.rotate(i*Math.PI/3+t*.02);x.beginPath();x.ellipse(52,0,40,16,0,0,Math.PI*2);x.fillStyle=lin(12,-16,92,16,[[0,'#eef4fb'],[1,'#6d7b90']]);x.fill();x.strokeStyle=P.dark;x.lineWidth=1.2;x.stroke();x.save();x.strokeStyle=`rgba(${P.win},.85)`;x.lineWidth=1.4;x.beginPath();x.moveTo(20,0);x.lineTo(86,0);x.stroke();x.restore();x.restore();}disc(0,0,24);glow(0,0,30,P.win,.85);}],
+ 'sec-arcology':['Arcology','sec',({x,lin,wins,glow,P})=>{for(const [cy,rx,ry] of [[40,92,34],[10,74,28],[-18,56,22],[-42,36,16]]){x.beginPath();x.ellipse(0,cy,rx,ry,0,0,Math.PI*2);x.fillStyle=lin(-rx,cy-ry,rx,cy+ry,[[0,'#eef4fb'],[.6,P.hull],[1,'#5f6d82']]);x.fill();x.strokeStyle=P.dark;x.lineWidth=1.2;x.stroke();wins(-rx*.8,cy+ry*.55,rx*.8,cy+ry*.55,Math.round(rx/5),P.win,2.4);}glow(0,-46,12,P.win,.9);}],
+ 'sec-sentinel':['Sentinel','sec',({poly,strip,glow,P,t})=>{for(const sx of[-1,1]){poly([[sx*8,-30],[sx*70,40],[sx*62,58],[sx*10,30]]);strip(sx*14,-14,sx*62,46,1.3);}poly([[0,-100],[16,-40],[16,70],[0,92],[-16,70],[-16,-40]]);strip(0,-84,0,80,1.6);glow(0,-60,10+3*Math.sin(t*3),P.win,.95);glow(0,92,12,P.win,.8);}],
+ 'sec-sensor':['Sensor Array','sec',({poly,disc,glow,strip,dish,P,t})=>{dish(0,-30,22,-Math.PI/2);dish(0,30,22,Math.PI/2);poly([[-100,0],[-80,-10],[80,-10],[100,0],[80,10],[-80,10]]);strip(-86,0,86,0,1.4);for(let i=-2;i<=2;i++){disc(i*36,0,i?9:18);glow(i*36,0,i?9:18,P.win,.6+.3*Math.sin(t*3+i));}}],
+ 'sec-ark':['Ark','sec',({x,lin,strip,glow,P,t})=>{x.beginPath();x.moveTo(100,0);x.bezierCurveTo(60,-30,-60,-38,-90,-14);x.lineTo(-90,14);x.bezierCurveTo(-60,38,60,30,100,0);x.fillStyle=lin(0,-36,0,36,[[0,'#eef4fb'],[.4,P.hull],[1,'#56647a']]);x.fill();x.strokeStyle=P.dark;x.lineWidth=1.2;x.stroke();
+  x.beginPath();x.ellipse(-10,0,11,48,0,0,Math.PI*2);x.lineWidth=9;x.strokeStyle=P.dark;x.stroke();x.lineWidth=6;x.strokeStyle=P.hull;x.stroke();x.save();x.lineWidth=1.6;x.strokeStyle=`rgba(${P.win},.9)`;x.stroke();x.restore();strip(-80,0,86,0,1.4);glow(-96,0,14+2*Math.sin(t*4),P.win,.9);}]
+};
+const STATION_GROUPS=[['General',{ring:'Ring',spindle:'Spindle',hub:'Hub',outpost:'Outpost'}],['Eisdon',{}],['Gallia',{}],['Secaran Republic',{}]];
+for(const [k,[label]] of Object.entries(SV_STATION_DESIGNS))STATION_GROUPS[k.startsWith('eis-')?1:k.startsWith('gal-')?2:k.startsWith('sec-')?3:0][1][k]=label;
+const STATION_STYLES={};for(const [g,m] of STATION_GROUPS)for(const [k,l] of Object.entries(m))STATION_STYLES[k]=g==='General'?l:`${g} ${l}`;
+const SV_GEN_STATIONS=Object.keys(STATION_GROUPS[0][1]); // the generator picks from the general designs
+const STATION_SIZES={small:['Small',11.25],medium:['Medium',20],large:['Large',32.5],huge:['Huge',50]};
+const SV_PLANET_MAX=500,SV_HABITABLE=['terran','jungle','ocean','city','swamp','coral','tundra','eyeball'],SV_GATE_R=9000,SV_GATE_SIZE=110,SV_LIMIT=12999;
 // Grid: 26 × 26 squares of 1,000 units over the system, columns A-Z (left to right) and rows 1-26 (top to bottom),
 // so a position reads like "G-8". Snap to grid (admin) puts placed and dragged objects in the middle of a square.
 const SV_GRID=26,SV_CELL=1000,SV_GRID_HALF=SV_GRID*SV_CELL/2,SV_COLS='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -2211,7 +2344,7 @@ function sanitizeInterior(v){
  for(const o of v.objects.slice(0,300)){
   if(!o||!SV_TYPES[o.type]||typeof o.id!=='string'||!o.id||ids.has(o.id))continue;ids.add(o.id);
   const c={id:o.id.slice(0,24),type:o.type,name:str(o.name,80),x:num(o.x,0,-SV_LIMIT,SV_LIMIT),y:num(o.y,0,-SV_LIMIT,SV_LIMIT),seed:Number.isInteger(o.seed)?o.seed:svHash(o.id)};
-  if(o.type==='planet'){c.style=PLANET_STYLES[o.style]?o.style:'rocky';c.size=Math.round(num(o.size,1300,150,3200));c.rings=!!o.rings;}
+  if(o.type==='planet'){c.style=PLANET_STYLES[o.style]?o.style:'rocky';c.size=Math.round(num(o.size,400,80,SV_PLANET_MAX));c.rings=!!o.rings;c.habitable=!!o.habitable;c.docks=Math.round(num(o.docks,2,1,4));c.traffic=Math.round(num(o.traffic,5,0,10));}
   else if(o.type==='asteroid')c.size=Math.round(num(o.size,120,10,500));
   else if(o.type==='cluster'){c.count=Math.round(num(o.count,60,5,250));c.spread=Math.round(num(o.spread,800,150,3000));}
   else{c.style=STATION_STYLES[o.style]?o.style:'ring';c.size=STATION_SIZES[o.size]?o.size:'medium';}
@@ -2224,14 +2357,14 @@ function svGenerate(s,seed){
  const r=rng(seed??svHash(s.id)),pick=a=>a[Math.floor(r()*a.length)],cols=Object.keys(NEBULA_COLORS).filter(c=>c!=='dust'),objs=[];
  const free=(x,y,rad)=>Math.hypot(x,y)>rad+900&&Math.hypot(x,y)+rad<SV_GATE_R-700&&objs.every(o=>Math.hypot(o.x-x,o.y-y)>rad+(o.type==='planet'?o.size*(o.rings?1.9:1):o.type==='cluster'?o.spread:400)+900);
  const place=(dMin,dMax,rad)=>{for(let i=0;i<40;i++){const a=r()*Math.PI*2,d=dMin+r()*(dMax-dMin),x=Math.cos(a)*d,y=Math.sin(a)*d;if(free(x,y,rad))return [Math.round(x),Math.round(y)];}const a=r()*Math.PI*2;return [Math.round(Math.cos(a)*dMax),Math.round(Math.sin(a)*dMax)];};
- const [cx,cy]=place(1800,2600,200);objs.push({id:'control',type:'control',name:'',x:cx,y:cy,seed:Math.floor(r()*1e9),style:pick(['ring','hub','spindle']),size:'large'});
+ const [cx,cy]=place(1800,2600,200);objs.push({id:'control',type:'control',name:'',x:cx,y:cy,seed:Math.floor(r()*1e9),style:pick(['ring','hub','spindle','twinring','wheel','sphere','dockring','hexhub']),size:'large'});
  const np=Math.floor(r()*4),num=['I','II','III','IV','V'];
- for(let i=0;i<np;i++){const size=Math.round(900+r()*1300),rings=r()<.3,[x,y]=place(3200,7400,size*(rings?1.9:1));objs.push({id:'p'+i,type:'planet',name:`${s.name} ${num[i]}`,x,y,seed:Math.floor(r()*1e9),style:pick(Object.keys(PLANET_STYLES)),size,rings});}
+ for(let i=0;i<np;i++){const size=Math.round(260+r()*(SV_PLANET_MAX-260)),rings=r()<.3,[x,y]=place(3200,7400,size*(rings?1.9:1)),seed=Math.floor(r()*1e9),style=pick(Object.keys(PLANET_STYLES));objs.push({id:'p'+i,type:'planet',name:`${s.name} ${num[i]}`,x,y,seed,style,size,rings,habitable:SV_HABITABLE.includes(style)&&seed%4!==0,docks:1+seed%3,traffic:3+seed%5});}
  const nc=Math.floor(r()*3);for(let i=0;i<nc;i++){const spread=Math.round(500+r()*900),[x,y]=place(3000,7800,spread);objs.push({id:'c'+i,type:'cluster',name:'Asteroid field',x,y,seed:Math.floor(r()*1e9),count:Math.round(35+r()*80),spread});}
- if(r()<.45){const [x,y]=place(2800,7600,250);objs.push({id:'s0',type:'station',name:`${s.name} Station`,x,y,seed:Math.floor(r()*1e9),style:pick(['ring','spindle','hub','outpost']),size:pick(['small','medium','medium','large'])});}
+ if(r()<.45){const [x,y]=place(2800,7600,250);objs.push({id:'s0',type:'station',name:`${s.name} Station`,x,y,seed:Math.floor(r()*1e9),style:pick(SV_GEN_STATIONS),size:pick(['small','medium','medium','large'])});}
  return sanitizeInterior({bg:{color:pick(cols),accent:pick(cols),density:Math.round((.35+r()*.45)*100)/100,stars:.7},objects:objs});
 }
-const SV={grid:svPref('grid',true),snap:svPref('snap',false),open:false,id:null,cam:{x:0,y:0,z:.2},sel:null,placing:null,drag:null,down:null,gen:new Map(),cache:new Map(),bgKey:'',bgCanvas:null,stars:null,ships:[],shipKey:'',admin:null,last:0,saveTimer:0};
+const SV={grid:svPref('grid',true),snap:svPref('snap',false),open:false,id:null,cam:{x:0,y:0,z:.2},sel:null,placing:null,drag:null,down:null,gen:new Map(),cache:new Map(),bgKey:'',bgCanvas:null,stars:null,tr:null,admin:null,last:0,saveTimer:0};
 const svCanvas=()=>$('sv-canvas');
 function svSys(){return sys(SV.id);}
 function svInterior(s=svSys()){if(!s)return null;if(s.interior)return s.interior;let g=SV.gen.get(s.id);if(!g){g=svGenerate(s);SV.gen.set(s.id,g);}return g;}
@@ -2259,7 +2392,7 @@ function svName(o,s){return o.type==='control'?(o.name||`${s.name} Traffic Contr
 // ---------- opening and closing ----------
 function svGridUI(){$('sv').classList.toggle('grid-on',SV.grid);$('sv-grid').setAttribute('aria-pressed',String(SV.grid));if(!SV.grid)$('sv-cell').textContent='';}
 function svOpen(id){svGridUI();
- const s=sys(id);if(!s)return;SV.open=true;SV.id=id;SV.sel=null;SV.placing=null;SV.drag=null;SV.ships=[];SV.shipKey='';SV.bgKey='';
+ const s=sys(id);if(!s)return;SV.open=true;SV.id=id;SV.sel=null;SV.placing=null;SV.drag=null;SV.tr=null;SV.bgKey='';
  $('sv').hidden=false;document.body.classList.add('sv-open');$('sv-name').textContent=s.name;svFit();svTools();svInfo();svHint();svCtxUI();
  svCanvas().focus({preventScroll:true});requestAnimationFrame(svFrame);
 }
@@ -2300,12 +2433,13 @@ function svInfo(){
  const row=(l,v)=>`<dt>${l}</dt><dd>${esc(v)}</dd>`,opt=(map,cur)=>Object.entries(map).map(([k,v])=>`<option value="${k}"${k===cur?' selected':''}>${esc(Array.isArray(v)?v[0]:v)}</option>`).join('');
  let view='',edit='';
  const gridRow=row('Grid',svCell(o.x,o.y));
- if(o.type==='planet'){view=row('Type',PLANET_STYLES[o.style])+row('Diameter',`${(o.size*30).toLocaleString('en-US')} km`)+(o.rings?row('Rings','Yes'):'');
-  edit=`<label class="sv-field">Type<select data-sv-f="style">${opt(PLANET_STYLES,o.style)}</select></label><label class="sv-field">Size<input type="range" min="150" max="3200" step="10" value="${o.size}" data-sv-f="size"></label><label class="sv-check"><input type="checkbox" data-sv-f="rings"${o.rings?' checked':''}> Rings</label>`;}
+ if(o.type==='planet'){view=row('Type',PLANET_STYLES[o.style])+row('Diameter',`${(o.size*30).toLocaleString('en-US')} km`)+(o.rings?row('Rings','Yes'):'')+(o.habitable?row('Habitable',`Yes · ${o.docks} docking station${o.docks>1?'s':''}`)+row('Traffic',`${o.traffic} / 10`):'');
+  edit=`<label class="sv-field">Type<select data-sv-f="style">${opt(PLANET_STYLES,o.style)}</select></label><label class="sv-field">Size<input type="range" min="80" max="${SV_PLANET_MAX}" step="5" value="${o.size}" data-sv-f="size"></label><label class="sv-check"><input type="checkbox" data-sv-f="rings"${o.rings?' checked':''}> Rings</label><label class="sv-check"><input type="checkbox" data-sv-f="habitable"${o.habitable?' checked':''}> Habitable (docking stations and traffic)</label>`+
+  (o.habitable?`<label class="sv-field">Docking stations<select data-sv-f="docks">${[1,2,3,4].map(n=>`<option value="${n}"${n===o.docks?' selected':''}>${n}</option>`).join('')}</select></label><label class="sv-field">Traffic: <b data-sv-tv>${o.traffic} / 10</b><input type="range" min="0" max="10" value="${o.traffic}" data-sv-f="traffic"></label>`:'');}
  else if(o.type==='asteroid'){view=row('Size',`${(o.size*15).toLocaleString('en-US')} m across`);edit=`<label class="sv-field">Size<input type="range" min="10" max="500" value="${o.size}" data-sv-f="size"></label>`;}
  else if(o.type==='cluster'){view=row('Asteroids',`About ${o.count}`);edit=`<label class="sv-field">Number of asteroids<input type="range" min="5" max="250" value="${o.count}" data-sv-f="count"></label><label class="sv-field">Spread<input type="range" min="150" max="3000" step="10" value="${o.spread}" data-sv-f="spread"></label>`;}
  else{view=row('Design',STATION_STYLES[o.style])+row('Size',STATION_SIZES[o.size][0])+(o.type==='control'?row('Role','Issues gate clearance and controls traffic'):'');
-  edit=`<label class="sv-field">Design<select data-sv-f="style">${opt(STATION_STYLES,o.style)}</select></label><label class="sv-field">Size<select data-sv-f="size">${opt(STATION_SIZES,o.size)}</select></label>`;}
+  edit=`<label class="sv-field">Design<select data-sv-f="style">${STATION_GROUPS.map(([g,m])=>`<optgroup label="${esc(g)}">${opt(m,o.style)}</optgroup>`).join('')}</select></label><label class="sv-field">Size<select data-sv-f="size">${opt(STATION_SIZES,o.size)}</select></label>`;}
  el.innerHTML=`<div class="sv-ih"><div><span class="eyebrow">${esc(SV_TYPES[o.type])}</span><h3>${esc(svName(o,s))}</h3></div>${x}</div>`+(admin?'':`<dl class="sv-dl">${gridRow}${view}</dl>`)+
   (admin?`<div class="sv-edit"><label class="sv-field">Name<input maxlength="80" value="${esc(o.name)}" placeholder="${esc(svName(o,s))}" data-sv-f="name"></label>${edit}<p class="sv-small">Grid ${svCell(o.x,o.y)}. Drag it in the view to move it${SV.snap?' (snaps to the grid)':''}.</p>${o.type==='control'?'':`<button class="btn danger" type="button" data-sv-del>Delete</button>`}</div>`:'');
 }
@@ -2382,8 +2516,10 @@ function svPlanetImage(o,star){
 function svRock(seed,n=11){const r=rng(seed),pts=[];for(let k=0;k<n;k++){const a=k/n*Math.PI*2,d=.65+r()*.45;pts.push([Math.cos(a)*d,Math.sin(a)*d]);}return pts;}
 function svDrawRock(x,px,py,rad,pts,rot){x.save();x.translate(px,py);x.rotate(rot);x.beginPath();pts.forEach(([a,b],i)=>i?x.lineTo(a*rad,b*rad):x.moveTo(a*rad,b*rad));x.closePath();const g=x.createLinearGradient(-rad,-rad,rad,rad);g.addColorStop(0,'#9a948c');g.addColorStop(1,'#3a3632');x.fillStyle=g;x.fill();x.strokeStyle='rgba(0,0,0,.35)';x.lineWidth=Math.max(.5,rad*.06);x.stroke();x.restore();}
 function svDrawStation(x,o,px,py,z,t){
- const size=STATION_SIZES[o.size][1],k=size*z/100;if(k<.02){x.fillStyle='#cfe7ff';x.fillRect(px-1,py-1,2,2);return;}
- x.save();x.translate(px,py);x.scale(k,k);const metal='#9aa8b6',dark='#4b5663',blink=(t*1.3+o.seed%7)%2<.35;const light=(lx,ly,col)=>{x.fillStyle=blink?col:'rgba(0,0,0,0)';x.beginPath();x.arc(lx,ly,4,0,Math.PI*2);x.fill();};
+ const size=STATION_SIZES[o.size][1],k=size*z/100,des=SV_STATION_DESIGNS[o.style];
+ if(size*z<3.5){const rgb=des?SV_PAL[des[1]].glow:'170,210,255',g=x.createRadialGradient(px,py,0,px,py,6);g.addColorStop(0,`rgba(${rgb},.55)`);g.addColorStop(1,`rgba(${rgb},0)`);x.fillStyle=g;x.fillRect(px-6,py-6,12,12);x.fillStyle=o.type==='control'?'#bfffd8':'#e6f2ff';x.fillRect(px-1.3,py-1.3,2.6,2.6);return;} // too small to draw: a marker
+ x.save();x.translate(px,py);x.scale(k,k);
+ if(des)des[2](svKit(x,SV_PAL[des[1]],t,o.seed));else{const metal='#9aa8b6',dark='#4b5663',blink=(t*1.3+o.seed%7)%2<.35;const light=(lx,ly,col)=>{x.fillStyle=blink?col:'rgba(0,0,0,0)';x.beginPath();x.arc(lx,ly,4,0,Math.PI*2);x.fill();};
  if(o.style==='ring'){x.rotate(t*.06);x.lineWidth=16;x.strokeStyle=dark;x.beginPath();x.arc(0,0,86,0,Math.PI*2);x.stroke();x.lineWidth=10;x.strokeStyle=metal;x.stroke();
   x.lineWidth=6;for(let i=0;i<4;i++){x.rotate(Math.PI/2);x.beginPath();x.moveTo(20,0);x.lineTo(80,0);x.stroke();}x.fillStyle=metal;x.beginPath();x.arc(0,0,24,0,Math.PI*2);x.fill();x.fillStyle=dark;x.beginPath();x.arc(0,0,11,0,Math.PI*2);x.fill();
   for(let i=0;i<8;i++){const a=i/8*Math.PI*2;x.fillStyle='rgba(255,230,160,.85)';x.fillRect(Math.cos(a)*86-2,Math.sin(a)*86-2,4,4);}light(0,-96,'#ff5040');light(0,96,'#40ff80');}
@@ -2392,6 +2528,7 @@ function svDrawStation(x,o,px,py,z,t){
  else if(o.style==='hub'){x.rotate(t*.03);x.strokeStyle=metal;x.lineWidth=8;for(let i=0;i<6;i++){const a=i/6*Math.PI*2;x.beginPath();x.moveTo(Math.cos(a)*30,Math.sin(a)*30);x.lineTo(Math.cos(a)*78,Math.sin(a)*78);x.stroke();x.fillStyle=dark;x.beginPath();x.arc(Math.cos(a)*84,Math.sin(a)*84,15,0,Math.PI*2);x.fill();x.fillStyle='rgba(255,220,150,.8)';x.fillRect(Math.cos(a)*84-3,Math.sin(a)*84-3,6,6);}
   const g=x.createRadialGradient(-10,-10,4,0,0,38);g.addColorStop(0,'#dfe8f0');g.addColorStop(1,'#56616d');x.fillStyle=g;x.beginPath();x.arc(0,0,38,0,Math.PI*2);x.fill();light(0,0,'#ffffff');}
  else{x.fillStyle=dark;x.fillRect(-60,-22,70,44);x.fillStyle=metal;x.fillRect(-20,-40,48,34);x.fillRect(4,0,56,30);x.fillStyle='#3a5a8a';x.fillRect(-92,-14,30,28);x.strokeStyle=metal;x.lineWidth=4;x.beginPath();x.moveTo(30,-40);x.lineTo(46,-80);x.stroke();x.beginPath();x.arc(46,-84,10,Math.PI*.1,Math.PI*1.1);x.stroke();light(46,-84,'#ff5040');x.fillStyle='rgba(255,230,160,.85)';for(let i=0;i<4;i++)x.fillRect(-14+i*10,-30,4,4);}
+ }
  if(o.type==='control'){const p=(t*.5)%1;x.strokeStyle=`rgba(120,255,170,${.6*(1-p)})`;x.lineWidth=3/Math.max(k,.2)*.6;x.beginPath();x.arc(0,0,110+p*160,0,Math.PI*2);x.stroke();}
  x.restore();
 }
@@ -2405,12 +2542,114 @@ function svDrawGate(x,g,px,py,z,t){
  for(let i=0;i<8;i++){const a=i/8*Math.PI*2,on=g.cond!=='closed'?((t*2+i)%8)<1.2:(t%2)<1;x.fillStyle=on?`rgb(${col})`:'rgba(40,40,40,.9)';x.beginPath();x.arc(Math.cos(a)*R,Math.sin(a)*R,R*.07,0,Math.PI*2);x.fill();}
  x.restore();
 }
-function svShips(s,it,gates){
- const ctl=it.objects.find(o=>o.type==='control'),key=gates.map(g=>g.id+g.cond+g.lane.traffic).join()+'|'+(ctl?ctl.x+','+ctl.y:'');if(key===SV.shipKey)return SV.ships;
- const r=rng(svHash(s.id+'ships')),ships=[];
- for(const g of gates){if(g.cond==='closed'||!ctl)continue;const n=Math.max(1,Math.round(g.lane.traffic*(g.cond==='caution'?.25:.5)));
-  for(let i=0;i<n;i++)ships.push({g,out:r()<.5,p:r(),v:.025+r()*.03,bend:(r()-.5)*.6});}
- SV.shipKey=key;return SV.ships=ships;
+// ---------- traffic ----------
+// Ships jump in at the gates (a flash, a short pause, then they set off) and fly to a station or to a habitable
+// planet's docking station; others leave stations and docks and jump out through a gate. Gate arrivals follow each
+// lane's traffic level; a habitable planet's own traffic setting (0-10) sets how busy its docks are. At a dock,
+// incoming ships queue outside until the doors open, go in one at a time, and departing ships wait inside for
+// the doors. This runs only in each visitor's browser and is not saved.
+const SV_SHIP_CAP=220,SV_DOOR_TIME=1.1,SV_TRANSIT=1.4,SV_SLOT=20;
+function svDocks(o){ // docking stations spaced evenly around a habitable planet's edge
+ if(o.type!=='planet'||!o.habitable)return [];const n=o.docks||1,a0=(o.seed%360)*Math.PI/180,R=o.size,out=[];
+ for(let i=0;i<n;i++){const a=a0+i*Math.PI*2/n,c=Math.cos(a),s=Math.sin(a),pt=d=>[o.x+c*(R+d),o.y+s*(R+d)];
+  out.push({key:o.id+'#'+i,planet:o,a,body:pt(14),door:pt(36),inside:pt(18),approach:pt(70),slot:k=>pt(70+k*SV_SLOT)});}
+ return out;
+}
+function svTrafficState(s){if(!SV.tr||SV.tr.id!==s.id)SV.tr={id:s.id,ships:[],flashes:[],docks:new Map(),timers:new Map(),warm:false};return SV.tr;}
+function svDockState(T,key){let st=T.docks.get(key);if(!st){st={d:0,hold:0,q:[],out:0,busy:null,turn:0};T.docks.set(key,st);}return st;}
+const svExp=rate=>-Math.log(1-Math.random())/rate;
+function svTick(T,key,rate,dt,fn){if(!(rate>0)){T.timers.delete(key);return;}let v=T.timers.get(key);if(v===undefined)v=svExp(rate)*Math.random();v-=dt;while(v<=0){fn();v+=svExp(rate);}T.timers.set(key,v);}
+const SV_ENGINES=['150,200,255','255,190,120','170,255,210','200,180,255'];
+function svNewShip(x,y,to,mode,extra){return Object.assign({x,y,ang:0,to,mode,timer:0,age:0,alpha:1,scale:1,speed:0,col:SV_ENGINES[Math.floor(Math.random()*SV_ENGINES.length)]},extra);}
+function svJumpIn(T,g,to){const a=Math.atan2(-g.y,-g.x),j=(Math.random()-.5)*90;
+ const sh=svNewShip(g.x+Math.cos(a)*70-Math.sin(a)*j,g.y+Math.sin(a)*70+Math.cos(a)*j,to,'gate',{ang:a,timer:1+Math.random()*1.8,scale:0});T.ships.push(sh);T.flashes.push({x:sh.x,y:sh.y,t:0});}
+function svStartFly(sh){sh.mode='fly';sh.ax=sh.x;sh.ay=sh.y;sh.p=0;sh.bend=(Math.random()-.5)*.5;sh.v=260+Math.random()*160;}
+function svTrafficStep(s,it,gates,dt){
+ const T=svTrafficState(s);
+ if(!T.warm){T.warm=true;for(let i=0;i<450;i++)svTrafficStep(s,it,gates,.1);T.flashes=[];} // start with traffic already under way
+ const open=gates.filter(g=>g.cond!=='closed').map(g=>({g,rate:(g.lane.traffic||0)*(g.cond==='caution'?.5:1)/30})).filter(e=>e.rate>0);
+ const gRate=open.reduce((a,e)=>a+e.rate,0),pickGate=()=>{let v=Math.random()*gRate;for(const e of open){v-=e.rate;if(v<=0)return e.g;}return open[open.length-1].g;};
+ const stations=it.objects.filter(o=>o.type==='station'||o.type==='control'),wt=o=>o.type==='control'?2:1,W=stations.reduce((a,o)=>a+wt(o),0),ctl=it.objects.find(o=>o.type==='control');
+ const docks=new Map();for(const p of it.objects)for(const d of svDocks(p))docks.set(d.key,d);
+ for(const k of [...T.docks.keys()])if(!docks.has(k))T.docks.delete(k);
+ const room=()=>T.ships.length<SV_SHIP_CAP;
+ // gate arrivals bound for stations, and station departures to the gates
+ if(W)for(const e of open)svTick(T,'g:'+e.g.id,e.rate,dt,()=>{if(!room())return;let v=Math.random()*W,st=stations[0];for(const o of stations){v-=wt(o);if(v<=0){st=o;break;}}svJumpIn(T,e.g,{kind:'station',id:st.id});});
+ for(const o of stations)svTick(T,'s:'+o.id,W&&gRate?gRate*wt(o)/W:0,dt,()=>{if(!room())return;T.ships.push(svNewShip(o.x,o.y,{kind:'gate',id:pickGate().id},'undock',{alpha:0,ang:Math.random()*6.28}));});
+ // habitable planets
+ for(const p of it.objects){const pd=svDocks(p);const rate=pd.length?(p.traffic||0)/40:0;
+  svTick(T,'pi:'+p.id,rate,dt,()=>{if(!room())return;let best=null,bn=1e9;for(const d of pd){const n=svDockState(T,d.key).q.length+T.ships.reduce((a,sh)=>a+(sh.to.id===d.key&&sh.mode!=='queue'?1:0),0);if(n<bn){bn=n;best=d;}}if(bn>=12)return;
+   const to={kind:'dock',id:best.key};if(gRate)svJumpIn(T,pickGate(),to);else if(ctl)T.ships.push(svNewShip(ctl.x,ctl.y,to,'undock',{alpha:0}));});
+  svTick(T,'po:'+p.id,rate,dt,()=>{const st=svDockState(T,pd[Math.floor(Math.random()*pd.length)].key);if(st.out<4)st.out++;});}
+ // dock doors: open when a ship waits at the front of the queue or inside; one ship passes through at a time
+ for(const [key,d] of docks){const st=svDockState(T,key),front=st.q[0],ready=!!(front&&front.ready);
+  if(st.mustClose&&!st.busy){st.d=Math.max(0,st.d-dt/SV_DOOR_TIME);if(st.d<=0)st.mustClose=false;} // the doors shut after every ship
+  else if(ready||st.out>0||st.busy){st.hold=.6;st.d=Math.min(1,st.d+dt/SV_DOOR_TIME);}else{st.hold-=dt;if(st.hold<=0)st.d=Math.max(0,st.d-dt/SV_DOOR_TIME);}
+  if(!st.busy&&st.d>=1){
+   if(ready&&(st.turn===0||!st.out)){st.q.shift();front.mode='enter';front.timer=0;front.ready=false;front.dock=key;st.busy=front;st.turn=1;}
+   else if(st.out>0){st.out--;const to=gRate?{kind:'gate',id:pickGate().id}:ctl?{kind:'station',id:ctl.id}:null;
+    if(to&&room()){const sh=svNewShip(d.inside[0],d.inside[1],to,'exit',{dock:key,alpha:0,ang:d.a});T.ships.push(sh);st.busy=sh;}st.turn=0;}}}
+ // ships
+ for(const sh of T.ships){sh.age+=dt;
+  if(sh.mode==='gate'){sh.scale=Math.min(1,sh.age/.35);sh.timer-=dt;const tg=svShipTarget(T,sh,it,gates,docks);if(tg)sh.ang=svTurn(sh.ang,Math.atan2(tg[1]-sh.y,tg[0]-sh.x),dt*1.5);if(sh.timer<=0)svStartFly(sh);continue;}
+  if(sh.mode==='undock'){sh.alpha=Math.min(1,sh.alpha+dt/.6);if(sh.alpha>=1)svStartFly(sh);continue;}
+  if(sh.mode==='dockst'){sh.alpha-=dt/.6;sh.scale=Math.max(.3,sh.alpha);if(sh.alpha<=0)sh.dead=true;continue;}
+  if(sh.mode==='enter'||sh.mode==='exit'){const d=docks.get(sh.dock);if(!d){sh.dead=true;continue;}sh.timer+=dt/SV_TRANSIT;const f=Math.min(1,sh.timer),e=f<.5?2*f*f:1-Math.pow(-2*f+2,2)/2,[a,b]=sh.mode==='enter'?[d.approach,d.inside]:[d.inside,d.approach];
+   sh.x=a[0]+(b[0]-a[0])*e;sh.y=a[1]+(b[1]-a[1])*e;sh.ang=sh.mode==='enter'?d.a+Math.PI:d.a;sh.alpha=sh.mode==='enter'?Math.max(0,Math.min(1,(.85-f)/.25)):Math.max(0,Math.min(1,(f-.15)/.25));
+   if(f>=1){const st=T.docks.get(sh.dock);if(st&&st.busy===sh){st.busy=null;st.mustClose=true;}if(sh.mode==='enter')sh.dead=true;else{sh.alpha=1;sh.dock=null;svStartFly(sh);}}continue;}
+  if(sh.mode==='queue'){const d=docks.get(sh.to.id),st=d&&T.docks.get(d.key);if(!d||!st){sh.dead=true;continue;}const i=st.q.indexOf(sh),[tx,ty]=d.slot(Math.max(0,i)),dx=tx-sh.x,dy=ty-sh.y,dist=Math.hypot(dx,dy),step=70*dt;
+   if(dist>step){sh.x+=dx/dist*step;sh.y+=dy/dist*step;sh.ang=svTurn(sh.ang,Math.atan2(dy,dx),dt*4);sh.speed=.3;}else{sh.x=tx;sh.y=ty;sh.ang=svTurn(sh.ang,d.a+Math.PI,dt*3);sh.speed=0;}sh.ready=i===0&&dist<2;continue;}
+  // flying along a gentle curve; slow at the start and the end
+  const tg=svShipTarget(T,sh,it,gates,docks);if(!tg){sh.dead=true;continue;}
+  const [bx,by]=tg,dx=bx-sh.ax,dy=by-sh.ay,L=Math.hypot(dx,dy)||1,mx=(sh.ax+bx)/2-dy*sh.bend*.5,my=(sh.ay+by)/2+dx*sh.bend*.5,done=sh.p*L,left=(1-sh.p)*L,ease=Math.max(.1,Math.min(1,Math.min(done+50,left+20)/600));
+  sh.p=Math.min(1,sh.p+sh.v*ease*dt/(L*1.05));sh.speed=ease;const p=sh.p,q=1-p;
+  sh.x=q*q*sh.ax+2*q*p*mx+p*p*bx;sh.y=q*q*sh.ay+2*q*p*my+p*p*by;sh.ang=Math.atan2(2*q*(my-sh.ay)+2*p*(by-my),2*q*(mx-sh.ax)+2*p*(bx-mx));
+  if(p>=1){if(sh.to.kind==='gate'){T.flashes.push({x:sh.x,y:sh.y,t:0});sh.dead=true;}
+   else if(sh.to.kind==='station'){sh.mode='dockst';}
+   else{const st=svDockState(T,sh.to.id);st.q.push(sh);sh.mode='queue';}}
+ }
+ if(T.ships.some(sh=>sh.dead))T.ships=T.ships.filter(sh=>!sh.dead);
+ for(const f of T.flashes)f.t+=dt;T.flashes=T.flashes.filter(f=>f.t<.7);
+ return T;
+}
+function svTurn(a,b,k){const d=Math.atan2(Math.sin(b-a),Math.cos(b-a));return a+d*Math.min(1,k);}
+function svShipTarget(T,sh,it,gates,docks){const to=sh.to;
+ if(to.kind==='gate'){const g=gates.find(g=>g.id===to.id);return g?[g.x,g.y]:null;}
+ if(to.kind==='station'){const o=it.objects.find(o=>o.id===to.id);return o?[o.x,o.y]:null;}
+ const d=docks.get(to.id);return d?d.slot(svDockState(T,d.key).q.length):null;
+}
+// a docking station on a planet's edge: local +x points away from the planet; the doors are on the outer face
+function svDrawDock(x,d,st,px,py,z,t){
+ const W=60*z;if(W<2)return;if(W<5){x.fillStyle='rgba(220,235,255,.85)';x.fillRect(px-1.2,py-1.2,2.4,2.4);return;}
+ const k=z,o=st?st.d:0;x.save();x.translate(px,py);x.rotate(d.a);x.scale(k,k);
+ const lin=(x0,y0,x1,y1,a,b,c)=>{const g=x.createLinearGradient(x0,y0,x1,y1);g.addColorStop(0,a);g.addColorStop(.5,b);g.addColorStop(1,c);return g;};
+ x.fillStyle='#3d4753';x.beginPath();x.moveTo(-30,-40);x.lineTo(-10,-31);x.lineTo(-10,31);x.lineTo(-30,40);x.closePath();x.fill(); // footing into the ground
+ x.fillStyle=lin(-14,-30,22,30,'#c3ccd6','#8d99a6','#4f5a66');x.beginPath();x.roundRect(-14,-31,36,62,4);x.fill();x.strokeStyle='#26303a';x.lineWidth=1.4;x.stroke();
+ x.strokeStyle='rgba(0,0,0,.25)';x.lineWidth=1;x.beginPath();for(const yy of[-16,0,16]){x.moveTo(-12,yy);x.lineTo(16,yy);}x.stroke();
+ for(const sy of[-1,1]){x.fillStyle=lin(-10,sy*31,26,sy*42,'#a9b4c0','#7d8995','#46505b');x.fillRect(-10,sy>0?31:-42,34,11);x.strokeStyle='#26303a';x.strokeRect(-10,sy>0?31:-42,34,11);}
+ // doorway: lit interior shows as the two door leaves slide apart
+ x.fillStyle='#0a0e14';x.fillRect(18,-19,6,38);
+ if(o>0){const g=x.createLinearGradient(10,0,26,0);g.addColorStop(0,`rgba(255,214,150,${.75*o})`);g.addColorStop(1,`rgba(255,214,150,${.15*o})`);x.fillStyle=g;x.fillRect(18,-19*o,6,38*o);}
+ const leaf=19*(1-o);x.fillStyle='#6f7b88';x.fillRect(19,-19,6,leaf);x.fillRect(19,19-leaf,6,leaf);x.strokeStyle='#26303a';x.lineWidth=1;x.strokeRect(19,-19,6,leaf);x.strokeRect(19,19-leaf,6,leaf);
+ x.fillStyle='#d4a21e';for(const yy of[-19,19-3])x.fillRect(25,yy,2,3);
+ // status lights: green open, red shut, amber while moving
+ const moving=o>0&&o<1,col=o>=1?'90,255,140':moving?((t*4)%1<.5?'255,190,60':'60,50,20'):'255,70,60';
+ for(const sy of[-1,1]){x.fillStyle=`rgb(${col})`;x.beginPath();x.arc(24,sy*25,2.2,0,Math.PI*2);x.fill();const g=x.createRadialGradient(24,sy*25,0,24,sy*25,8);g.addColorStop(0,`rgba(${col},.6)`);g.addColorStop(1,`rgba(${col},0)`);x.fillStyle=g;x.fillRect(16,sy*25-8,16,16);}
+ // approach guide lights, chasing toward the door while it is open
+ for(let i=0;i<5;i++){const lx=34+i*8,on=o>=1&&Math.floor(t*6)%5===4-i;for(const sy of[-1,1]){x.fillStyle=on?'rgba(150,255,180,1)':'rgba(150,200,255,.35)';x.fillRect(lx-1,sy*13-1,2,2);}}
+ x.restore();
+}
+function svDrawShips(x,T,z,sx,sy,w,h){
+ const k0=Math.max(1.8,5*z);
+ for(const sh of T.ships){const px=sx(sh.x),py=sy(sh.y);if(px<-30||px>w+30||py<-30||py>h+30||sh.alpha<=0)continue;const k=k0*(sh.scale??1);if(k<.3)continue;x.globalAlpha=Math.max(0,Math.min(1,sh.alpha));
+  const c=Math.cos(sh.ang),s=Math.sin(sh.ang);
+  if(sh.mode==='fly'&&sh.speed>.2){x.strokeStyle=`rgba(${sh.col},${.4*sh.speed})`;x.lineWidth=Math.max(1,k*.35);x.beginPath();x.moveTo(px-c*k*.4,py-s*k*.4);x.lineTo(px-c*k*(1+4*sh.speed),py-s*k*(1+4*sh.speed));x.stroke();}
+  x.fillStyle='#e8f2ff';x.beginPath();x.moveTo(px+c*k,py+s*k);x.lineTo(px+Math.cos(sh.ang+2.5)*k*.7,py+Math.sin(sh.ang+2.5)*k*.7);x.lineTo(px+Math.cos(sh.ang-2.5)*k*.7,py+Math.sin(sh.ang-2.5)*k*.7);x.fill();
+  if(sh.mode!=='queue'||sh.speed>0){x.fillStyle=`rgba(${sh.col},.9)`;x.fillRect(px-c*k*.55-1,py-s*k*.55-1,2,2);}}
+ x.globalAlpha=1;
+ for(const f of T.flashes){const p=f.t/.7,px=sx(f.x),py=sy(f.y),R=Math.max(140*z,26)*(.3+p);if(px<-R||px>w+R||py<-R||py>h+R)continue;
+  const g=x.createRadialGradient(px,py,0,px,py,R);g.addColorStop(0,`rgba(255,255,255,${.95*(1-p)})`);g.addColorStop(.3,`rgba(170,220,255,${.6*(1-p)})`);g.addColorStop(1,'rgba(120,180,255,0)');
+  x.save();x.globalCompositeOperation='lighter';x.fillStyle=g;x.fillRect(px-R,py-R,R*2,R*2);x.strokeStyle=`rgba(200,235,255,${.7*(1-p)})`;x.lineWidth=1.5;x.beginPath();x.arc(px,py,R*.8,0,Math.PI*2);x.stroke();x.restore();}
 }
 function svFrame(now){
  if(!SV.open)return;requestAnimationFrame(svFrame);
@@ -2443,17 +2682,14 @@ function svFrame(now){
   if(o.type==='cluster'){const r=rng(o.seed),rad=o.spread*z;if(px<-rad-50||px>w+rad+50||py<-rad-50||py>h+rad+50)continue;
    for(let i=0;i<o.count;i++){const a=r()*Math.PI*2,d=Math.sqrt(r())*o.spread,rs=(8+r()*r()*45)*Math.max(1,o.spread/450),pts=svRock(o.seed+i,9),rot=r()*6+t*(r()-.5)*.1;const ax=px+Math.cos(a)*d*z,ay=py+Math.sin(a)*d*.75*z;if(rs*z<.8){x.fillStyle='rgba(170,160,150,.8)';x.fillRect(ax,ay,1.2,1.2);}else svDrawRock(x,ax,ay,rs*z,pts,rot);}
    labels.push([px,py+o.spread*z*.8+14,svName(o,s),'#c9c2b8',o.id]);}
-  else if(o.type==='planet'){const img=svPlanetImage(o,star),sz=img.S*(o.size/img.R)*z;if(px+sz<0||px-sz>w||py+sz<0||py-sz>h)continue;x.drawImage(img.c,px-sz/2,py-sz/2,sz,sz);labels.push([px,py+o.size*z+18,svName(o,s),'#d8e8ff',o.id]);}
+  else if(o.type==='planet'){const img=svPlanetImage(o,star),sz=img.S*(o.size/img.R)*z;if(px+sz<0||px-sz>w||py+sz<0||py-sz>h)continue;x.drawImage(img.c,px-sz/2,py-sz/2,sz,sz);labels.push([px,o.habitable?py+5:py+o.size*z+18,svName(o,s),'#d8e8ff',o.id]);}
   else if(o.type==='asteroid'){svDrawRock(x,px,py,Math.max(1.5,o.size*z),svRock(o.seed),o.seed%6+t*.05);labels.push([px,py+o.size*z+14,svName(o,s),'#c9c2b8',o.id]);}
  }
  for(const g of gates){const px=sx(g.x),py=sy(g.y);svDrawGate(x,g,px,py,z,t);labels.push([px,py+SV_GATE_SIZE*z+18,`Gate to ${g.to.name}`,`rgb(${LANE_CONDITIONS[g.cond].colors[2]})`,g.id,LANE_CONDITIONS[g.cond].label]);}
- // traffic between the gates and traffic control
- const ctl=it.objects.find(o=>o.type==='control');
- for(const sh of svShips(s,it,gates)){sh.p+=sh.v*dt*(3200/Math.hypot(sh.g.x-ctl.x,sh.g.y-ctl.y));if(sh.p>=1){sh.p=0;sh.out=!sh.out;}
-  const [ax,ay,bx,by]=sh.out?[ctl.x,ctl.y,sh.g.x,sh.g.y]:[sh.g.x,sh.g.y,ctl.x,ctl.y],e=sh.p<.5?2*sh.p*sh.p:1-Math.pow(-2*sh.p+2,2)/2,mx=(ax+bx)/2+(by-ay)*sh.bend*.3,my=(ay+by)/2-(bx-ax)*sh.bend*.3;
-  const qx=(1-e)*(1-e)*ax+2*(1-e)*e*mx+e*e*bx,qy=(1-e)*(1-e)*ay+2*(1-e)*e*my+e*e*by,dx=2*(1-e)*(mx-ax)+2*e*(bx-mx),dy=2*(1-e)*(my-ay)+2*e*(by-my),ang=Math.atan2(dy,dx),px=sx(qx),py=sy(qy),k=Math.max(2.2,9*z);
-  const col=LANE_CONDITIONS[sh.g.cond].colors[2];x.strokeStyle=`rgba(${col},.35)`;x.lineWidth=Math.max(1,k*.35);x.beginPath();x.moveTo(px,py);x.lineTo(px-Math.cos(ang)*k*4,py-Math.sin(ang)*k*4);x.stroke();
-  x.fillStyle='#e8f2ff';x.beginPath();x.moveTo(px+Math.cos(ang)*k,py+Math.sin(ang)*k);x.lineTo(px+Math.cos(ang+2.5)*k*.7,py+Math.sin(ang+2.5)*k*.7);x.lineTo(px+Math.cos(ang-2.5)*k*.7,py+Math.sin(ang-2.5)*k*.7);x.fill();}
+ // traffic: docking stations on habitable planets, ships and jump flashes (ships fade into stations, so they draw first)
+ const T=svTrafficStep(s,it,gates,dt);
+ for(const o of it.objects)for(const d of svDocks(o)){const [bx,by]=d.body,bpx=sx(bx),bpy=sy(by);if(bpx<-80*z-40||bpx>w+80*z+40||bpy<-80*z-40||bpy>h+80*z+40)continue;svDrawDock(x,d,T.docks.get(d.key),bpx,bpy,z,t);}
+ svDrawShips(x,T,z,sx,sy,w,h);
  for(const o of it.objects)if(o.type==='station'||o.type==='control'){const px=sx(o.x),py=sy(o.y);svDrawStation(x,o,px,py,z,t);labels.push([px,py+STATION_SIZES[o.size][1]*z+18,svName(o,s),o.type==='control'?'#9dffc4':'#d8e8ff',o.id,o.type==='control'?'Traffic control':'']);}
  // selection ring and labels
  if(SV.sel){const b=svBounds(SV.sel,it,gates,s);if(b){const px=sx(b[0]),py=sy(b[1]),rr=Math.max(10,b[2]*z+8);x.strokeStyle='rgba(152,220,255,.85)';x.setLineDash([6,5]);x.lineWidth=1.5;x.beginPath();x.arc(px,py,rr,0,Math.PI*2);x.stroke();x.setLineDash([]);}}
@@ -2496,7 +2732,7 @@ function svSelect(id){SV.sel=id;svInfo();if(SV.ctxOpen)svCtxList(true);}
 function svAdd(type,wx,wy){
  if(!isAdmin())return;const it=svOwn(),id='o'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),seed=Math.floor(Math.random()*1e9);
  const [px,py]=svPos(wx,wy),o={id,type,name:'',x:px,y:py,seed};
- if(type==='planet')Object.assign(o,{name:'New planet',style:'rocky',size:1400,rings:false});else if(type==='asteroid')Object.assign(o,{name:'Asteroid',size:140});
+ if(type==='planet')Object.assign(o,{name:'New planet',style:'rocky',size:400,rings:false,habitable:false,docks:2,traffic:5});else if(type==='asteroid')Object.assign(o,{name:'Asteroid',size:140});
  else if(type==='cluster')Object.assign(o,{name:'Asteroid field',count:70,spread:900});else Object.assign(o,{name:'New station',style:'ring',size:'medium'});
  it.objects.push(o);SV.placing=null;svTools();svSelect(id);svHint();svCommit(`${SV_TYPES[type]} added.`);
 }
@@ -2542,8 +2778,8 @@ function svWire(){
   if(e.target.matches('[data-sv-star]')){const it=svOwn();it.star=SV_STAR_DIRS[e.target.value]?e.target.value:'';SV.cache.clear();svCommit();return;}
   const bg=e.target.dataset.svBg;if(bg){const it=svOwn(),v=e.target.value;it.bg[bg]=bg==='density'||bg==='stars'?clamp(+v/100,0,1):v;SV.bgKey='';svCommit();return;}
   const f=e.target.dataset.svF;if(!f||!SV.sel)return;svOwn();const o=svObj(SV.sel);if(!o)return;
-  if(f==='name')o.name=e.target.value.slice(0,80);else if(f==='rings')o.rings=e.target.checked;else if(f==='style'||(f==='size'&&o.type!=='planet'&&o.type!=='asteroid'))o[f]=e.target.value;else o[f]=Math.round(+e.target.value);
-  SV.cache.delete(o.id);svCommit();if(e.type==='input'&&e.target.tagName==='SELECT')svInfo();
+  if(f==='name')o.name=e.target.value.slice(0,80);else if(f==='rings')o.rings=e.target.checked;else if(f==='habitable'){o.habitable=e.target.checked;o.docks=o.docks||2;o.traffic=o.traffic??5;svOwn();svCommit();svInfo();return;}else if(f==='style'||(f==='size'&&o.type!=='planet'&&o.type!=='asteroid'))o[f]=e.target.value;else o[f]=Math.round(+e.target.value);
+  SV.cache.delete(o.id);svCommit();if(e.type==='input'&&e.target.tagName==='SELECT')svInfo();if(f==='traffic'){const b=$('sv-info').querySelector('[data-sv-tv]');if(b)b.textContent=`${o.traffic} / 10`;}
   if(f!=='name'){const h=$('sv-info').querySelector('h3');if(h)h.textContent=svName(o,svSys());}else{const h=$('sv-info').querySelector('h3');if(h)h.textContent=svName(o,svSys());}});
 }
 // ---------- Context Menu: search everything in the system and fly to it ----------
@@ -2555,7 +2791,7 @@ function svCtxItems(){
  for(const g of svGates(s))out.push({id:g.id,kind:'gate',name:`Gate to ${g.to.name}`,sub:`Jump gate · ${LANE_CONDITIONS[g.cond].label}`,x:g.x,y:g.y,f:'gate'});
  const order={control:0,station:1,planet:2,cluster:3,asteroid:4};
  for(const o of [...it.objects].sort((a,b)=>order[a.type]-order[b.type]||svName(a,s).localeCompare(svName(b,s)))){
-  const sub=o.type==='planet'?`Planet · ${PLANET_STYLES[o.style]||''}`:o.type==='control'?'Traffic control station':o.type==='station'?`Space station · ${STATION_SIZES[o.size][0]}`:o.type==='cluster'?'Asteroid field':'Asteroid';
+  const sub=o.type==='planet'?`Planet · ${PLANET_STYLES[o.style]||''}${o.habitable?' · Habitable':''}`:o.type==='control'?'Traffic control station':o.type==='station'?`Space station · ${STATION_SIZES[o.size][0]}`:o.type==='cluster'?'Asteroid field':'Asteroid';
   out.push({id:o.id,kind:o.type,name:svName(o,s),sub,x:o.x,y:o.y,f:o.type==='control'||o.type==='station'?'station':o.type==='planet'?'planet':'rock'});}
  return out;
 }
@@ -2574,7 +2810,7 @@ function svCtxUI(){const on=SV.ctxOpen;$('sv').classList.toggle('ctx-on',on);$('
 function svCtxToggle(on){SV.ctxOpen=on;svSetPref('ctx',on);svCtxUI();if(on)$('sv-ctx-q').focus({preventScroll:true});else $('sv-ctx-open').focus({preventScroll:true});}
 function svFlyTo(id){ // centre the camera on an object, zoomed so it fills about a third of the view
  const s=svSys();if(!s)return;const it=svInterior(s),b=svBounds(id,it,svGates(s),s);if(!b)return;const c=svCanvas(),w=c.clientWidth||innerWidth,h=c.clientHeight||innerHeight;
- const save={...SV.cam},target={x:b[0],y:b[1],z:clamp(Math.min(w,h)*.32/Math.max(1,b[2]),svMinZoom(w,h),1.2)};SV.cam={...target};svClampCam(w,h);const to={...SV.cam};SV.cam=save;
+ const save={...SV.cam},target={x:b[0],y:b[1],z:clamp(Math.min(w,h)*.32/Math.max(1,b[2]),svMinZoom(w,h),SV_ZOOM_MAX)};SV.cam={...target};svClampCam(w,h);const to={...SV.cam};SV.cam=save;
  SV.fly={a:{...save},b:to,t0:null};svSelect(id);
 }
 $('sv-ctx-open').onclick=()=>svCtxToggle(true);$('sv-ctx-close').onclick=()=>svCtxToggle(false);
