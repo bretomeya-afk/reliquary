@@ -70,20 +70,61 @@ service cloud.firestore {
       allow read: if isAdmin() || (request.auth != null && request.auth.uid == uid);
       allow create, update: if isAdmin();
     }
-    // Message board: everyone can read; members post under their display name, the administrator as Administrator.
+    // Message board: everyone can read. Posts go in a board (old posts without one count as General); only the
+    // administrator starts topics in Rules & Getting Started. Members post under their display name, the administrator
+    // as Administrator, or either as one of their own characters (the post then carries the character's name).
     // Members can delete their own posts; the administrator can delete any.
+    function validAuthor(d) {
+      return (d.get('char', '') == ''
+          && (isAdmin() || (isMember() && d.from == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.display)))
+        || (d.get('char', '') != '' && d.char is string && d.char.size() <= 40
+          && get(/databases/$(database)/documents/characters/$(d.char)).data.owner == request.auth.uid
+          && d.from == get(/databases/$(database)/documents/characters/$(d.char)).data.name);
+    }
     match /board/{post} {
       allow read: if true;
       allow delete: if isAdmin() || (request.auth != null && resource.data.uid == request.auth.uid);
-      allow create: if request.resource.data.keys().hasOnly(['uid', 'topic', 'title', 'text', 'from', 'faction', 'at'])
+      allow create: if request.resource.data.keys().hasOnly(['uid', 'board', 'topic', 'title', 'text', 'from', 'player', 'char', 'faction', 'at'])
         && request.auth != null && request.resource.data.uid == request.auth.uid
-        && (isAdmin() || (isMember() && request.resource.data.from == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.display))
+        && validAuthor(request.resource.data)
+        && request.resource.data.get('board', 'general') is string && request.resource.data.get('board', 'general').matches('^[a-z0-9-]{1,30}$')
+        && (request.resource.data.topic != '' || request.resource.data.get('board', 'general') != 'rules' || isAdmin())
         && request.resource.data.topic is string && request.resource.data.topic.size() <= 40
         && request.resource.data.title is string && request.resource.data.title.size() <= 120
         && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 2000
-        && request.resource.data.from is string && request.resource.data.from.size() <= 60
+        && request.resource.data.from is string && request.resource.data.from.size() <= 130
+        && request.resource.data.get('player', '') is string && request.resource.data.get('player', '').size() <= 60
         && request.resource.data.faction is string && request.resource.data.faction.size() <= 20
         && request.resource.data.at == request.time;
+    }
+    // Forum characters: ids are {uid}_1 to {uid}_3, which limits each signed-in user to three. Everyone can read them;
+    // the owner creates, edits and deletes them; the administrator can delete any.
+    function shortText(t) {
+      return t is string && t.size() <= 60;
+    }
+    function validCharacter(d) {
+      return d.keys().hasOnly(['owner', 'player', 'name', 'names', 'dob', 'birthplace', 'gender', 'height', 'weight',
+          'nationality', 'race', 'occupation', 'affiliation', 'background', 'image', 'updated'])
+        && d.owner == request.auth.uid && shortText(d.player)
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 130
+        && d.names is list && d.names.size() >= 1 && d.names.size() <= 4
+        && shortText(d.dob) && shortText(d.birthplace) && shortText(d.gender) && shortText(d.height) && shortText(d.weight)
+        && shortText(d.nationality) && shortText(d.race) && shortText(d.occupation) && shortText(d.affiliation)
+        && d.background is string && d.background.size() <= 8000
+        && d.image is string && d.image.size() <= 200000
+        && (d.image == '' || d.image.matches('(https://|data:image/(jpeg|png|webp);base64,).+'))
+        && d.updated == request.time;
+    }
+    match /characters/{id} {
+      allow read: if true;
+      allow create: if request.auth != null && (isMember() || isAdmin())
+        && id.matches('^' + request.auth.uid + '_[1-3]$')
+        && !exists(/databases/$(database)/documents/banned/$(request.auth.uid))
+        && validCharacter(request.resource.data);
+      allow update: if request.auth != null && resource.data.owner == request.auth.uid
+        && id.matches('^' + request.auth.uid + '_[1-3]$')
+        && validCharacter(request.resource.data);
+      allow delete: if isAdmin() || (request.auth != null && resource.data.owner == request.auth.uid);
     }
     // Fleets (ids like gallia-2): anyone logged into a command can place and move its fleets; only the administrator changes the ship count (3 to 10).
     match /fleets/{fleet} {

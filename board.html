@@ -510,7 +510,7 @@ html.faction-dropdown-open,html.faction-dropdown-open body,html.faction-dropdown
 .board-panel{padding:6px 18px 16px}
 .board-topics{list-style:none;margin:0;padding:0}
 .board-topics li+li{border-top:1px solid var(--line)}
-.board-topic{display:flex;flex-direction:column;gap:2px;width:100%;padding:12px 4px;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.board-topic{display:flex;flex-direction:column;gap:2px;width:100%;padding:12px 4px;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;text-decoration:none}
 .board-topic:hover .board-topic-title,.board-topic:focus-visible .board-topic-title{color:var(--accent);text-decoration:underline}
 .board-topic-title{font-size:15px;font-weight:600;color:var(--text)}
 .board-topic-meta{font-size:11px;color:var(--muted)}
@@ -529,6 +529,74 @@ html.faction-dropdown-open,html.faction-dropdown-open body,html.faction-dropdown
 .board-note{margin:12px 0 0}.board-error{margin:0 0 8px;color:#ff9c86;font-size:12px}
 .board-link{padding:0;border:0;background:none;color:var(--accent);font:inherit;text-decoration:underline;cursor:pointer}
 a.home-icon{display:inline-flex;align-items:center;justify-content:center;color:inherit}
+/* Forum sections, boards, characters */
+.board-tabs{display:flex;gap:4px;margin:0 0 14px;border-bottom:1px solid var(--line)}
+.board-tabs a{padding:8px 14px;border:1px solid transparent;border-bottom:0;border-radius:5px 5px 0 0;color:var(--muted);font-size:12px;letter-spacing:.12em;text-transform:uppercase;text-decoration:none}
+.board-tabs a:hover{color:var(--text)}
+.board-tabs a[aria-current="page"]{border-color:var(--line);background:var(--panel2);color:var(--text);margin-bottom:-1px}
+.board-crumbs{margin:12px 0 4px;font-size:12px;color:var(--muted)}
+.board-crumbs a{color:var(--accent)}
+.forum-sec{margin:10px 0 6px}
+.forum-sec-head{display:flex;align-items:center;gap:10px;width:100%;padding:10px 4px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.forum-sec-head:hover .forum-sec-name{color:var(--accent)}
+.forum-chev{display:inline-block;width:8px;height:8px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(45deg);transition:transform .15s;margin:0 4px 3px 2px}
+.forum-sec-head[aria-expanded="false"] .forum-chev{transform:rotate(-45deg);margin-bottom:0}
+.forum-sec-name{font-size:15px;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+.forum-sec-sub{font-size:11px;color:var(--muted)}
+.forum-sec-count{margin-left:auto;font-size:11px;color:var(--muted)}
+.forum-boards{list-style:none;margin:0;padding:0}
+.forum-boards[hidden]{display:none}
+.forum-boards li+li{border-top:1px solid var(--line)}
+.forum-board{display:grid;grid-template-columns:minmax(0,1.4fr) 120px minmax(0,1fr);gap:4px 18px;align-items:center;padding:12px 6px 12px 26px;color:inherit;text-decoration:none}
+.forum-board:hover .forum-board-name,.forum-board:focus-visible .forum-board-name{color:var(--accent);text-decoration:underline}
+.forum-board-name{display:block;font-size:15px;font-weight:600;color:var(--text)}
+.forum-board-desc,.forum-board-stats,.forum-board-last{font-size:11px;color:var(--muted)}
+.forum-board-last b{color:var(--text);font-weight:600}
+@media(max-width:700px){.forum-board{grid-template-columns:1fr;padding-left:14px}}
+.board-post{display:grid;grid-template-columns:56px minmax(0,1fr);gap:12px}
+.board-av{display:flex;align-items:center;justify-content:center;width:56px;height:56px;overflow:hidden;border:1px solid var(--line);border-radius:6px;background:var(--panel2);color:var(--muted);font-size:20px;font-weight:700;text-decoration:none}
+.board-av img{width:100%;height:100%;object-fit:cover}
+a.board-from{text-decoration:none}a.board-from:hover{text-decoration:underline}
+.board-player{font-style:italic}
+.board-as{display:inline-flex;align-items:center;gap:8px;margin-right:auto;font-size:11px;color:var(--muted)}
+.board-as select{max-width:260px;padding:6px 8px;border:1px solid var(--line);border-radius:4px;background:rgba(0,10,16,.9);color:var(--text);font:inherit;font-size:12px}
+.char-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:14px 0 8px}
+.char-head h2,.char-sub{margin:0;font-size:17px}.char-head small{font-size:11px;font-weight:400;color:var(--muted);margin-left:6px}
+.char-sub{margin:22px 0 8px}
+.char-grid-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;list-style:none;margin:0;padding:0}
+.char-card{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:6px;background:var(--panel2);overflow:hidden}
+.char-card-link{display:flex;flex-direction:column;gap:2px;color:inherit;text-decoration:none;padding-bottom:10px}
+.char-card-link:hover .char-card-name{color:var(--accent);text-decoration:underline}
+.char-card .char-img{aspect-ratio:1;margin-bottom:8px;border-bottom:1px solid var(--line)}
+.char-card-name{padding:0 10px;font-size:14px;font-weight:600}
+.char-card-sub{padding:0 10px;font-size:11px;color:var(--muted)}
+.char-card-actions{display:flex;gap:6px;padding:0 10px 10px}.char-card-actions .btn{flex:1;padding:6px 8px}
+.char-img{display:flex;align-items:center;justify-content:center;overflow:hidden;background:rgba(0,10,16,.9);color:var(--muted);font-size:42px;font-weight:700}
+.char-img img{width:100%;height:100%;object-fit:cover}
+.char-img.empty{font-size:12px;font-weight:400}
+.btn.danger{color:#ffb3a3}.btn.danger:hover{border-color:#ff9c86;background:rgba(120,30,20,.45)}
+.btn:disabled{opacity:.5;cursor:default}
+.char-profile{display:grid;grid-template-columns:260px minmax(0,1fr);gap:22px;margin:14px 0}
+.char-profile .char-img{width:260px;height:260px;border:1px solid var(--line);border-radius:6px}
+.char-profile h2{margin:0 0 2px;font-size:22px}
+.char-info{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 18px;margin:14px 0}
+.char-info dt{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.char-info dd{margin:0;overflow-wrap:anywhere}
+.char-bg{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6}
+.char-section-title{margin:18px 0 6px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.char-actions{display:flex;gap:8px;flex-wrap:wrap}
+@media(max-width:700px){.char-profile{grid-template-columns:1fr}.char-profile .char-img{width:100%;max-width:300px;height:auto;aspect-ratio:1}}
+.char-form fieldset{margin:0 0 16px;padding:12px 14px 4px;border:1px solid var(--line);border-radius:6px}
+.char-form legend{padding:0 6px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.char-form-top{display:grid;grid-template-columns:220px minmax(0,1fr);gap:18px;margin-top:12px}
+.char-image-edit{display:flex;flex-direction:column;gap:8px}.char-form-top fieldset{align-self:start}
+.char-image-edit .char-img{width:220px;height:220px;border:1px solid var(--line);border-radius:6px}
+.char-image-edit .char-img-btns{display:flex;gap:6px}.char-image-edit .char-img-btns .btn{flex:1;cursor:pointer}
+.char-fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px 14px;margin-bottom:12px}
+.char-form .field{margin:0}
+.char-form .field.wide{margin-bottom:14px}
+.char-form textarea{min-height:200px;resize:vertical;font:inherit}
+@media(max-width:700px){.char-form-top{grid-template-columns:1fr}}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
 </head>
 <body class="board-page">
@@ -537,18 +605,21 @@ a.home-icon{display:inline-flex;align-items:center;justify-content:center;color:
 <main id="main">
 <div class="heading"><div><div class="eyebrow">Forum</div><h1>Message Board</h1></div><button class="btn primary" type="button" id="board-new-btn" hidden>New topic</button></div>
 <p class="board-online" id="board-online" aria-live="polite"></p>
-<section class="panel board-panel" id="board-body" aria-label="Topics"></section>
+<nav class="board-tabs" aria-label="Message board menu"><a href="#forum" data-tab="forum">Forum</a><a href="#characters" data-tab="characters">Characters</a></nav>
+<section class="panel board-panel" id="board-body" aria-label="Forum"></section>
 </main>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
 <script src="assets/cloud-config.js"></script>
-<script src="assets/cloud.js?v=20261127"></script>
-<script src="assets/accounts.js?v=20261127"></script>
+<script src="assets/cloud.js?v=20261127b"></script>
+<script src="assets/accounts.js?v=20261127b"></script>
 <script>
 'use strict';
 // Project RELIQUARY Message Board (board.html). Everyone can read. Signed-in members post under their display name
-// and the administrator as "Administrator" (sign in as administrator on the main page first). Members can delete
-// their own posts; the administrator can delete any post. Posts are stored online (assets/cloud.js, "board").
+// and the administrator as "Administrator" (sign in as administrator on the main page first), or as one of their own
+// characters. Members can delete their own posts; the administrator can delete any post. Posts and characters are
+// stored online (assets/cloud.js: "board" and "characters").
+// Pages (the part of the address after #): forum (home), board-<id>, topic-<id>, characters, character-<id>.
 const Cloud=window.ReliquaryCloud||{enabled:false},Accounts=window.ReliquaryAccounts||{open(){},member:null,onChange(){}};
 const $=id=>document.getElementById(id);
 const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -556,78 +627,242 @@ let toastTimer;function toast(m){const t=$('toast');t.textContent=m;t.hidden=fal
 window.toast=toast;
 const isAdmin=()=>!!(Cloud.enabled&&Cloud.isAdmin&&Cloud.isAdmin());
 function commandFaction(){try{const c=localStorage.getItem('reliquary-commander');return localStorage.getItem('reliquary-command-alpha')==='1'&&['eisdon','gallia','secara'].includes(c)?c:'';}catch(e){return '';}}
-let member=Accounts.member,boardPosts=[],boardLoaded=false,boardOpen=decodeURIComponent(location.hash.replace(/^#topic-/,''))||null,boardNew=false,boardDraft={title:'',text:'',reply:''},boardBusy=false,boardError='',online=[];
-function boardAuthor(){return isAdmin()?{from:'Administrator',faction:''}:member?{from:member.display,faction:commandFaction()}:null;}
-const canPost=()=>!!boardAuthor();
+// Forum layout: sections (collapsible) holding boards. adminTopics: only the administrator starts topics there.
+// Posts saved before boards existed belong to DEFAULT_BOARD. New boards can be added here; ids use a-z, 0-9 and -.
+const FORUM=[
+ {id:'ooc',name:'OOC',sub:'Out of character',boards:[
+  {id:'rules',name:'Rules & Getting Started',desc:'Site rules, account help and how to get started.',adminTopics:true},
+  {id:'general',name:'General',desc:'General discussion.'},
+  {id:'memes',name:'Memes',desc:'Memes and jokes.'},
+  {id:'offtopic',name:'Off-topic',desc:'Anything not related to the setting.'}]}];
+const DEFAULT_BOARD='general',BOARDS={};FORUM.forEach(s=>s.boards.forEach(b=>BOARDS[b.id]={...b,sec:s}));
+const CHAR_MAX=Cloud.CHAR_MAX||3;
+const CHAR_INFO=[['dob','Date of birth'],['birthplace','Place of birth'],['gender','Gender'],['height','Height'],['weight','Weight'],['nationality','Nationality'],['race','Race'],['occupation','Occupation'],['affiliation','Affiliation']];
+const NAME_LABELS=['First name','Middle name','Last name','Other name'];
+let member=Accounts.member,boardPosts=[],boardLoaded=false,boardNew=false,boardDraft={title:'',text:'',reply:''},boardBusy=false,boardError='',online=[];
+let chars={},charsLoaded=false,charEdit=null,collapsed={};
+let postAs='';try{postAs=localStorage.getItem('reliquary-post-as')||'';collapsed=JSON.parse(localStorage.getItem('reliquary-forum-collapsed')||'{}')||{};}catch(e){}
+function route(){
+ const h=decodeURIComponent(location.hash.slice(1)),m=/^(topic|board|character)-(.+)$/.exec(h);
+ if(m)return {v:m[1],id:m[2]};
+ return {v:h==='characters'?'characters':'forum'};
+}
+let R=route();
+// ---- People and characters ----
+function myUid(){return isAdmin()?(Cloud.uid&&Cloud.uid()):member?member.uid:null;}
+function baseAuthor(){return isAdmin()?{from:'Administrator',player:'Administrator',faction:''}:member?{from:member.display,player:member.display,faction:commandFaction()}:null;}
+function myChars(){const u=myUid();return u?Object.values(chars).filter(c=>c.owner===u).sort((a,b)=>a.id.localeCompare(b.id)):[];}
+function boardAuthor(){
+ const b=baseAuthor();if(!b)return null;
+ const c=postAs&&chars[postAs];return c&&c.owner===myUid()?{...b,from:c.name,char:c.id}:{...b,char:''};
+}
+const canPost=()=>!!baseAuthor();
 const boardTime=t=>t?new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date(t)):'';
 const mine=p=>isAdmin()||(member&&p.uid&&p.uid===member.uid);
-function topics(){
+const charHref=c=>'#character-'+encodeURIComponent(c.id);
+const initial=s=>escapeHTML((String(s||'?').trim().charAt(0)||'?').toUpperCase());
+function charImg(c,cls='char-img'){return c&&c.image?`<span class="${cls}"><img src="${escapeHTML(c.image)}" alt="" loading="lazy"></span>`:`<span class="${cls}">${initial(c&&c.name)}</span>`;}
+// ---- Forum data ----
+const boardOf=p=>BOARDS[p.board]?p.board:DEFAULT_BOARD;
+function topics(boardId){
  const reps={};for(const p of boardPosts)if(p.topic)(reps[p.topic]=reps[p.topic]||[]).push(p);
- return boardPosts.filter(p=>!p.topic).map(t=>{const r=reps[t.id]||[];return {t,replies:r.length,last:Math.max(t.at,...r.map(x=>x.at))};}).sort((a,b)=>b.last-a.last);
+ return boardPosts.filter(p=>!p.topic&&(!boardId||boardOf(p)===boardId)).map(t=>{const r=reps[t.id]||[];return {t,replies:r.length,last:Math.max(t.at,...r.map(x=>x.at))};}).sort((a,b)=>b.last-a.last);
 }
-const nameHTML=p=>`<b class="board-from${p.faction?' f-'+escapeHTML(p.faction):''}">${escapeHTML(p.from||'Unknown')}</b>`;
+const canStartTopic=b=>canPost()&&!(b&&b.adminTopics&&!isAdmin());
+function postName(p){const c=p.char&&chars[p.char];return c?c.name:(p.from||'Unknown');}
+function nameHTML(p){
+ const c=p.char&&chars[p.char],cls=`board-from${p.faction?' f-'+escapeHTML(p.faction):''}`;
+ return c?`<a class="${cls}" href="${charHref(c)}">${escapeHTML(c.name)}</a>`:`<b class="${cls}">${escapeHTML(p.from||'Unknown')}</b>`;
+}
+function avatarHTML(p){
+ const c=p.char&&chars[p.char],inner=c&&c.image?`<img src="${escapeHTML(c.image)}" alt="" loading="lazy">`:initial(postName(p));
+ return c?`<a class="board-av" href="${charHref(c)}" tabindex="-1" aria-hidden="true">${inner}</a>`:`<span class="board-av" aria-hidden="true">${inner}</span>`;
+}
+function asHTML(){
+ const b=baseAuthor(),mc=myChars();
+ if(!mc.length)return `<span class="subtext">Posting as ${escapeHTML(b.from)}</span>`;
+ const cur=boardAuthor().char;
+ return `<label class="board-as">Post as <select id="board-as">${[`<option value="">${escapeHTML(b.from)}</option>`,...mc.map(c=>`<option value="${escapeHTML(c.id)}"${cur===c.id?' selected':''}>${escapeHTML(c.name)}</option>`)].join('')}</select></label>`;
+}
+const crumbs=parts=>`<nav class="board-crumbs" aria-label="Location">${parts.map(([l,h])=>h?`<a href="${h}">${escapeHTML(l)}</a>`:escapeHTML(l)).join(' › ')}</nav>`;
+// ---- Forum views ----
+function homeHTML(){
+ return FORUM.map(s=>{const open=!collapsed[s.id];return `<section class="forum-sec"><button class="forum-sec-head" type="button" data-sec-toggle="${s.id}" aria-expanded="${open}" aria-controls="sec-${s.id}"><span class="forum-chev" aria-hidden="true"></span><span class="forum-sec-name">${escapeHTML(s.name)}</span><span class="forum-sec-sub">${escapeHTML(s.sub)}</span><span class="forum-sec-count">${s.boards.length} boards</span></button>`+
+  `<ul class="forum-boards" id="sec-${s.id}"${open?'':' hidden'}>${s.boards.map(b=>{const list=topics(b.id),posts=list.reduce((n,x)=>n+1+x.replies,0),last=list[0];
+   return `<li><a class="forum-board" href="#board-${b.id}"><span><span class="forum-board-name">${escapeHTML(b.name)}</span><span class="forum-board-desc">${escapeHTML(b.desc)}</span></span><span class="forum-board-stats">${list.length} ${list.length===1?'topic':'topics'} · ${posts} ${posts===1?'post':'posts'}</span><span class="forum-board-last">${last?`<b>${escapeHTML(last.t.title)}</b><br>${boardTime(last.last)}`:'No posts yet'}</span></a></li>`;}).join('')}</ul></section>`;}).join('');
+}
+function boardHTML(b){
+ const can=canPost(),err=boardError?`<p class="board-error" role="alert">${escapeHTML(boardError)}</p>`:'',list=topics(b.id);
+ const ro=can?(b.adminTopics&&!isAdmin()?'<p class="subtext board-note">Only the administrator starts topics here; you can reply to them.</p>':''):'<p class="subtext board-note">Read only. <button class="board-link" type="button" data-board-signin>Sign in or create an account</button> to post.</p>';
+ return crumbs([['Forum','#forum'],[b.sec.name,'#forum'],[b.name]])+`<h2 class="board-thread-title">${escapeHTML(b.name)}</h2>`+
+  (boardNew&&canStartTopic(b)?`<form class="board-form" id="board-new-form" autocomplete="off"><label class="field">Title<input id="board-title-input" data-board-field="title" maxlength="120" required value="${escapeHTML(boardDraft.title)}"></label><label class="field">Message<textarea id="board-text" data-board-field="text" maxlength="2000" rows="6" required>${escapeHTML(boardDraft.text)}</textarea></label>${err}<div class="board-actions">${asHTML()}<button class="btn" type="button" data-board-cancel>Cancel</button><button class="btn primary" type="submit"${boardBusy?' disabled':''}>Post topic</button></div></form>`:'')+
+  (list.length?`<ul class="board-topics">${list.map(({t,replies,last})=>`<li><a class="board-topic" href="#topic-${encodeURIComponent(t.id)}"><span class="board-topic-title">${escapeHTML(t.title)}</span><span class="board-topic-meta">${escapeHTML(postName(t))} · ${replies} ${replies===1?'reply':'replies'} · last post ${boardTime(last)}</span></a></li>`).join('')}</ul>`:'<p class="subtext">No topics yet.</p>')+ro;
+}
+function threadHTML(topic){
+ const b=BOARDS[boardOf(topic)],can=canPost(),err=boardError?`<p class="board-error" role="alert">${escapeHTML(boardError)}</p>`:'';
+ const posts=[topic,...boardPosts.filter(p=>p.topic===topic.id)];
+ return crumbs([['Forum','#forum'],[b.name,'#board-'+b.id],[topic.title]])+`<h2 class="board-thread-title">${escapeHTML(topic.title)}</h2>`+
+  `<ol class="board-posts">${posts.map((p,i)=>`<li class="board-post">${avatarHTML(p)}<div><div class="board-meta">${nameHTML(p)}${p.char&&p.player?`<span class="board-player">played by ${escapeHTML(p.player)}</span>`:''}<span>${boardTime(p.at)}</span>${mine(p)?`<button class="board-del" type="button" data-board-del="${escapeHTML(p.id)}">${i?'Delete':'Delete topic'}</button>`:''}</div><div class="board-text">${escapeHTML(p.text)}</div></div></li>`).join('')}</ol>`+
+  (can?`<form class="board-form" id="board-reply-form" autocomplete="off"><label class="field">Reply<textarea id="board-reply" data-board-field="reply" maxlength="2000" rows="4" required>${escapeHTML(boardDraft.reply)}</textarea></label>${err}<div class="board-actions">${asHTML()}<button class="btn primary" type="submit"${boardBusy?' disabled':''}>Post reply</button></div></form>`:'<p class="subtext board-note">Read only. <button class="board-link" type="button" data-board-signin>Sign in or create an account</button> to post.</p>');
+}
+// ---- Character views ----
+function cardHTML(c,own){
+ const sub=[c.race,c.occupation].filter(Boolean).join(' · ');
+ return `<li class="char-card"><a class="char-card-link" href="${charHref(c)}">${charImg(c)}<span class="char-card-name">${escapeHTML(c.name)}</span><span class="char-card-sub">${escapeHTML(sub||(own?'':'Played by '+c.player))}</span></a>${own?`<div class="char-card-actions"><button class="btn" type="button" data-char-edit="${escapeHTML(c.id)}">Edit</button><button class="btn danger" type="button" data-char-del="${escapeHTML(c.id)}">Delete</button></div>`:''}</li>`;
+}
+function charactersHTML(){
+ if(!charsLoaded)return '<p class="subtext">Loading…</p>';
+ const u=myUid(),mc=myChars(),others=Object.values(chars).filter(c=>c.owner!==u).sort((a,b)=>a.name.localeCompare(b.name));
+ const full=mc.length>=CHAR_MAX;
+ return (u?`<div class="char-head"><h2>Your characters<small>${mc.length} of ${CHAR_MAX}</small></h2><button class="btn primary" type="button" data-char-new${full?' disabled':''}>New character</button></div>`+
+   (mc.length?`<ul class="char-grid-list">${mc.map(c=>cardHTML(c,true)).join('')}</ul>`:'<p class="subtext">You have no characters yet.</p>')+
+   (full?`<p class="subtext board-note">You have reached the limit of ${CHAR_MAX} characters. Delete one to create another.</p>`:'')
+  :'<p class="subtext board-note"><button class="board-link" type="button" data-board-signin>Sign in or create an account</button> to create characters.</p>')+
+  `<h2 class="char-sub">${u?'Other characters':'Characters'}</h2>`+(others.length?`<ul class="char-grid-list">${others.map(c=>cardHTML(c,false)).join('')}</ul>`:'<p class="subtext">None yet.</p>');
+}
+function profileHTML(id){
+ const c=chars[id];if(!c)return charsLoaded?crumbs([['Characters','#characters'],['Not found']])+'<p class="subtext">This character no longer exists.</p>':'<p class="subtext">Loading…</p>';
+ const own=c.owner===myUid(),rows=CHAR_INFO.filter(([k])=>c[k]).map(([k,l])=>`<dt>${l}</dt><dd>${escapeHTML(c[k])}</dd>`).join('');
+ const acts=own?`<button class="btn" type="button" data-char-edit="${escapeHTML(c.id)}">Edit</button><button class="btn danger" type="button" data-char-del="${escapeHTML(c.id)}">Delete</button>`:isAdmin()?`<button class="btn danger" type="button" data-char-del="${escapeHTML(c.id)}">Delete (administrator)</button>`:'';
+ return crumbs([['Characters','#characters'],[c.name]])+`<article class="char-profile">${charImg(c)}<div><h2>${escapeHTML(c.name)}</h2>${c.player?`<p class="subtext">Played by ${escapeHTML(c.player)}</p>`:''}${rows?`<dl class="char-info">${rows}</dl>`:''}${acts?`<div class="char-actions">${acts}</div>`:''}</div></article>`+
+  (c.background?`<h3 class="char-section-title">Background</h3><div class="char-bg">${escapeHTML(c.background)}</div>`:'');
+}
+function blankChar(){const d={names:['','','',''],background:'',image:''};CHAR_INFO.forEach(([k])=>d[k]='');return d;}
+function editorHTML(){
+ const e=charEdit,d=e.d,title=e.id?'Edit '+(chars[e.id]?chars[e.id].name:'character'):'New character',url=d.image.startsWith('https://')?d.image:'';
+ const fld=(k,l,ph='')=>`<label class="field">${l}<input id="cf-${k}" data-char-field="${k}" maxlength="60" value="${escapeHTML(d[k])}"${ph?` placeholder="${ph}"`:''}></label>`;
+ return crumbs([['Characters','#characters'],[title]])+`<h2 class="board-thread-title">${escapeHTML(title)}</h2><form class="char-form" id="char-form" autocomplete="off" novalidate>`+
+  `<div class="char-form-top"><div class="char-image-edit">${d.image?`<span class="char-img"><img src="${escapeHTML(d.image)}" alt="Character image"></span>`:'<span class="char-img empty">No image</span>'}`+
+   `<div class="char-img-btns"><label class="btn">Upload image<input class="sr-only" type="file" id="char-file" accept="image/*"></label>${d.image?'<button class="btn" type="button" data-char-img-clear>Remove</button>':''}</div>`+
+   `<label class="field">Or image link<input id="cf-imageurl" data-char-field="imageurl" maxlength="1000" placeholder="https://…" value="${escapeHTML(url)}"></label></div>`+
+   `<fieldset><legend>Names</legend><div class="char-fields">${NAME_LABELS.map((l,i)=>`<label class="field">${l}${i?'':' (required)'}<input id="cf-name${i}" data-char-field="name${i}" maxlength="30" value="${escapeHTML(d.names[i])}"${i?'':' required'}></label>`).join('')}</div></fieldset></div>`+
+  `<fieldset><legend>Basic information</legend><div class="char-fields">${CHAR_INFO.map(([k,l])=>fld(k,l)).join('')}</div></fieldset>`+
+  `<label class="field wide">Background<textarea id="cf-background" data-char-field="background" maxlength="8000" rows="10">${escapeHTML(d.background)}</textarea></label>`+
+  (e.error?`<p class="board-error" role="alert">${escapeHTML(e.error)}</p>`:'')+
+  `<div class="board-actions"><span class="subtext">Uploaded images are resized to at most 400 pixels.</span><button class="btn" type="button" data-char-cancel>Cancel</button><button class="btn primary" type="submit"${e.busy?' disabled':''}>Save character</button></div></form>`;
+}
+// Uploaded pictures are shrunk in the browser to a small JPEG so they fit in the database.
+async function shrinkImage(file){
+ if(!file||!/^image\//.test(file.type))throw Error('Choose an image file.');
+ const url=URL.createObjectURL(file);
+ try{
+  const img=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>no(Error('That image could not be read.'));i.src=url;});
+  for(const [max,q] of [[400,.85],[320,.8],[256,.72],[200,.62]]){
+   const s=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight)),w=Math.max(1,Math.round(img.naturalWidth*s)),h=Math.max(1,Math.round(img.naturalHeight*s));
+   const cv=document.createElement('canvas');cv.width=w;cv.height=h;const x=cv.getContext('2d');x.fillStyle='#06121c';x.fillRect(0,0,w,h);x.drawImage(img,0,0,w,h);
+   const d=cv.toDataURL('image/jpeg',q);if(d.length<=190000)return d;
+  }
+  throw Error('That image is too large.');
+ }finally{URL.revokeObjectURL(url);}
+}
+// ---- Rendering ----
 function bodyHTML(){
  if(!Cloud.enabled)return '<p class="subtext">The message board needs shared online storage, which is not set up for this site.</p>';
+ if(R.v==='characters')return charEdit?editorHTML():charactersHTML();
+ if(R.v==='character')return profileHTML(R.id);
  if(!boardLoaded)return '<p class="subtext">Loading…</p>';
- const can=canPost(),err=boardError?`<p class="board-error" role="alert">${escapeHTML(boardError)}</p>`:'';
- const ro=can?'':'<p class="subtext board-note">Read only. <button class="board-link" type="button" data-board-signin>Sign in or create an account</button> to post.</p>';
- const as=can?`<span class="subtext">Posting as ${escapeHTML(boardAuthor().from)}</span>`:'';
- const topic=boardOpen&&boardPosts.find(p=>p.id===boardOpen&&!p.topic);
- if(topic){
-  const posts=[topic,...boardPosts.filter(p=>p.topic===topic.id)];
-  return `<div class="board-thread-head"><button class="btn" type="button" data-board-back>← All topics</button></div><h2 class="board-thread-title">${escapeHTML(topic.title)}</h2>`+
-   `<ol class="board-posts">${posts.map((p,i)=>`<li class="board-post"><div class="board-meta">${nameHTML(p)}<span>${boardTime(p.at)}</span>${mine(p)?`<button class="board-del" type="button" data-board-del="${escapeHTML(p.id)}">${i?'Delete':'Delete topic'}</button>`:''}</div><div class="board-text">${escapeHTML(p.text)}</div></li>`).join('')}</ol>`+
-   (can?`<form class="board-form" id="board-reply-form" autocomplete="off"><label class="field">Reply<textarea id="board-reply" data-board-field="reply" maxlength="2000" rows="4" required>${escapeHTML(boardDraft.reply)}</textarea></label>${err}<div class="board-actions">${as}<button class="btn primary" type="submit"${boardBusy?' disabled':''}>Post reply</button></div></form>`:ro);
- }
- const list=topics();
- return (boardNew&&can?`<form class="board-form" id="board-new-form" autocomplete="off"><label class="field">Title<input id="board-title-input" data-board-field="title" maxlength="120" required value="${escapeHTML(boardDraft.title)}"></label><label class="field">Message<textarea id="board-text" data-board-field="text" maxlength="2000" rows="6" required>${escapeHTML(boardDraft.text)}</textarea></label>${err}<div class="board-actions">${as}<button class="btn" type="button" data-board-cancel>Cancel</button><button class="btn primary" type="submit"${boardBusy?' disabled':''}>Post topic</button></div></form>`:'')+
-  (list.length?`<ul class="board-topics">${list.map(({t,replies,last})=>`<li><button class="board-topic" type="button" data-board-open="${escapeHTML(t.id)}"><span class="board-topic-title">${escapeHTML(t.title)}</span><span class="board-topic-meta">${escapeHTML(t.from)} · ${replies} ${replies===1?'reply':'replies'} · last post ${boardTime(last)}</span></button></li>`).join('')}</ul>`:'<p class="subtext">No topics yet.</p>')+ro;
+ if(R.v==='board'){const b=BOARDS[R.id];return b?boardHTML(b):crumbs([['Forum','#forum'],['Not found']])+'<p class="subtext">This board does not exist.</p>';}
+ if(R.v==='topic'){const t=boardPosts.find(p=>p.id===R.id&&!p.topic);return t?threadHTML(t):crumbs([['Forum','#forum'],['Not found']])+'<p class="subtext">This topic no longer exists.</p>';}
+ return (boardError?`<p class="board-error" role="alert">${escapeHTML(boardError)}</p>`:'')+homeHTML();
 }
+function renderOnline(){$('board-online').innerHTML=Cloud.enabled?`<span class="board-live-head">Online now (${online.length})</span> ${online.length?online.map(o=>`<span class="board-chip">${escapeHTML(o.name)}</span>`).join(' '):'<span class="subtext">No one</span>'}`:'';}
 function render(){
- const a=document.activeElement,fid=a&&a.dataset&&a.dataset.boardField?a.id:null,sel=fid?[a.selectionStart,a.selectionEnd]:null;
- $('board-new-btn').hidden=!(Cloud.enabled&&boardLoaded&&canPost()&&!boardOpen&&!boardNew);
- $('board-body').innerHTML=bodyHTML();
- $('board-online').innerHTML=Cloud.enabled?`<span class="board-live-head">Online now (${online.length})</span> ${online.length?online.map(o=>`<span class="board-chip">${escapeHTML(o.name)}</span>`).join(' '):'<span class="subtext">No one</span>'}`:'';
- if(fid){const n=$(fid);if(n){n.focus();try{n.setSelectionRange(sel[0],sel[1]);}catch(e){}}}
+ const body=$('board-body'),a=document.activeElement,fid=a&&a.id&&body.contains(a)?a.id:null,sel=fid&&'selectionStart' in a?[a.selectionStart,a.selectionEnd,a.scrollTop]:null;
+ const chv=R.v==='characters'||R.v==='character';
+ document.querySelectorAll('[data-tab]').forEach(t=>t.toggleAttribute('aria-current',false));
+ const cur=document.querySelector(`[data-tab="${chv?'characters':'forum'}"]`);if(cur)cur.setAttribute('aria-current','page');
+ const b=R.v==='board'&&BOARDS[R.id];
+ $('board-new-btn').hidden=!(Cloud.enabled&&boardLoaded&&b&&canStartTopic(b)&&!boardNew);
+ body.setAttribute('aria-label',chv?'Characters':'Forum');
+ body.innerHTML=bodyHTML();
+ if(fid){const n=$(fid);if(n){n.focus({preventScroll:true});if(sel)try{n.setSelectionRange(sel[0],sel[1]);n.scrollTop=sel[2];}catch(e){}}}
 }
-function openTopic(id){boardOpen=id;boardNew=false;boardError='';history.replaceState(null,'',id?'#topic-'+encodeURIComponent(id):location.pathname);render();window.scrollTo({top:0});}
+function onRoute(){R=route();boardNew=false;boardError='';charEdit=null;render();window.scrollTo({top:0});}
+window.addEventListener('hashchange',onRoute);
 async function del(ids){try{await Cloud.deleteBoardPosts(ids);}catch(e){toast('Not deleted: '+e.message);}}
-document.addEventListener('input',e=>{const f=e.target.dataset&&e.target.dataset.boardField;if(f)boardDraft[f]=e.target.value;});
+function editChar(id){
+ const c=id&&chars[id];let d=blankChar();
+ if(c){d={...d,...Object.fromEntries(CHAR_INFO.map(([k])=>[k,c[k]])),background:c.background,image:c.image,names:[0,1,2,3].map(i=>c.names[i]||'')};}
+ charEdit={id:c?c.id:null,d,busy:false,error:''};
+ if(R.v!=='characters'){history.pushState(null,'','#characters');R=route();}
+ render();window.scrollTo({top:0});$('cf-name0')?.focus({preventScroll:true});
+}
+async function deleteChar(id){
+ const c=chars[id];if(!c)return;
+ if(!confirm(`Delete ${c.name}? This cannot be undone. Posts made as this character stay, under the character's name, without the picture.`))return;
+ try{await Cloud.deleteCharacter(id);toast(`${c.name} deleted.`);if(postAs===id)setPostAs('');if(R.v==='character')location.hash='characters';}catch(e){toast('Not deleted: '+e.message);}
+}
+function setPostAs(v){postAs=v;try{localStorage.setItem('reliquary-post-as',v);}catch(e){}}
+document.addEventListener('input',e=>{
+ const f=e.target.dataset&&e.target.dataset.boardField;if(f){boardDraft[f]=e.target.value;return;}
+ const k=e.target.dataset&&e.target.dataset.charField;if(!k||!charEdit)return;const d=charEdit.d,v=e.target.value;
+ if(/^name\d$/.test(k))d.names[+k.slice(4)]=v;
+ else if(k==='imageurl'){const u=v.trim();if(u)d.image=u;else if(d.image.startsWith('https://'))d.image='';}
+ else d[k]=v;
+});
+document.addEventListener('change',async e=>{
+ if(e.target.id==='board-as'){setPostAs(e.target.value);return;}
+ if(e.target.id==='cf-imageurl'&&charEdit){render();return;}
+ if(e.target.id==='char-file'&&charEdit){
+  const f=e.target.files&&e.target.files[0];if(!f)return;
+  try{charEdit.d.image=await shrinkImage(f);charEdit.error='';}catch(x){charEdit.error=x.message;}
+  render();
+ }
+});
 document.addEventListener('click',e=>{
  if(e.target.closest('[data-board-signin]')){Accounts.open('signin');return;}
  if(e.target.closest('#board-new-btn')){boardNew=true;boardError='';render();$('board-title-input')?.focus();return;}
  if(e.target.closest('[data-board-cancel]')){boardNew=false;boardError='';render();return;}
- if(e.target.closest('[data-board-back]')){openTopic(null);return;}
- const o=e.target.closest('[data-board-open]');if(o){openTopic(o.dataset.boardOpen);return;}
+ const st=e.target.closest('[data-sec-toggle]');if(st){const id=st.dataset.secToggle;collapsed[id]=!collapsed[id];try{localStorage.setItem('reliquary-forum-collapsed',JSON.stringify(collapsed));}catch(x){}render();return;}
+ if(e.target.closest('[data-char-new]')){if(myChars().length<CHAR_MAX)editChar(null);return;}
+ const ce=e.target.closest('[data-char-edit]');if(ce){editChar(ce.dataset.charEdit);return;}
+ const cd=e.target.closest('[data-char-del]');if(cd){deleteChar(cd.dataset.charDel);return;}
+ if(e.target.closest('[data-char-cancel]')){charEdit=null;render();window.scrollTo({top:0});return;}
+ if(e.target.closest('[data-char-img-clear]')&&charEdit){charEdit.d.image='';render();return;}
  const d=e.target.closest('[data-board-del]');if(d){
   const p=boardPosts.find(x=>x.id===d.dataset.boardDel);if(!p||!mine(p))return;
   const reps=boardPosts.filter(x=>x.topic===p.id);
   if(p.topic){if(confirm('Delete this reply?'))del([p.id]);}
   else if(!isAdmin()&&reps.some(x=>x.uid!==member.uid))alert('This topic has replies from others, so only an administrator can delete it.');
-  else if(confirm(`Delete the topic "${p.title}"${reps.length?' and its replies':''}?`)){openTopic(null);del([p.id,...reps.map(x=>x.id)]);}
+  else if(confirm(`Delete the topic "${p.title}"${reps.length?' and its replies':''}?`)){location.hash='board-'+boardOf(p);del([p.id,...reps.map(x=>x.id)]);}
  }
 });
 document.addEventListener('submit',async e=>{
+ if(e.target.id==='char-form'){
+  e.preventDefault();const ed=charEdit;if(!ed||ed.busy)return;const d=ed.d,u=myUid();ed.error='';
+  if(!u){ed.error='Sign in to save characters.';render();return;}
+  if(!d.names[0].trim()){ed.error='Enter a first name.';render();$('cf-name0')?.focus();return;}
+  if(d.image&&!/^(https:\/\/|data:image\/(jpeg|png|webp);base64,)/.test(d.image)){ed.error='The image link must start with https://';render();return;}
+  let id=ed.id;if(!id){for(let i=1;i<=CHAR_MAX&&!id;i++)if(!chars[u+'_'+i])id=u+'_'+i;}
+  if(!id){ed.error=`You already have ${CHAR_MAX} characters.`;render();return;}
+  ed.busy=true;render();
+  try{await Cloud.saveCharacter(id,{...d,player:baseAuthor().player});charEdit=null;toast('Character saved.');location.hash='character-'+encodeURIComponent(id);}
+  catch(x){ed.busy=false;ed.error='Not saved: '+x.message;render();}
+  return;
+ }
  const isNew=e.target.id==='board-new-form',isReply=e.target.id==='board-reply-form';if(!isNew&&!isReply)return;e.preventDefault();
  if(boardBusy)return;boardError='';
  const title=boardDraft.title.trim(),text=(isNew?boardDraft.text:boardDraft.reply).trim(),au=boardAuthor();
  if(!au){boardError='Sign in to post.';render();return;}
  if(isNew&&!title){boardError='Enter a title.';render();return;}
  if(!text){boardError='Enter a message.';render();return;}
+ const topic=isReply&&boardPosts.find(p=>p.id===R.id&&!p.topic),board=isNew?R.id:topic?boardOf(topic):DEFAULT_BOARD;
  boardBusy=true;render();
  try{
-  const id=await Cloud.addBoardPost({...(isNew?{topic:'',title,text}:{topic:boardOpen,title:'',text}),...au});
-  if(isNew){boardDraft.title=boardDraft.text='';boardNew=false;boardBusy=false;if(id)openTopic(id);}else{boardDraft.reply='';}
+  const id=await Cloud.addBoardPost({...(isNew?{topic:'',title,text}:{topic:R.id,title:'',text}),board,...au});
+  if(isNew){boardDraft.title=boardDraft.text='';boardNew=false;boardBusy=false;if(id)location.hash='topic-'+encodeURIComponent(id);}else{boardDraft.reply='';}
  }catch(x){boardError='Not posted: '+x.message;}
  boardBusy=false;render();
 });
 Accounts.onChange(m=>{member=m;render();});
 if(Cloud.enabled){
  Cloud.onAuth&&Cloud.onAuth(()=>render());
- Cloud.watchBoard(posts=>{boardPosts=posts;boardLoaded=true;if(boardOpen&&!posts.some(p=>p.id===boardOpen&&!p.topic))boardOpen=null;render();},msg=>{boardLoaded=true;boardError='Message board: '+msg;render();});
- Cloud.watchOnline&&Cloud.watchOnline(o=>{online=o;render();},()=>{});
+ Cloud.watchBoard(posts=>{boardPosts=posts;boardLoaded=true;render();},msg=>{boardLoaded=true;boardError='Message board: '+msg;render();});
+ if(Cloud.watchCharacters)Cloud.watchCharacters(c=>{chars=c;charsLoaded=true;if(charEdit&&charEdit.busy)return;render();},msg=>{charsLoaded=true;toast('Characters: '+msg);render();});
+ else charsLoaded=true;
+ Cloud.watchOnline&&Cloud.watchOnline(o=>{online=o;renderOnline();},()=>{});
 }
-render();
+renderOnline();render();
 </script>
 </body>
 </html>

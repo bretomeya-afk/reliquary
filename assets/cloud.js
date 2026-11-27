@@ -8,6 +8,7 @@
 //                      (at = server time) about once a minute. A command's online count is its number of fresh records.
 //   board/{post}       public read; message board topics and replies (posted by members and the administrator).
 //   users/{uid}, usernames/{name}, banned/{uid}: member accounts (username + PIN sign-up).
+//   characters/{uid}_{1-3}  public read; forum characters, up to three per signed-in user (owner edits/deletes).
 //   fleets/{fleet}     public read (ids like gallia-2); any browser can place or move a fleet, only the administrator changes its ship count.
 (function(){
 'use strict';
@@ -188,27 +189,53 @@ async function deleteMember(uid,name,withPosts){
  await ready();if(!isAdmin())throw Error('Sign in as administrator.');
  try{
   const b=db.batch(),at=window.firebase.firestore.FieldValue.serverTimestamp();
-  b.delete(db.collection('users').doc(uid));b.delete(db.collection('online').doc(uid));b.delete(db.collection('usernames').doc(String(name).toLowerCase()));b.set(db.collection('banned').doc(uid),{name:String(name).slice(0,20),at});await b.commit();
+  b.delete(db.collection('users').doc(uid));b.delete(db.collection('online').doc(uid));b.delete(db.collection('usernames').doc(String(name).toLowerCase()));b.set(db.collection('banned').doc(uid),{name:String(name).slice(0,20),at});
+  for(let i=1;i<=CHAR_MAX;i++)b.delete(db.collection('characters').doc(uid+'_'+i)); // their characters go with the account
+  await b.commit();
   if(withPosts){const s=await db.collection('board').where('uid','==',uid).get(),ids=[];s.forEach(d=>ids.push(d.id));await deleteBoardPosts(ids);}
  }catch(e){throw Error(friendly(e));}
 }
-// Message board: board/{id} = {uid, topic, title, text, from, faction, at}. A topic has topic '' and a title; a reply
+// Message board: board/{id} = {uid, board, topic, title, text, from, player, char, faction, at}. board is the forum
+// board id (old posts without one belong to General); char is the id of the character posted as ('' for none), and
+// then from is the character's name and player the poster's display name. A topic has topic '' and a title; a reply
 // has topic = the topic's id. Everyone can read; signed-in members (as their username) and the administrator can post;
 // the database checks the author. Members can delete their own posts; the administrator can delete any.
 function watchBoard(cb,onError){
  let stop=()=>{},closed=false;
- ready().then(()=>{if(closed)return;stop=db.collection('board').orderBy('at').limitToLast(1000).onSnapshot(s=>{const out=[];s.forEach(d=>{const m=d.data({serverTimestamps:'estimate'});if(m&&typeof m.text==='string')out.push({id:d.id,uid:String(m.uid||''),topic:String(m.topic||''),title:String(m.title||''),text:m.text,from:String(m.from||''),faction:String(m.faction||''),at:m.at&&m.at.toMillis?m.at.toMillis():0});});cb(out);},e=>onError&&onError(friendly(e)));}).catch(e=>onError&&onError(friendly(e)));
+ ready().then(()=>{if(closed)return;stop=db.collection('board').orderBy('at').limitToLast(1000).onSnapshot(s=>{const out=[];s.forEach(d=>{const m=d.data({serverTimestamps:'estimate'});if(m&&typeof m.text==='string')out.push({id:d.id,uid:String(m.uid||''),topic:String(m.topic||''),board:String(m.board||''),title:String(m.title||''),text:m.text,from:String(m.from||''),player:String(m.player||''),char:String(m.char||''),faction:String(m.faction||''),at:m.at&&m.at.toMillis?m.at.toMillis():0});});cb(out);},e=>onError&&onError(friendly(e)));}).catch(e=>onError&&onError(friendly(e)));
  return()=>{closed=true;stop();};
 }
 async function addBoardPost(m){
  await ready();
- try{const r=await db.collection('board').add({uid:auth.currentUser?auth.currentUser.uid:'',topic:String(m.topic||'').slice(0,40),title:String(m.title||'').slice(0,120),text:String(m.text).slice(0,2000),from:String(m.from).slice(0,60),faction:String(m.faction||'').slice(0,20),at:window.firebase.firestore.FieldValue.serverTimestamp()});return r.id;}
+ try{const r=await db.collection('board').add({uid:auth.currentUser?auth.currentUser.uid:'',board:String(m.board||'general').slice(0,30),topic:String(m.topic||'').slice(0,40),title:String(m.title||'').slice(0,120),text:String(m.text).slice(0,2000),from:String(m.from).slice(0,130),player:String(m.player||'').slice(0,60),char:String(m.char||'').slice(0,40),faction:String(m.faction||'').slice(0,20),at:window.firebase.firestore.FieldValue.serverTimestamp()});return r.id;}
  catch(e){throw Error(/permission-denied/.test(e&&e.code||'')?'The shared database refused the post. Publish the latest firestore.rules in Firebase.':friendly(e));}
 }
 async function deleteBoardPosts(ids){
  await ready();
  try{for(let i=0;i<ids.length;i+=400){const b=db.batch();ids.slice(i,i+400).forEach(id=>b.delete(db.collection('board').doc(id)));await b.commit();}}catch(e){throw Error(friendly(e));}
 }
+// Forum characters: characters/{uid}_{slot} (slot 1 to CHAR_MAX) = {owner, player, name, names[1-4], dob, birthplace,
+// gender, height, weight, nationality, race, occupation, affiliation, background, image, updated}. image is '' or a
+// small JPEG data URL (resized in the browser) or an https link. Public read; the owner saves and deletes, the
+// administrator can delete any. The fixed ids are what limits each user to CHAR_MAX characters.
+const CHAR_MAX=3,CHAR_TEXT=['dob','birthplace','gender','height','weight','nationality','race','occupation','affiliation'];
+function uid(){return auth&&auth.currentUser?auth.currentUser.uid:null;}
+function watchCharacters(cb,onError){
+ let stop=()=>{},closed=false;
+ ready().then(()=>{if(closed)return;stop=db.collection('characters').onSnapshot(s=>{const o={};s.forEach(d=>{const v=d.data()||{},c={id:d.id,owner:String(v.owner||''),player:String(v.player||''),name:String(v.name||''),names:Array.isArray(v.names)?v.names.map(String):[],background:String(v.background||''),image:String(v.image||'')};CHAR_TEXT.forEach(k=>c[k]=String(v[k]||''));if(c.name)o[d.id]=c;});cb(o);},e=>onError&&onError(friendly(e)));}).catch(e=>onError&&onError(friendly(e)));
+ return()=>{closed=true;stop();};
+}
+async function saveCharacter(id,c){
+ await ready();const u=uid();if(!u)throw Error('Sign in to save characters.');
+ if(!new RegExp('^'+u+'_[1-'+CHAR_MAX+']$').test(id))throw Error('You can have up to '+CHAR_MAX+' characters.');
+ const names=(c.names||[]).map(n=>String(n||'').trim().slice(0,30)).filter(Boolean).slice(0,4);if(!names.length)throw Error('Enter a first name.');
+ const d={owner:u,player:String(c.player||'').slice(0,60),name:names.join(' ').slice(0,130),names,background:String(c.background||'').slice(0,8000),image:String(c.image||''),updated:window.firebase.firestore.FieldValue.serverTimestamp()};
+ CHAR_TEXT.forEach(k=>d[k]=String(c[k]||'').trim().slice(0,60));
+ if(d.image.length>200000)throw Error('The image is too large.');
+ try{await db.collection('characters').doc(id).set(d);}
+ catch(e){throw Error(/permission-denied/.test(e&&e.code||'')?'The shared database refused the character. Publish the latest firestore.rules in Firebase.':friendly(e));}
+}
+async function deleteCharacter(id){await ready();try{await db.collection('characters').doc(id).delete();}catch(e){throw Error(friendly(e));}}
 // Commander presence. Several people on different computers can be logged into the same command at once, so each
 // browser has its own presence record: sessions/{browser id} = {command, at} (command '' when logged out; at = server
 // time). The browser id is kept in localStorage, so the main page and the starmap open in the same browser count as
@@ -242,6 +269,6 @@ function trackPresence(getCmd,onChange){
  addEventListener('pagehide',()=>{if(pres.cur){writePresence(null).catch(()=>{});try{pres.bc&&pres.bc.postMessage('closing');}catch(e){}}});
  addEventListener('pageshow',e=>{if(e.persisted){pres.cur=null;syncPresence();}});
 }
-window.ReliquaryCloud={enabled,adminEmail,ready,isAdmin,onAuth,signIn,signOut,watchDoc,saveDoc,watchChat,addChat,clearChat,trackPresence,syncPresence,presenceStatus,watchFleets,saveFleet,watchBoard,addBoardPost,deleteBoardPosts,onMember,memberSignUp,memberSignIn,setDisplayName,watchOnline,watchMembers,deleteMember};
+window.ReliquaryCloud={enabled,adminEmail,ready,isAdmin,onAuth,signIn,signOut,watchDoc,saveDoc,watchChat,addChat,clearChat,trackPresence,syncPresence,presenceStatus,watchFleets,saveFleet,watchBoard,addBoardPost,deleteBoardPosts,CHAR_MAX,uid,watchCharacters,saveCharacter,deleteCharacter,onMember,memberSignUp,memberSignIn,setDisplayName,watchOnline,watchMembers,deleteMember};
 if(enabled)ready().catch(()=>{});
 })();
