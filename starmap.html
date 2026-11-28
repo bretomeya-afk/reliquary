@@ -2433,7 +2433,7 @@ function svOpen(id){svGridUI();
 function svClose(){SV.open=false;$('sv').hidden=true;document.body.classList.remove('sv-open');clearTimeout(SV.saveTimer);if(SV.saveTimer&&isAdmin())save();SV.saveTimer=0;dirty=true;}
 // The view never goes past the edge of the grid: the furthest zoom-out shows about 24 × 12 squares on a
 // 1920 × 1080 screen (never less than the screen), and the camera is held so the grid always fills the view.
-const SV_ZOOM_MIN=.08,SV_ZOOM_MAX=3;
+const SV_ZOOM_MIN=.08,SV_ZOOM_MAX=4.5;
 function svPads(){return SV.grid?[22,18]:[0,0];} // grid rulers along the left and top edges
 function svMinZoom(w,h){const [L,T]=svPads();return Math.max(SV_ZOOM_MIN,(w-L)/(2*SV_GRID_HALF),(h-T)/(2*SV_GRID_HALF));}
 function svClampCam(w,h){const c=svCanvas();w=w||c.clientWidth||innerWidth;h=h||c.clientHeight||innerHeight;const [L,T]=svPads(),cam=SV.cam;
@@ -2852,12 +2852,16 @@ function svDrawShips(x,T,z,sx,sy,w,h){
  const k0=Math.max(.9,2.5*z); // shuttles: about 5 units long
  for(const sh of T.ships){const px=sx(sh.x),py=sy(sh.y);if(px<-30||px>w+30||py<-30||py>h+30||sh.alpha<=0)continue;const k=k0*(sh.scale??1);if(k<.3)continue;x.globalAlpha=Math.max(0,Math.min(1,sh.alpha));
   const c=Math.cos(sh.ang),s=Math.sin(sh.ang),kd=SV_SHIP_KINDS[sh.kind]||SV_SHIP_KINDS.shuttle,Lp=2.2*k*kd[1],moving=(sh.mode==='fly'||sh.mode==='jump')&&sh.speed>.2;
+  if(Lp<7||!sh.kind){ // zoomed out: a bluish-white dot with an engine flare trail
+   if(moving){const tl=(8+14*sh.speed)*(sh.scale??1),ex=px-c*tl,ey=py-s*tl,g=x.createLinearGradient(px,py,ex,ey);g.addColorStop(0,'rgba(170,210,255,.75)');g.addColorStop(.35,'rgba(110,170,255,.35)');g.addColorStop(1,'rgba(90,150,255,0)');
+    x.strokeStyle=g;x.lineCap='round';x.lineWidth=1.6;x.beginPath();x.moveTo(px,py);x.lineTo(ex,ey);x.stroke();}
+   const gl=x.createRadialGradient(px,py,0,px,py,4.5);gl.addColorStop(0,'rgba(190,220,255,.55)');gl.addColorStop(1,'rgba(150,200,255,0)');x.fillStyle=gl;x.fillRect(px-4.5,py-4.5,9,9);
+   x.fillStyle='#e4f0ff';x.beginPath();x.arc(px,py,1.3,0,Math.PI*2);x.fill();continue;}
   if(moving){const tl=Lp*.45;x.strokeStyle=`rgba(${sh.col},${.4*sh.speed})`;x.lineWidth=Math.max(1,k*.35);x.beginPath();x.moveTo(px-c*tl,py-s*tl);x.lineTo(px-c*(tl+k*3*sh.speed),py-s*(tl+k*3*sh.speed));x.stroke();}
-  if(Lp>=7&&sh.kind){const sc=Lp/112;x.save();x.translate(px,py);x.rotate(sh.ang); // a detailed sprite when big enough to see
+  {const sc=Lp/112;x.save();x.translate(px,py);x.rotate(sh.ang); // a detailed sprite when big enough to see
    if(sh.mode!=='queue'||sh.speed>0)for(const [ex,ey] of kd[2]){const R=Math.max(2,9*sc*(.6+.4*(sh.speed||0))),g=x.createRadialGradient(ex*sc,ey*sc,0,ex*sc,ey*sc,R);g.addColorStop(0,`rgba(${sh.col},.9)`);g.addColorStop(1,`rgba(${sh.col},0)`);x.fillStyle=g;x.fillRect(ex*sc-R,ey*sc-R,R*2,R*2);}
    x.drawImage(svShipSprite(sh.kind,sh.liv),-64*sc,-40*sc,128*sc,80*sc);x.restore();continue;}
-  x.fillStyle='#e8f2ff';x.beginPath();x.moveTo(px+c*k,py+s*k);x.lineTo(px+Math.cos(sh.ang+2.5)*k*.7,py+Math.sin(sh.ang+2.5)*k*.7);x.lineTo(px+Math.cos(sh.ang-2.5)*k*.7,py+Math.sin(sh.ang-2.5)*k*.7);x.fill();
-  if(sh.mode!=='queue'||sh.speed>0){x.fillStyle=`rgba(${sh.col},.9)`;x.fillRect(px-c*k*.55-1,py-s*k*.55-1,2,2);}}
+  }
  x.globalAlpha=1;
  for(const f of T.flashes){const p=f.t/.6,px=sx(f.x),py=sy(f.y),R=Math.max(SV_GATE_SIZE*.7*z,7)*(.35+p*.65);if(px<-R||px>w+R||py<-R||py>h+R)continue; // small flash inside the ring
   const g=x.createRadialGradient(px,py,0,px,py,R);g.addColorStop(0,`rgba(255,255,255,${.9*(1-p)})`);g.addColorStop(.35,`rgba(170,220,255,${.5*(1-p)})`);g.addColorStop(1,'rgba(120,180,255,0)');
