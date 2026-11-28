@@ -2650,16 +2650,31 @@ function svDrawGate(x,g,z,t,sx,sy,T){ // a gate is an array of jump rings side b
  x.strokeStyle='#7d8996';x.lineWidth=Math.max(1,R*.08);x.stroke();
  for(const r of rings){const px=sx(r.x),py=sy(r.y);x.strokeStyle='#4a5560';x.lineWidth=Math.max(1.5,R*.12);x.beginPath();x.moveTo(px+ox*.75,py+oy*.75);x.lineTo(px+ox,py+oy);x.stroke();}
  x.restore();
- for(const r of rings){const st=T&&T.ports.get(r.key),charge=g.cond==='closed'?0:st?1-Math.min(1,st.cool/SV_RING_CHARGE):1;svDrawRing(x,g,sx(r.x),sy(r.y),R,t+r.i*1.7,col,charge);}
+ for(const r of rings){const st=T&&T.ports.get(r.key),charge=g.cond==='closed'?0:st?1-Math.min(1,st.cool/SV_RING_CHARGE):1;svDrawRing(x,g,sx(r.x),sy(r.y),R,t+r.i*1.7,col,charge,st?st.d:0,svHash(r.key));}
 }
-function svDrawRing(x,g,px,py,R,t,col,charge){
- x.save();x.translate(px,py);x.rotate(g.angle+Math.PI/2);
- const glow=x.createRadialGradient(0,0,R*.2,0,0,R*1.7);glow.addColorStop(0,`rgba(${col},${g.cond==='closed'?.1:.12+.22*charge})`);glow.addColorStop(1,`rgba(${col},0)`);x.fillStyle=glow;x.beginPath();x.arc(0,0,R*1.7,0,Math.PI*2);x.fill();
- if(g.cond!=='closed'){x.save();x.beginPath();x.arc(0,0,R*.86,0,Math.PI*2);x.clip();x.rotate(t*(g.cond==='open'?.8:.35));for(let i=0;i<6;i++){x.rotate(Math.PI/3);x.strokeStyle=`rgba(${col},${.1+.25*charge})`;x.lineWidth=R*.08;x.beginPath();x.arc(R*.25,0,R*.55,Math.PI*.6,Math.PI*1.4);x.stroke();}x.restore();
-  const core=x.createRadialGradient(0,0,0,0,0,R*.86);core.addColorStop(0,`rgba(255,255,255,${.1+.35*charge})`);core.addColorStop(.4,`rgba(${col},${.08+.18*charge})`);core.addColorStop(1,`rgba(${col},.04)`);x.fillStyle=core;x.beginPath();x.arc(0,0,R*.86,0,Math.PI*2);x.fill();}
- x.lineWidth=R*.2;x.strokeStyle='#4a5560';x.beginPath();x.arc(0,0,R,0,Math.PI*2);x.stroke();x.lineWidth=R*.08;x.strokeStyle='#9aa8b6';x.stroke();
- x.lineWidth=R*.03;x.strokeStyle='rgba(0,0,0,.35)';for(let i=0;i<12;i++){const a=i/12*Math.PI*2;x.beginPath();x.moveTo(Math.cos(a)*R*.9,Math.sin(a)*R*.9);x.lineTo(Math.cos(a)*R*1.1,Math.sin(a)*R*1.1);x.stroke();}
- for(let i=0;i<8;i++){const a=i/8*Math.PI*2,on=g.cond!=='closed'&&charge>=1?((t*2+i)%8)<1.2:charge<1?((t*6+i)%2)<.4:(t%2)<1;x.fillStyle=on?(charge<1&&g.cond!=='closed'?'rgb(255,190,70)':`rgb(${col})`):'rgba(40,40,40,.9)';x.beginPath();x.arc(Math.cos(a)*R,Math.sin(a)*R,R*.07,0,Math.PI*2);x.fill();}
+// One gate of the array: a heavy octagonal frame with clamp blocks and capacitor pods; two armoured blast doors
+// slide apart into the frame to open the aperture, behind which the jump field shows as a dim glow.
+function svDrawRing(x,g,px,py,R,t,col,charge,d,seed){
+ const k=R/100,closed=g.cond==='closed',o=closed?0:Math.max(0,Math.min(1,d||0)),P=SV_PAL.gen,ang=g.angle+Math.PI/2;
+ x.save();x.translate(px,py);x.rotate(ang);x.scale(k,k);
+ const K=svKit(x,P,t,seed,{light:SV.light,detail:R>40,shadow:R>60?Math.min(8,R*.05):0});
+ const oct=(rr,rot=Math.PI/8)=>[...Array(8)].map((_,i)=>[Math.cos(i*Math.PI/4+rot)*rr,Math.sin(i*Math.PI/4+rot)*rr]),path=pts=>{x.beginPath();pts.forEach(([a,b],i)=>i?x.lineTo(a,b):x.moveTo(a,b));x.closePath();};
+ for(const [a,b] of [[-1,-1],[1,-1],[-1,1],[1,1]])K.cyl(a*84,b*84,30,16,{a:Math.atan2(b,a),ribs:3}); // capacitor pods
+ K.poly(oct(100),{c:'#7c8794'});path(oct(92));x.strokeStyle='rgba(0,0,0,.3)';x.lineWidth=1;x.stroke();
+ // aperture: field behind the doors
+ const ap=oct(70);x.save();path(ap);x.fillStyle='#05080d';x.fill();x.clip();
+ if(!closed&&o>0){const a=(.18+.5*charge)*o,gr=x.createRadialGradient(0,0,4,0,0,74);gr.addColorStop(0,`rgba(235,245,255,${a})`);gr.addColorStop(.35,`rgba(${col},${a*.7})`);gr.addColorStop(1,`rgba(${col},${a*.15})`);x.fillStyle=gr;x.fillRect(-74,-74,148,148);
+  x.strokeStyle=`rgba(225,240,255,${.18*o*charge})`;x.lineWidth=1;for(let i=0;i<3;i++){const rr=(((t*.35+i/3)%1))*68;x.beginPath();x.arc(0,0,rr,0,Math.PI*2);x.stroke();}}
+ // blast doors: two leaves sliding sideways into the frame
+ const gap=o*72;for(const sd of[-1,1]){x.save();x.translate(sd*gap,0);
+  K.box(sd*36,0,72,148,{c:'#8a949f',lines:4});x.fillStyle='rgba(0,0,0,.25)';for(const yy of[-48,0,48])x.fillRect(sd>0?6:-66,yy-2,60,4);
+  K.hazard(sd*3.5,0,7,140);x.restore();}
+ x.restore();
+ path(ap);x.strokeStyle='#2a3038';x.lineWidth=4;x.stroke();x.strokeStyle='rgba(255,255,255,.15)';x.lineWidth=1;x.stroke();
+ for(const [a,b,rot] of [[0,-86,0],[0,86,0],[-86,0,Math.PI/2],[86,0,Math.PI/2]])K.box(a,b,34,16,{a:rot,c:'#6d7783',r:2,lines:3}); // door track clamps
+ // status lights: green open, amber moving or charging, red shut
+ const moving=o>0&&o<1,lc=closed?'255,70,60':o>=1?'90,255,140':moving||charge<1?'255,190,60':'255,70,60',on=moving?(t*4)%1<.5:true;
+ for(const [a,b] of [[-56,-80],[56,-80],[-56,80],[56,80]]){x.fillStyle=on?`rgb(${lc})`:'rgba(50,40,20,.9)';x.beginPath();x.arc(a,b,3.2,0,Math.PI*2);x.fill();if(on)K.glow(a,b,10,lc,.6);}
  x.restore();
 }
 // ---------- traffic ----------
@@ -2669,7 +2684,7 @@ function svDrawRing(x,g,px,py,R,t,col,charge){
 // At a planet's docking station, ships queue outside until the doors open, go in one at a time, and departing
 // ships wait inside for the doors. Gate arrivals follow each lane's traffic level; a habitable planet's own Traffic
 // setting (0-10) sets how busy its docks are. This runs only in each visitor's browser and is not saved.
-const SV_SHIP_CAP=240,SV_DOOR_TIME=1.6,SV_TRANSIT=2.2,SV_SLOT=16,SV_DOCK_K=.7,SV_RING_N=4,SV_RING_GAP=280,SV_RING_CHARGE=1.8,SV_JUMP_TIME=1.6;
+const SV_SHIP_CAP=240,SV_DOOR_TIME=1.6,SV_TRANSIT=2.2,SV_SLOT=16,SV_DOCK_K=.4,SV_GATE_DOOR=1.3,SV_RING_N=4,SV_RING_GAP=280,SV_RING_CHARGE=1.8,SV_JUMP_TIME=1.6;
 function svRings(g){ // the rings of a gate array, side by side across the lane direction; queues form on the inner side
  const c=Math.cos(g.angle),s=Math.sin(g.angle),tx=-s,ty=c,out=[];
  for(let i=0;i<SV_RING_N;i++){const off=(i-(SV_RING_N-1)/2)*SV_RING_GAP,x=g.x+tx*off,y=g.y+ty*off;
@@ -2687,7 +2702,7 @@ function svPort(T,key){let st=T.ports.get(key);if(!st){st={d:0,hold:0,q:[],out:0
 const svExp=rate=>-Math.log(1-Math.random())/rate;
 function svTick(T,key,rate,dt,fn){if(!(rate>0)){T.timers.delete(key);return;}let v=T.timers.get(key);if(v===undefined)v=svExp(rate)*Math.random();v-=dt;while(v<=0){fn();v+=svExp(rate);}T.timers.set(key,v);}
 const SV_ENGINES=['150,200,255','255,190,120','170,255,210','200,180,255'];
-function svNewShip(x,y,to,mode,extra){return Object.assign({x,y,ang:0,to,mode,timer:0,age:0,alpha:1,scale:1,speed:0,col:SV_ENGINES[Math.floor(Math.random()*SV_ENGINES.length)]},extra);}
+function svNewShip(x,y,to,mode,extra){return Object.assign({x,y,ang:0,to,mode,timer:0,age:0,alpha:1,scale:1,speed:0,col:SV_ENGINES[Math.floor(Math.random()*SV_ENGINES.length)],kind:svPickShip(),liv:Math.floor(Math.random()*SV_SHIP_LIVERIES.length)},extra);}
 function svStartFly(sh){sh.mode='fly';sh.ax=sh.x;sh.ay=sh.y;sh.p=0;sh.bend=(Math.random()-.5)*.5;sh.v=110+Math.random()*70;}
 function svTrafficStep(s,it,gates,dt){
  const T=svTrafficState(s);
@@ -2703,8 +2718,9 @@ function svTrafficStep(s,it,gates,dt){
  const stations=it.objects.filter(o=>o.type==='station'||o.type==='control'),wt=o=>o.type==='control'?2:1,W=stations.reduce((a,o)=>a+wt(o),0),ctl=it.objects.find(o=>o.type==='control');
  const room=()=>T.ships.length<SV_SHIP_CAP;
  // arrivals: a charged ring of the gate array lets a ship through
- const jumpIn=(g,to)=>{const free=svRings(g).filter(r=>{const st=svPort(T,r.key);return st.cool<=0&&!st.busy;});if(!free.length)return false;const r=free[Math.floor(Math.random()*free.length)];svPort(T,r.key).cool=SV_RING_CHARGE;
-  const side=(Math.random()<.5?-1:1)*(.5+Math.random()*.4),a=g.angle+Math.PI+side;T.ships.push(svNewShip(r.x,r.y,to,'gate',{ang:a,drift:a,timer:1.5+Math.random()*2,scale:0}));T.flashes.push({x:r.x,y:r.y,t:0});return true;};
+ const jumpIn=(g,to)=>{const free=svRings(g).filter(r=>{const st=svPort(T,r.key);return st.cool<=0&&!st.busy&&!st.incoming&&!st.mustClose;});if(!free.length)return false;
+  free.sort((a,b)=>svPort(T,a.key).q.length-svPort(T,b.key).q.length);svPort(T,free[0].key).incoming=to;return true;}; // the gate's doors open, then the ship comes through
+ const emerge=(r,to)=>{const g=r.gate,side=(Math.random()<.5?-1:1)*(.5+Math.random()*.4),a=g.angle+Math.PI+side;T.ships.push(svNewShip(r.x,r.y,to,'gate',{ang:a,drift:a,timer:1.5+Math.random()*2,scale:0}));T.flashes.push({x:r.x,y:r.y,t:0});};
  if(T.pending.length){const keep=[];for(const pnd of T.pending)if(!jumpIn(pnd.g,pnd.to))keep.push(pnd);T.pending=keep;}
  const arrive=(g,to)=>{if(!room())return;if(!jumpIn(g,to)&&T.pending.length<30)T.pending.push({g,to});};
  if(W)for(const e of open)svTick(T,'g:'+e.g.id,e.rate,dt,()=>{let v=Math.random()*W,st=stations[0];for(const o of stations){v-=wt(o);if(v<=0){st=o;break;}}arrive(e.g,{kind:'station',id:st.id});});
@@ -2713,8 +2729,14 @@ function svTrafficStep(s,it,gates,dt){
   svTick(T,'pi:'+p.id,rate,dt,()=>{if(!room())return;const [best,bn]=shortest(pd);if(bn>=12)return;const to={kind:'dock',id:best.key};if(gRate)arrive(pickGate(),to);else if(ctl)T.ships.push(svNewShip(ctl.x,ctl.y,to,'undock',{alpha:0}));});
   svTick(T,'po:'+p.id,rate,dt,()=>{const st=svPort(T,pd[Math.floor(Math.random()*pd.length)].key);if(st.out<4)st.out++;});}
  // gate rings: the front ship of each line goes through once the ring has recharged
- for(const [key] of rings){const st=svPort(T,key);st.cool=Math.max(0,st.cool-dt);const front=st.q[0];
-  if(front&&front.ready&&!st.busy&&st.cool<=0){st.q.shift();front.mode='jump';front.timer=0;front.ready=false;front.port=key;st.busy=front;}}
+ // gates: the doors open for one ship at a time (in or out), shut behind it, and the gate recharges before opening again
+ for(const [key,r] of rings){const st=svPort(T,key),front=st.q[0],ready=!!(front&&front.ready);st.cool=Math.max(0,st.cool-dt);st.hold=Math.max(0,(st.hold||0)-dt);
+  if(st.mustClose&&!st.busy&&st.hold<=0){st.d=Math.max(0,st.d-dt/SV_GATE_DOOR);if(st.d<=0){st.mustClose=false;st.cool=SV_RING_CHARGE;}}
+  else if(!st.mustClose&&(st.busy||st.cool<=0&&(ready||st.incoming)))st.d=Math.min(1,st.d+dt/SV_GATE_DOOR);
+  else if(!st.mustClose&&!st.busy)st.d=Math.max(0,st.d-dt/SV_GATE_DOOR);
+  if(st.d>=1&&!st.busy&&!st.mustClose){
+   if(st.incoming){emerge(r,st.incoming);st.incoming=null;st.mustClose=true;st.hold=.9;}
+   else if(ready){st.q.shift();front.mode='jump';front.timer=0;front.ready=false;front.port=key;st.busy=front;}}}
  // dock doors: open for the ship at the front of the line or one waiting inside, and shut after every ship
  for(const [key,d] of ports){if(rings.has(key))continue;const st=svPort(T,key),front=st.q[0],ready=!!(front&&front.ready);
   if(st.mustClose&&!st.busy){st.d=Math.max(0,st.d-dt/SV_DOOR_TIME);if(st.d<=0)st.mustClose=false;}
@@ -2724,7 +2746,7 @@ function svTrafficStep(s,it,gates,dt){
    else if(st.out>0){st.out--;const to=gRate?toGate():ctl?{kind:'station',id:ctl.id}:null;
     if(to&&room()){const sh=svNewShip(d.inside[0],d.inside[1],to,'exit',{port:key,alpha:0,ang:d.a});T.ships.push(sh);st.busy=sh;}st.turn=0;}}}
  // ships
- const done=sh=>{const st=T.ports.get(sh.port);if(st&&st.busy===sh){st.busy=null;if(rings.has(sh.port))st.cool=SV_RING_CHARGE;else st.mustClose=true;}};
+ const done=sh=>{const st=T.ports.get(sh.port);if(st&&st.busy===sh){st.busy=null;st.mustClose=true;if(rings.has(sh.port))st.hold=.3;}};
  for(const sh of T.ships){sh.age+=dt;
   if(sh.mode==='gate'){sh.scale=Math.min(1,sh.age/.5);sh.timer-=dt;sh.x+=Math.cos(sh.drift)*18*dt;sh.y+=Math.sin(sh.drift)*18*dt;const tg=svShipTarget(T,sh,it,ports);if(tg)sh.ang=svTurn(sh.ang,Math.atan2(tg[1]-sh.y,tg[0]-sh.x),dt*.8);if(sh.timer<=0)svStartFly(sh);continue;}
   if(sh.mode==='undock'){sh.alpha=Math.min(1,sh.alpha+dt/.8);if(sh.alpha>=1)svStartFly(sh);continue;}
@@ -2770,11 +2792,70 @@ function svDrawDock(x,d,st,px,py,z,t){
  for(let i=0;i<5;i++){const lx=34+i*8,on=o>=1&&Math.floor(t*6)%5===4-i;for(const sy of[-1,1]){x.fillStyle=on?'rgba(150,255,180,1)':'rgba(150,200,255,.35)';x.fillRect(lx-1,sy*13-1,2,2);}}
  x.restore();
 }
+// ---------- shuttles ----------
+// Traffic ships are small top-down sprites in a chunky, plated style (cab and canopy up front, engine blocks at the
+// back, cargo pods and containers on the haulers), drawn once per design and livery and reused. Nose points along +x;
+// designs are drawn in a 128 × 80 box with the ship about 112 long. When a ship is only a few pixels long it shows as a
+// simple arrow instead.
+const SV_SHIP_LIVERIES=['178,52,40','52,94,160','196,150,40','58,120,74','214,218,222','198,104,40','96,70,130'];
+const SV_SHIP_KINDS={ // weight, length (relative), engine points
+ shuttle:[3,1,[[-40,0]]],courier:[2,.9,[[-46,-13],[-46,13]]],transport:[3,1.35,[[-50,-9],[-50,9]]],freighter:[2,1.6,[[-52,-22],[-52,22],[-52,0]]],
+ train:[1.4,2.1,[[-54,-6],[-54,6]]],liner:[1,1.9,[[-54,-10],[-54,0],[-54,10]]],gunboat:[1,1.3,[[-48,-16],[-48,16]]],miner:[1.2,1.2,[[-48,-6],[-48,8]]]};
+const SV_SHIP_W=Object.entries(SV_SHIP_KINDS).reduce((a,[,v])=>a+v[0],0);
+function svPickShip(){let v=Math.random()*SV_SHIP_W;for(const [k,d] of Object.entries(SV_SHIP_KINDS)){v-=d[0];if(v<=0)return k;}return 'shuttle';}
+function svShipSprite(kind,liv){
+ SV.shipSpr=SV.shipSpr||new Map();const key=kind+'|'+liv;let c=SV.shipSpr.get(key);if(c)return c;
+ c=document.createElement('canvas');c.width=128;c.height=80;const x=c.getContext('2d');x.translate(64,40);
+ const L=SV_SHIP_LIVERIES[liv%SV_SHIP_LIVERIES.length],LC='#'+L.split(',').map(v=>(+v).toString(16).padStart(2,'0')).join(''),hullC=['#a4adb7','#9aa3a8','#b1aba1','#8f9aa6'][liv%4],dark='#262c33';
+ const sh=(hex,f)=>svShade(hex,f);
+ const fill=(pts,c=hullC)=>{let y0=1e9,y1=-1e9;for(const [,b] of pts){y0=Math.min(y0,b);y1=Math.max(y1,b);}x.beginPath();pts.forEach(([a,b],i)=>i?x.lineTo(a,b):x.moveTo(a,b));x.closePath();
+  const g=x.createLinearGradient(0,y0,0,y1);g.addColorStop(0,sh(c,1.35));g.addColorStop(.45,c);g.addColorStop(1,sh(c,.48));x.fillStyle=g;x.fill();x.strokeStyle=dark;x.lineWidth=1.3;x.stroke();};
+ const box=(cx,cy,w,h,c=hullC,r=2)=>{x.beginPath();x.roundRect(cx-w/2,cy-h/2,w,h,r);const g=x.createLinearGradient(0,cy-h/2,0,cy+h/2);g.addColorStop(0,sh(c,1.35));g.addColorStop(.5,c);g.addColorStop(1,sh(c,.5));x.fillStyle=g;x.fill();x.strokeStyle=dark;x.lineWidth=1.2;x.stroke();};
+ const lines=(x0,x1,y0,y1,n)=>{x.strokeStyle='rgba(0,0,0,.28)';x.lineWidth=.8;x.beginPath();for(let i=1;i<n;i++){const q=x0+(x1-x0)*i/n;x.moveTo(q,y0);x.lineTo(q,y1);}x.stroke();};
+ const canopy=(cx,cy,w,h)=>{x.beginPath();x.ellipse(cx,cy,w,h,0,0,Math.PI*2);const g=x.createLinearGradient(cx-w,cy-h,cx+w,cy+h);g.addColorStop(0,'#bfe4ff');g.addColorStop(.35,'#2f5f8c');g.addColorStop(1,'#0b1626');x.fillStyle=g;x.fill();x.strokeStyle=dark;x.lineWidth=1.1;x.stroke();
+  x.fillStyle='rgba(255,255,255,.55)';x.beginPath();x.ellipse(cx+w*.15,cy-h*.35,w*.45,h*.22,0,0,Math.PI*2);x.fill();};
+ const nozzle=(cx,cy,w,h)=>{x.fillStyle='#3a4048';x.fillRect(cx-w,cy-h/2,w,h);x.fillStyle='#141619';x.fillRect(cx-w-1.5,cy-h/2+1,2.5,h-2);x.strokeStyle=dark;x.lineWidth=1;x.strokeRect(cx-w,cy-h/2,w,h);};
+ const stripe=(x0,x1,y,h)=>{x.fillStyle=LC;x.fillRect(x0,y-h/2,x1-x0,h);};
+ const lamp=(cx,cy,col)=>{x.fillStyle=col;x.beginPath();x.arc(cx,cy,1.6,0,Math.PI*2);x.fill();};
+ switch(kind){
+  case 'shuttle':fill([[-36,-16],[2,-20],[30,-14],[46,-5],[48,0],[46,5],[30,14],[2,20],[-36,16],[-40,8],[-40,-8]]);
+   for(const s of[-1,1])fill([[-26,s*16],[4,s*18],[-6,s*30],[-30,s*31]].map(([a,b])=>[a,b]),sh(hullC,.9));stripe(-30,14,0,5);lines(-34,40,-14,14,5);canopy(32,0,10,7);nozzle(-38,0,6,14);
+   lamp(-20,-30,'#ff5040');lamp(-20,30,'#40ff80');break;
+  case 'courier':fill([[-34,-6],[18,-8],[50,-2],[52,0],[50,2],[18,8],[-34,6]]);
+   for(const s of[-1,1]){fill([[-30,s*6],[6,s*8],[-8,s*30],[-24,s*34],[-34,s*22]],sh(hullC,.92));box(-30,s*13,26,9,sh(hullC,.8));x.fillStyle=LC;x.fillRect(-20,s*26-2,10,4);}
+   canopy(24,0,12,5);stripe(-26,6,0,3);nozzle(-42,-13,6,7);nozzle(-42,13,6,7);lamp(-24,-34,'#ff5040');lamp(-24,34,'#40ff80');break;
+  case 'transport':box(-2,0,60,14,sh(hullC,.85),2);for(const s of[-1,1])for(const cx of[-20,8])box(cx,s*15,24,14,s<0?LC:sh(hullC,1.05),2);
+   for(const s of[-1,1])for(const cx of[-20,8]){x.fillStyle='rgba(0,0,0,.25)';x.fillRect(cx-1,s*15-7,1.2,14);}
+   fill([[26,-14],[42,-12],[52,-4],[52,4],[42,12],[26,14]]);canopy(44,0,6,8);box(-40,0,16,26,sh(hullC,.9),3);nozzle(-48,-9,5,8);nozzle(-48,9,5,8);
+   x.fillStyle=LC;x.fillRect(-44,-13,8,26);lamp(-40,-14,'#ff5040');lamp(-40,14,'#40ff80');break;
+  case 'freighter':box(-4,0,74,18,sh(hullC,.85),2);for(const s of[-1,1]){box(-4,s*24,80,14,sh(hullC,1.02),3);lines(-44,36,s*24-7,s*24+7,6);x.fillStyle=LC;x.fillRect(22,s*24-7,8,14);}
+   for(let i=0;i<4;i++){x.fillStyle=['#7a6a52','#5c6c80','#8a5a48','#667a58'][(i+liv)%4];x.fillRect(-36+i*16,-6,13,12);x.strokeStyle=dark;x.lineWidth=.8;x.strokeRect(-36+i*16,-6,13,12);}
+   fill([[34,-12],[48,-9],[54,0],[48,9],[34,12]]);canopy(46,0,5,6);box(-48,0,10,56,sh(hullC,.8),2);nozzle(-52,-22,5,9);nozzle(-52,22,5,9);nozzle(-52,0,5,9);break;
+  case 'train':x.fillStyle='#4b525b';x.fillRect(-48,-2.5,92,5);
+   for(let i=0;i<4;i++){const cx=-30+i*18,col=['#7a6a52','#5c6c80','#8a5a48','#667a58','#7d7f86'][(i+liv)%5];box(cx,0,15,20,col,1);x.fillStyle='rgba(0,0,0,.25)';for(let k=-1;k<=1;k++)x.fillRect(cx-6.5+k*4.5+4.5,-9,1,18);}
+   fill([[42,-9],[52,-6],[56,0],[52,6],[42,9],[40,0]]);canopy(50,0,4,5);x.fillStyle=LC;x.fillRect(41,-9,4,18);box(-46,0,12,18,sh(hullC,.85),3);nozzle(-52,-6,4,6);nozzle(-52,6,4,6);break;
+  case 'liner':fill([[-48,-12],[30,-13],[48,-8],[56,0],[48,8],[30,13],[-48,12]]);stripe(-44,40,-7,2.5);stripe(-44,40,7,2.5);
+   x.fillStyle='rgba(255,236,190,.95)';for(let i=0;i<14;i++){x.fillRect(-40+i*5.6,-4.5,2.2,1.6);x.fillRect(-40+i*5.6,3,2.2,1.6);}
+   fill([[10,-8],[34,-8],[40,0],[34,8],[10,8]],sh(hullC,1.1));canopy(36,0,5,4);for(const s of[-1,1])fill([[-40,s*12],[-24,s*12],[-34,s*24],[-46,s*24]],sh(hullC,.85));
+   nozzle(-48,-10,6,6);nozzle(-48,0,6,6);nozzle(-48,10,6,6);lamp(-40,-24,'#ff5040');lamp(-40,24,'#40ff80');break;
+  case 'gunboat':fill([[-40,-14],[10,-18],[44,-6],[50,0],[44,6],[10,18],[-40,14]]);for(const s of[-1,1]){box(-18,s*22,40,10,sh(hullC,.85),2);box(-4,s*22,6,6,'#5a626c',3);x.fillStyle='#2b3138';x.fillRect(-2,s*22-1,12,2);}
+   x.fillStyle='#5a626c';x.beginPath();x.arc(8,0,6,0,Math.PI*2);x.fill();x.fillStyle='#2b3138';x.fillRect(10,-1.2,18,2.4);canopy(30,0,8,5);stripe(-34,0,0,4);lines(-36,40,-12,12,6);
+   nozzle(-40,-16,8,8);nozzle(-40,16,8,8);break;
+  case 'miner':box(-6,-2,44,22,sh(hullC,.9),3);x.fillStyle='#6a5a46';x.beginPath();x.moveTo(-26,-12);x.lineTo(6,-12);x.lineTo(2,8);x.lineTo(-22,8);x.closePath();x.fill();x.strokeStyle=dark;x.stroke();
+   x.fillStyle='#8f7b5e';for(let i=0;i<7;i++){x.beginPath();x.arc(-20+i*3.5,-6+(i%3)*4,2.2,0,Math.PI*2);x.fill();}
+   fill([[16,-12],[34,-10],[44,-2],[44,6],[34,12],[16,12]]);canopy(36,1,6,6);x.strokeStyle='#4a525a';x.lineWidth=3;x.beginPath();x.moveTo(10,12);x.lineTo(30,22);x.lineTo(48,18);x.stroke();
+   x.fillStyle='#c9a640';x.beginPath();x.arc(48,18,3,0,Math.PI*2);x.fill();box(-34,1,14,24,LC,2);nozzle(-42,-6,5,7);nozzle(-42,8,5,7);break;
+ }
+ SV.shipSpr.set(key,c);return c;
+}
 function svDrawShips(x,T,z,sx,sy,w,h){
- const k0=Math.max(1.8,5*z);
+ const k0=Math.max(.9,2.5*z); // shuttles: about 5 units long
  for(const sh of T.ships){const px=sx(sh.x),py=sy(sh.y);if(px<-30||px>w+30||py<-30||py>h+30||sh.alpha<=0)continue;const k=k0*(sh.scale??1);if(k<.3)continue;x.globalAlpha=Math.max(0,Math.min(1,sh.alpha));
-  const c=Math.cos(sh.ang),s=Math.sin(sh.ang);
-  if((sh.mode==='fly'||sh.mode==='jump')&&sh.speed>.2){x.strokeStyle=`rgba(${sh.col},${.4*sh.speed})`;x.lineWidth=Math.max(1,k*.35);x.beginPath();x.moveTo(px-c*k*.4,py-s*k*.4);x.lineTo(px-c*k*(1+3*sh.speed),py-s*k*(1+3*sh.speed));x.stroke();}
+  const c=Math.cos(sh.ang),s=Math.sin(sh.ang),kd=SV_SHIP_KINDS[sh.kind]||SV_SHIP_KINDS.shuttle,Lp=2.2*k*kd[1],moving=(sh.mode==='fly'||sh.mode==='jump')&&sh.speed>.2;
+  if(moving){const tl=Lp*.45;x.strokeStyle=`rgba(${sh.col},${.4*sh.speed})`;x.lineWidth=Math.max(1,k*.35);x.beginPath();x.moveTo(px-c*tl,py-s*tl);x.lineTo(px-c*(tl+k*3*sh.speed),py-s*(tl+k*3*sh.speed));x.stroke();}
+  if(Lp>=7&&sh.kind){const sc=Lp/112;x.save();x.translate(px,py);x.rotate(sh.ang); // a detailed sprite when big enough to see
+   if(sh.mode!=='queue'||sh.speed>0)for(const [ex,ey] of kd[2]){const R=Math.max(2,9*sc*(.6+.4*(sh.speed||0))),g=x.createRadialGradient(ex*sc,ey*sc,0,ex*sc,ey*sc,R);g.addColorStop(0,`rgba(${sh.col},.9)`);g.addColorStop(1,`rgba(${sh.col},0)`);x.fillStyle=g;x.fillRect(ex*sc-R,ey*sc-R,R*2,R*2);}
+   x.drawImage(svShipSprite(sh.kind,sh.liv),-64*sc,-40*sc,128*sc,80*sc);x.restore();continue;}
   x.fillStyle='#e8f2ff';x.beginPath();x.moveTo(px+c*k,py+s*k);x.lineTo(px+Math.cos(sh.ang+2.5)*k*.7,py+Math.sin(sh.ang+2.5)*k*.7);x.lineTo(px+Math.cos(sh.ang-2.5)*k*.7,py+Math.sin(sh.ang-2.5)*k*.7);x.fill();
   if(sh.mode!=='queue'||sh.speed>0){x.fillStyle=`rgba(${sh.col},.9)`;x.fillRect(px-c*k*.55-1,py-s*k*.55-1,2,2);}}
  x.globalAlpha=1;
@@ -2817,7 +2898,7 @@ function svFrame(now){
   else if(o.type==='asteroid'){svDrawRock(x,px,py,Math.max(1.5,o.size*z),svRock(o.seed),o.seed%6+t*.05);labels.push([px,py+o.size*z+14,svName(o,s),'#c9c2b8',o.id]);}
  }
  const T=svTrafficStep(s,it,gates,dt);
- for(const g of gates){const px=sx(g.x),py=sy(g.y);svDrawGate(x,g,z,t,sx,sy,T);labels.push([px+Math.cos(g.angle)*(SV_GATE_SIZE*1.9*z+30),py+Math.sin(g.angle)*(SV_GATE_SIZE*1.9*z+30)+4,`Gate to ${g.to.name}`,`rgb(${LANE_CONDITIONS[g.cond].colors[2]})`,g.id,LANE_CONDITIONS[g.cond].label]);}
+ for(const g of gates){const px=sx(g.x),py=sy(g.y);SV.light=Math.atan2(star.y-g.y,star.x-g.x);svDrawGate(x,g,z,t,sx,sy,T);labels.push([px+Math.cos(g.angle)*(SV_GATE_SIZE*1.9*z+30),py+Math.sin(g.angle)*(SV_GATE_SIZE*1.9*z+30)+4,`Gate to ${g.to.name}`,`rgb(${LANE_CONDITIONS[g.cond].colors[2]})`,g.id,LANE_CONDITIONS[g.cond].label]);}
  // traffic: docking stations on habitable planets, ships and jump flashes (ships fade into stations, so they draw first)
  for(const o of it.objects)for(const d of svDocks(o)){const [bx,by]=d.body,bpx=sx(bx),bpy=sy(by);if(bpx<-80*z-40||bpx>w+80*z+40||bpy<-80*z-40||bpy>h+80*z+40)continue;svDrawDock(x,d,T.ports.get(d.key),bpx,bpy,z,t);}
  svDrawShips(x,T,z,sx,sy,w,h);
