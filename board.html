@@ -1,7 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="MSRAI_Label_c3feb43e-95d4-42a1-ae97-85d136991a95_AI_Disclosure" content="Made with AI">
+<meta charset="utf-8">
+<meta name="MSRAI_Label_c3feb43e-95d4-42a1-ae97-85d136991a95_AI_Disclosure" content="Made with AI">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#000000">
 <meta name="color-scheme" content="dark">
@@ -617,6 +618,8 @@ a.home-icon{display:inline-flex;align-items:center;justify-content:center;color:
 .rp-img img{width:100%;height:100%;object-fit:cover}
 .rp-card-name{font-size:12px;font-weight:600;color:var(--text);text-align:center}
 .board-compose{gap:6px}
+.char-give{margin:0 0 16px;padding:12px 14px;border:1px solid var(--accent);border-radius:6px;background:rgba(152,220,255,.06)}.char-give p{margin:0 0 10px}.char-give .field{max-width:320px}
+.quote-hint{margin:0 0 6px;font-size:12px}
 .quote-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .quote-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-right:2px}
 .quote-btn{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 3px;border:1px solid var(--line);border-radius:16px;background:var(--panel2);color:var(--text);font:inherit;font-size:12px;cursor:pointer}
@@ -726,7 +729,7 @@ a.board-from{text-decoration:none}a.board-from:hover{text-decoration:underline}
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
 <script src="assets/cloud-config.js"></script>
-<script src="assets/cloud.js?v=20261127g"></script>
+<script src="assets/cloud.js?v=20261128a"></script>
 <script src="assets/accounts.js?v=20261127b"></script>
 <script>
 'use strict';
@@ -776,7 +779,7 @@ const slotKey=n=>n===10?'0':String(n);
 const CHAR_INFO=[['dob','Date of birth'],['birthplace','Place of birth'],['gender','Gender'],['height','Height'],['weight','Weight'],['nationality','Nationality'],['race','Race'],['occupation','Occupation'],['affiliation','Affiliation']];
 const NAME_LABELS=['First name','Middle name','Last name','Other name'];
 let member=Accounts.member,boardPosts=[],boardLoaded=false,boardNew=false,boardDraft={title:'',text:'',reply:'',flat:''},boardBusy=false,boardError='',online=[];
-let chars={},charsLoaded=false,charEdit=null,collapsed={};
+let chars={},charsLoaded=false,charEdit=null,charGive=null,collapsed={};
 try{collapsed=JSON.parse(localStorage.getItem('reliquary-forum-collapsed')||'{}')||{};}catch(e){}
 function route(){
  const h=decodeURIComponent(location.hash.slice(1)),m=/^(topic|board|character)-(.+)$/.exec(h);
@@ -846,7 +849,7 @@ function edSerialize(ed){
 }
 function composerHTML(field,label,rows){
  const mc=myChars(),key=`${R.v}:${R.id||''}:${field}`;
- const bar=mc.length?`<div class="quote-bar" role="toolbar" aria-label="Character quotes"><span class="quote-label">Quote</span>${mc.map(c=>`<button type="button" class="quote-btn" data-quote-char="${escapeHTML(c.id)}" aria-pressed="false" aria-keyshortcuts="Alt+${slotKey(charSlot(c))}" title="Write as ${escapeHTML(c.name)} (Alt+${slotKey(charSlot(c))}): click to start their speech, click again to stop">${charImg(c,'quote-av')}<span>${escapeHTML(c.names[0]||c.name)}</span><kbd>${slotKey(charSlot(c))}</kbd></button>`).join('')}</div>`:'';
+ const bar=mc.length?`<div class="quote-bar" role="toolbar" aria-label="Character quotes"><span class="quote-label">Quote</span>${mc.map(c=>`<button type="button" class="quote-btn" data-quote-char="${escapeHTML(c.id)}" aria-pressed="false" aria-keyshortcuts="Alt+${slotKey(charSlot(c))}" title="Write as ${escapeHTML(c.name)} (Alt+${slotKey(charSlot(c))}): click to start their speech, click again to stop">${charImg(c,'quote-av')}<span>${escapeHTML(c.names[0]||c.name)}</span><kbd>${slotKey(charSlot(c))}</kbd></button>`).join('')}</div>`:`<p class="quote-hint subtext">To quote characters here, <a href="#characters">create a character</a> on this account${isAdmin()?'':'. Characters made while signed in as administrator belong to that account'}.</p>`;
  return `<div class="field board-compose"><span>${label}</span>${bar}<div class="board-editor" id="board-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="${label}" data-board-field="${field}" data-key="${escapeHTML(key)}" style="min-height:${rows*1.6+1.4}em">${edFromText(boardDraft[field]||'')}</div></div>`;
 }
 let edPos=null; // last caret position inside the message box {n: node, o: offset}
@@ -922,14 +925,32 @@ function threadHTML(topic){
 // ---- Character views ----
 function cardHTML(c,own){
  const sub=[c.race,c.occupation].filter(Boolean).join(' · ');
- return `<li class="char-card">${own?`<span class="char-slot" title="Slot ${charSlot(c)}: Alt+${slotKey(charSlot(c))} quotes this character">Alt+${slotKey(charSlot(c))}</span>`:''}<a class="char-card-link" href="${charHref(c)}">${charImg(c)}<span class="char-card-name">${escapeHTML(c.name)}</span><span class="char-card-sub">${escapeHTML(sub||(own?'':'Played by '+c.player))}</span></a>${own?`<div class="char-card-actions"><button class="btn" type="button" data-char-edit="${escapeHTML(c.id)}">Edit</button><button class="btn danger" type="button" data-char-del="${escapeHTML(c.id)}">Delete</button></div>`:''}</li>`;
+ return `<li class="char-card">${own?`<span class="char-slot" title="Slot ${charSlot(c)}: Alt+${slotKey(charSlot(c))} quotes this character">Alt+${slotKey(charSlot(c))}</span>`:''}<a class="char-card-link" href="${charHref(c)}">${charImg(c)}<span class="char-card-name">${escapeHTML(c.name)}</span><span class="char-card-sub">${escapeHTML(sub||(own?'':'Played by '+c.player))}</span></a>${own?`<div class="char-card-actions">${isAdmin()&&Cloud.giveCharacter?`<button class="btn" type="button" data-char-give="${escapeHTML(c.id)}">Give to member</button>`:''}<button class="btn" type="button" data-char-edit="${escapeHTML(c.id)}">Edit</button><button class="btn danger" type="button" data-char-del="${escapeHTML(c.id)}">Delete</button></div>`:''}</li>`;
+}
+// Administrator: hand one of the administrator account's characters to a member account (with its quotes and hotkey).
+function freeSlot(uid){for(let i=1;i<=CHAR_MAX;i++)if(!chars[uid+'_'+i])return i;return 0;}
+function giveHTML(){
+ const g=charGive,c=g&&chars[g.id];if(!c||!isAdmin())return '';
+ const ms=users.filter(u=>!u.admin).sort((a,b)=>a.display.localeCompare(b.display));
+ return `<div class="char-give" role="group" aria-label="Give a character"><p><b>Give ${escapeHTML(c.name)} to a member.</b> It moves to their account with its picture and details, shows in their quote buttons, and leaves yours.</p>`+
+  (ms.length?`<label class="field">Member<select id="char-give-to">${ms.map(m=>`<option value="${escapeHTML(m.uid)}"${m.uid===g.to?' selected':''}${freeSlot(m.uid)?'':' disabled'}>${escapeHTML(m.display)}${m.display.toLowerCase()!==m.name.toLowerCase()?` (${escapeHTML(m.name)})`:''}${freeSlot(m.uid)?'':' (full)'}</option>`).join('')}</select></label>`:'<p class="subtext">No member accounts found.</p>')+
+  (g.error?`<p class="board-error" role="alert">${escapeHTML(g.error)}</p>`:'')+
+  `<div class="board-actions"><button class="btn" type="button" data-char-give-cancel>Cancel</button><button class="btn primary" type="button" data-char-give-go${g.busy||!ms.length?' disabled':''}>Give character</button></div></div>`;
+}
+async function giveChar(){
+ const g=charGive,c=g&&chars[g.id],sel=$('char-give-to'),to=sel&&sel.value,m=users.find(u=>u.uid===to);if(!c||!m)return;
+ const slot=freeSlot(m.uid);if(!slot){g.error=`${m.display} already has ${CHAR_MAX} characters.`;render();return;}
+ if(!confirm(`Give ${c.name} to ${m.display}? It leaves the administrator account.`))return;
+ g.busy=true;g.error='';render();
+ try{await Cloud.giveCharacter(c.id,m.uid,m.display,slot);charGive=null;toast(`${c.name} now belongs to ${m.display}.`);render();}
+ catch(x){g.busy=false;g.error='Not moved: '+x.message;render();}
 }
 function charactersHTML(){
  if(!charsLoaded)return '<p class="subtext">Loading…</p>';
  const u=myUid(),mc=myChars(),others=Object.values(chars).filter(c=>c.owner!==u).sort((a,b)=>a.name.localeCompare(b.name));
  const full=mc.length>=CHAR_MAX;
  return crumbs([['Forum','#forum'],['My Characters']])+(u?`<div class="char-head"><h2>Your characters<small>${mc.length} of ${CHAR_MAX}</small></h2><button class="btn primary" type="button" data-char-new${full?' disabled':''}>New character</button></div>`+
-   (mc.length?`<ul class="char-grid-list">${mc.map(c=>cardHTML(c,true)).join('')}</ul>`:'<p class="subtext">You have no characters yet.</p>')+
+   giveHTML()+(mc.length?`<ul class="char-grid-list">${mc.map(c=>cardHTML(c,true)).join('')}</ul>`:'<p class="subtext">You have no characters yet.</p>')+
    (full?`<p class="subtext board-note">You have reached the limit of ${CHAR_MAX} characters. Delete one to create another.</p>`:'')
   :'<p class="subtext board-note"><button class="board-link" type="button" data-board-signin>Sign in or create an account</button> to create characters.</p>')+
   `<h2 class="char-sub">${u?'Other characters':'Characters'}</h2>`+(others.length?`<ul class="char-grid-list">${others.map(c=>cardHTML(c,false)).join('')}</ul>`:'<p class="subtext">None yet.</p>');
@@ -1173,6 +1194,9 @@ document.addEventListener('click',e=>{
  if(e.target.closest('[data-char-new]')){if(myChars().length<CHAR_MAX)editChar(null);return;}
  const ce=e.target.closest('[data-char-edit]');if(ce){editChar(ce.dataset.charEdit);return;}
  const cd=e.target.closest('[data-char-del]');if(cd){deleteChar(cd.dataset.charDel);return;}
+ const cg=e.target.closest('[data-char-give]');if(cg&&isAdmin()){charGive={id:cg.dataset.charGive,busy:false,error:''};render();$('char-give-to')?.focus();return;}
+ if(e.target.closest('[data-char-give-cancel]')){charGive=null;render();return;}
+ if(e.target.closest('[data-char-give-go]')){if(charGive){const sl=$('char-give-to');if(sl)charGive.to=sl.value;}giveChar();return;}
  if(e.target.closest('[data-char-cancel]')){charEdit=null;render();window.scrollTo({top:0});return;}
  if(e.target.closest('[data-char-img-clear]')&&charEdit){charEdit.d.image='';render();return;}
  const d=e.target.closest('[data-board-del]');if(d){

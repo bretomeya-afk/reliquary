@@ -98,14 +98,15 @@ service cloud.firestore {
         && request.resource.data.at == request.time;
     }
     // Forum characters: ids are {uid}_1 to {uid}_10, which limits each signed-in user to ten. Everyone can read them;
-    // the owner creates, edits and deletes them; the administrator can delete any.
+    // the owner creates, edits and deletes them; the administrator can delete any, and can give a character to a
+    // member (it is written under the member's id with the member as owner).
     function shortText(t) {
       return t is string && t.size() <= 60;
     }
-    function validCharacter(d) {
+    function validCharacter(d, owner) {
       return d.keys().hasOnly(['owner', 'player', 'name', 'names', 'dob', 'birthplace', 'gender', 'height', 'weight',
           'nationality', 'race', 'occupation', 'affiliation', 'background', 'image', 'updated'])
-        && d.owner == request.auth.uid && shortText(d.player)
+        && d.owner == owner && shortText(d.player)
         && d.name is string && d.name.size() > 0 && d.name.size() <= 130
         && d.names is list && d.names.size() >= 1 && d.names.size() <= 4
         && shortText(d.dob) && shortText(d.birthplace) && shortText(d.gender) && shortText(d.height) && shortText(d.weight)
@@ -120,10 +121,13 @@ service cloud.firestore {
       allow create: if request.auth != null && (isMember() || isAdmin())
         && id.matches('^' + request.auth.uid + '_([1-9]|10)$')
         && !exists(/databases/$(database)/documents/banned/$(request.auth.uid))
-        && validCharacter(request.resource.data);
+        && validCharacter(request.resource.data, request.auth.uid);
+      allow create: if isAdmin() && id.matches('^[A-Za-z0-9]+_([1-9]|10)$')
+        && exists(/databases/$(database)/documents/users/$(id.split('_')[0]))
+        && validCharacter(request.resource.data, id.split('_')[0]);
       allow update: if request.auth != null && resource.data.owner == request.auth.uid
         && id.matches('^' + request.auth.uid + '_([1-9]|10)$')
-        && validCharacter(request.resource.data);
+        && validCharacter(request.resource.data, request.auth.uid);
       allow delete: if isAdmin() || (request.auth != null && resource.data.owner == request.auth.uid);
     }
     // Private messages between members (the administrator can send as Administrator). Only the sender and the recipient

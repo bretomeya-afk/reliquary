@@ -236,6 +236,16 @@ async function saveCharacter(id,c){
  try{await db.collection('characters').doc(id).set(d);}
  catch(e){throw Error(/permission-denied/.test(e&&e.code||'')?'The shared database refused the character. Publish the latest firestore.rules in Firebase.':friendly(e));}
 }
+// Administrator: give a character to a member. It is copied to the member's free slot {memberUid}_{slot} with the
+// member as owner and player, and the original is removed (one batch, so it is never lost or doubled).
+async function giveCharacter(id,toUid,toName,slot){
+ await ready();if(!isAdmin())throw Error('Sign in as administrator.');
+ if(!/^[A-Za-z0-9]+$/.test(String(toUid))||!(slot>=1&&slot<=CHAR_MAX))throw Error('That member has no free character slot.');
+ const src=await db.collection('characters').doc(id).get();if(!src.exists)throw Error('This character no longer exists.');
+ const d={...src.data(),owner:toUid,player:String(toName||'').slice(0,60),updated:window.firebase.firestore.FieldValue.serverTimestamp()};
+ const b=db.batch();b.set(db.collection('characters').doc(toUid+'_'+slot),d);b.delete(db.collection('characters').doc(id));
+ try{await b.commit();}catch(e){throw Error(/permission-denied/.test(e&&e.code||'')?'The shared database refused the change. Publish the latest firestore.rules in Firebase.':friendly(e));}
+}
 async function deleteCharacter(id){await ready();try{await db.collection('characters').doc(id).delete();}catch(e){throw Error(friendly(e));}}
 // Private messages: messages/{id} = {from, fromName, to, toName, text, at, read}. watchMessages follows the signed-in
 // user's sent and received messages (re-subscribing when the sign-in changes) and calls cb with them, oldest first.
@@ -311,6 +321,6 @@ function trackPresence(getCmd,onChange){
  addEventListener('pagehide',()=>{if(pres.cur){writePresence(null).catch(()=>{});try{pres.bc&&pres.bc.postMessage('closing');}catch(e){}}});
  addEventListener('pageshow',e=>{if(e.persisted){pres.cur=null;syncPresence();}});
 }
-window.ReliquaryCloud={enabled,adminEmail,ready,isAdmin,onAuth,signIn,signOut,watchDoc,saveDoc,watchChat,addChat,clearChat,trackPresence,syncPresence,presenceStatus,watchFleets,saveFleet,watchBoard,addBoardPost,deleteBoardPosts,CHAR_MAX,uid,watchCharacters,saveCharacter,deleteCharacter,DM_MAX,watchMessages,sendMessage,watchAdmins,getMember,markMessagesRead,editMessage,deleteMessage,hideMessages,onMember,memberSignUp,memberSignIn,setDisplayName,watchOnline,watchMembers,deleteMember};
+window.ReliquaryCloud={enabled,adminEmail,ready,isAdmin,onAuth,signIn,signOut,watchDoc,saveDoc,watchChat,addChat,clearChat,trackPresence,syncPresence,presenceStatus,watchFleets,saveFleet,watchBoard,addBoardPost,deleteBoardPosts,CHAR_MAX,uid,watchCharacters,saveCharacter,deleteCharacter,giveCharacter,DM_MAX,watchMessages,sendMessage,watchAdmins,getMember,markMessagesRead,editMessage,deleteMessage,hideMessages,onMember,memberSignUp,memberSignIn,setDisplayName,watchOnline,watchMembers,deleteMember};
 if(enabled)ready().catch(()=>{});
 })();
